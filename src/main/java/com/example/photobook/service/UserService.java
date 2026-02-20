@@ -13,15 +13,15 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;
+    private final UserRepository repository;
+    private final UserMapper mapper;
 
     public UserDto create(UserDto dto) {
-        User user = userMapper.toEntity(dto);
+        User user = mapper.toEntity(dto);
         if (user.getIsActive() == null) {
             user.setIsActive(true);
         }
-        return userMapper.toDto(userRepository.save(user));
+        return mapper.toDto(repository.save(user));
     }
 
     public UserDto update(UUID id, UserDto dto) {
@@ -38,25 +38,25 @@ public class UserService {
         if (dto.getRoles() != null) {
             user.setRoles(dto.getRoles());
         }
-        return userMapper.toDto(userRepository.save(user));
+        return mapper.toDto(repository.save(user));
     }
 
     public UserDto findById(UUID id) {
         User user = findByUserId(id);
-        return userMapper.toDto(user);
+        return mapper.toDto(user);
     }
 
     public List<UserDto> findAll() {
-        return userMapper.toDto(userRepository.findAll());
+        return mapper.toDto(repository.findAll());
     }
 
     public UserDto delete(UUID id) {
         User user = findByUserId(id);
         user.setIsActive(false);
-        return userMapper.toDto(userRepository.save(user));
+        return mapper.toDto(repository.save(user));
     }
 
     private User findByUserId(UUID id) {
-        return userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("user not found"));
+        return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("user not found"));
     }
 }

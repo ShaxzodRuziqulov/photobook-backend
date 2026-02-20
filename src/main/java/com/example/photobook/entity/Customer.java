@@ -19,4 +19,7 @@ public class Customer extends BaseEntity {
     private String phone;
 
     private String notes;
+
+    @Column(nullable = false)
+    private Boolean isActive = true;
 }

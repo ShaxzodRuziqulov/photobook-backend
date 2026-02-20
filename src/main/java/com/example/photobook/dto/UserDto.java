@@ -17,6 +17,6 @@ public class UserDto {
     private String avatarUrl;
     private String phone;
     private String bio;
-    private Boolean isActive = true;
+    private Boolean isActive;
     private Set<Role> roles;
 }

@@ -12,4 +12,5 @@ public class CustomerDto {
     private String fullName;
     private String phone;
     private String notes;
+    private Boolean isActive;
 }
