@@ -25,7 +25,6 @@ public class MaterialService {
 
     public MaterialDto update(UUID id, MaterialDto dto) {
         Material material = findByMaterialId(id);
-        material.setId(dto.getId());
         material.setItemName(dto.getItemName());
         material.setItemType(dto.getItemType());
         material.setUnitName(dto.getUnitName());

@@ -56,7 +56,7 @@ public class UserService {
         return mapper.toDto(repository.save(user));
     }
 
-    private User findByUserId(UUID id) {
+    public User findByUserId(UUID id) {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("user not found"));
     }
 }

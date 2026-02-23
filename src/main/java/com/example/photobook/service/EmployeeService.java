@@ -22,8 +22,7 @@ public class EmployeeService {
     }
 
     public EmployeeDto update(UUID id, EmployeeDto dto) {
-        Employee employee = findByUserId(id);
-        employee.setId(dto.getId());
+        Employee employee = findEntityById(id);
         employee.setFullName(dto.getFullName());
         employee.setProfession(dto.getProfession());
         employee.setPhoneNumber(dto.getPhoneNumber());
@@ -34,7 +33,7 @@ public class EmployeeService {
     }
 
     public EmployeeDto findById(UUID id) {
-        Employee employee = findByUserId(id);
+        Employee employee = findEntityById(id);
         return mapper.toDto(employee);
     }
 
@@ -43,12 +42,12 @@ public class EmployeeService {
     }
 
     public EmployeeDto delete(UUID id) {
-        Employee employee = findByUserId(id);
+        Employee employee = findEntityById(id);
         employee.setIsActive(false);
         return mapper.toDto(repository.save(employee));
     }
 
-    public Employee findByUserId(UUID id) {
+    public Employee findEntityById(UUID id) {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("employee not found"));
     }
 }

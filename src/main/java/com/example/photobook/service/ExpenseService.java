@@ -20,15 +20,24 @@ public class ExpenseService {
 
     public ExpenseDto create(ExpenseDto dto) {
         Expense expense = mapper.toEntity(dto);
+        if (dto.getCategoryId() != null) {
+            expense.setCategory(categoryService.findByExpenseCategoryId(dto.getCategoryId()));
+        }
+        if (dto.getMaterialId() != null) {
+            expense.setMaterial(materialService.findByMaterialId(dto.getMaterialId()));
+        }
         return mapper.toDto(repository.save(expense));
     }
 
     public ExpenseDto update(UUID id, ExpenseDto dto) {
-        Expense expense = findByUserId(id);
+        Expense expense = findEntityById(id);
         expense.setName(dto.getName());
-        expense.setCategory(categoryService.findByExpenseCategoryId(dto.getCategoryId()));
-        expense.setMaterial(materialService.findByMaterialId(dto.getMaterialId()));
-        expense.setName(dto.getName());
+        if (dto.getCategoryId() != null) {
+            expense.setCategory(categoryService.findByExpenseCategoryId(dto.getCategoryId()));
+        }
+        if (dto.getMaterialId() != null) {
+            expense.setMaterial(materialService.findByMaterialId(dto.getMaterialId()));
+        }
         expense.setPrice(dto.getPrice());
         expense.setDescription(dto.getDescription());
         expense.setPaymentMethod(dto.getPaymentMethod());
@@ -39,7 +48,7 @@ public class ExpenseService {
     }
 
     public ExpenseDto findById(UUID id) {
-        Expense expense = findByUserId(id);
+        Expense expense = findEntityById(id);
         return mapper.toDto(expense);
     }
 
@@ -48,11 +57,11 @@ public class ExpenseService {
     }
 
     public void delete(UUID id) {
-        Expense expense = findByUserId(id);
+        Expense expense = findEntityById(id);
         repository.delete(expense);
     }
 
-    private Expense findByUserId(UUID id) {
+    private Expense findEntityById(UUID id) {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("expense not found"));
     }
 }

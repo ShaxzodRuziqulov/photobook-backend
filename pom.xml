@@ -24,7 +24,7 @@
     <!-- Versions -->
     <!-- ===================== -->
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok.version>1.18.30</lombok.version>
     </properties>
