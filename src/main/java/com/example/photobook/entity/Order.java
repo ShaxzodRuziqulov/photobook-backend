@@ -14,7 +14,14 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "orders")
+@Table(
+        name = "orders",
+        indexes = {
+                @Index(name = "idx_orders_category_id", columnList = "category_id"),
+                @Index(name = "idx_orders_customer_id", columnList = "customer_id"),
+                @Index(name = "idx_orders_employee_id", columnList = "employee_id")
+        }
+)
 public class Order extends BaseEntity {
 
     @Enumerated(EnumType.STRING)

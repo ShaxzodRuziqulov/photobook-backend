@@ -1,0 +1,55 @@
+package com.example.photobook.service;
+
+import com.example.photobook.dto.RoleDto;
+import com.example.photobook.entity.Role;
+import com.example.photobook.mapper.RoleMapper;
+import com.example.photobook.repository.RoleRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class RoleService {
+    private final RoleRepository repository;
+    private final RoleMapper mapper;
+
+    public RoleDto create(RoleDto dto) {
+        Role Order = mapper.toEntity(dto);
+
+        return mapper.toDto(repository.save(Order));
+    }
+
+    public RoleDto update(UUID id, RoleDto dto) {
+        Role role = findByRoleId(id);
+        role.setId(dto.getId());
+        role.setName(dto.getName());
+        role.setDescription(dto.getDescription());
+
+        return mapper.toDto(repository.save(role));
+    }
+
+    public RoleDto findById(UUID id) {
+        Role order = findByRoleId(id);
+        return mapper.toDto(order);
+    }
+
+    public List<RoleDto> findAll() {
+        return mapper.toDto(repository.findAll());
+    }
+
+    public void delete(UUID id) {
+        Role role = findByRoleId(id);
+        repository.delete(role);
+    }
+
+    public Role findByRoleId(UUID id) {
+        return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("role not found"));
+    }
+
+    public Role findByName(String roleName) {
+        return repository.findByName(roleName);
+    }
+}

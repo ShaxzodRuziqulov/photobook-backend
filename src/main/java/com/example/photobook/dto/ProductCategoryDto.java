@@ -12,5 +12,5 @@ public class ProductCategoryDto {
     private UUID id;
     private String name;
     private OrderKind kind;
-    private String defaultPages;
+    private Integer defaultPages;
 }

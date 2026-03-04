@@ -10,7 +10,13 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @Entity
-@Table(name = "expenses")
+@Table(
+        name = "expenses",
+        indexes = {
+                @Index(name = "idx_expenses_category_id", columnList = "category_id"),
+                @Index(name = "idx_expenses_material_id", columnList = "material_id")
+        }
+)
 public class Expense extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
