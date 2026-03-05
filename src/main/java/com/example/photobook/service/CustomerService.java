@@ -22,8 +22,7 @@ public class CustomerService {
     }
 
     public CustomerDto update(UUID id, CustomerDto dto) {
-        Customer customer = findByUserId(id);
-        customer.setId(dto.getId());
+        Customer customer = findEntityById(id);
         customer.setFullName(dto.getFullName());
         customer.setPhone(dto.getPhone());
         customer.setNotes(dto.getNotes());
@@ -34,7 +33,7 @@ public class CustomerService {
     }
 
     public CustomerDto findById(UUID id) {
-        Customer customer = findByUserId(id);
+        Customer customer = findEntityById(id);
         return mapper.toDto(customer);
     }
 
@@ -43,12 +42,12 @@ public class CustomerService {
     }
 
     public CustomerDto delete(UUID id) {
-        Customer customer = findByUserId(id);
+        Customer customer = findEntityById(id);
         customer.setIsActive(false);
         return mapper.toDto(repository.save(customer));
     }
 
-    public Customer findByUserId(UUID id) {
+    public Customer findEntityById(UUID id) {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("customer not found"));
     }
 }

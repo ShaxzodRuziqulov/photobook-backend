@@ -20,21 +20,35 @@ public class OrderService {
     private final EmployeeService employeeService;
 
     public OrderDto create(OrderDto dto) {
-        Order Order = mapper.toEntity(dto);
+        Order order = mapper.toEntity(dto);
+        if (dto.getCategoryId() != null) {
+            order.setCategory(productCategoryService.findByProductCategoryId(dto.getCategoryId()));
+        }
+        if (dto.getCustomerId() != null) {
+            order.setCustomer(customerService.findEntityById(dto.getCustomerId()));
+        }
+        if (dto.getEmployeeId() != null) {
+            order.setEmployee(employeeService.findEntityById(dto.getEmployeeId()));
+        }
 
-        return mapper.toDto(repository.save(Order));
+        return mapper.toDto(repository.save(order));
     }
 
     public OrderDto update(UUID id, OrderDto dto) {
         Order order = findByOrderId(id);
-        order.setId(dto.getId());
         order.setKind(dto.getKind());
-        order.setCategory(productCategoryService.findByProductCategoryId(dto.getCategoryId()));
+        if (dto.getCategoryId() != null) {
+            order.setCategory(productCategoryService.findByProductCategoryId(dto.getCategoryId()));
+        }
         order.setOrderName(dto.getOrderName());
         order.setItemType(dto.getItemType());
-        order.setCustomer(customerService.findByUserId(dto.getCustomerId()));
+        if (dto.getCustomerId() != null) {
+            order.setCustomer(customerService.findEntityById(dto.getCustomerId()));
+        }
         order.setReceiverName(dto.getReceiverName());
-        order.setEmployee(employeeService.findByUserId(dto.getEmployeeId()));
+        if (dto.getEmployeeId() != null) {
+            order.setEmployee(employeeService.findEntityById(dto.getEmployeeId()));
+        }
         order.setPageCount(dto.getPageCount());
         order.setAmount(dto.getAmount());
         order.setProcessedCount(dto.getProcessedCount());
@@ -46,8 +60,8 @@ public class OrderService {
     }
 
     public OrderDto findById(UUID id) {
-        Order Order = findByOrderId(id);
-        return mapper.toDto(Order);
+        Order order = findByOrderId(id);
+        return mapper.toDto(order);
     }
 
     public List<OrderDto> findAll() {
