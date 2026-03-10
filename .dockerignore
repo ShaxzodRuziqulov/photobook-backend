@@ -1,0 +1,7 @@
+.git
+.idea
+target
+.m2
+HELP.md
+*.log
+uploads-storage
