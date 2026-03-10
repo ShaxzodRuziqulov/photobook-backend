@@ -41,7 +41,9 @@ public class PreInject {
         if (roleRepository.count() == 0) {
             List<Role> roles = new ArrayList<>();
             roles.add(createRole("ROLE_ADMIN", "Admin"));
-            roles.add(createRole("ROLE_USER", "User"));
+            roles.add(createRole("ROLE_MANAGER", "Manager"));
+            roles.add(createRole("ROLE_OPERATOR", "Operator"));
+            roles.add(createRole("ROLE_USER", "Legacy User"));
             roleRepository.saveAll(roles);
         }
 

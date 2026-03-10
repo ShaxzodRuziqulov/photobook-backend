@@ -1,7 +1,10 @@
 package com.example.photobook.controller;
 
 import com.example.photobook.dto.OrderDto;
+import com.example.photobook.dto.OrderStatusHistoryDto;
+import com.example.photobook.dto.OrderStatusTransitionDto;
 import com.example.photobook.service.OrderService;
+import com.example.photobook.service.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,16 +14,17 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/order")
+@RequestMapping("/api/v1/orders")
 public class OrderController {
     private final OrderService service;
+    private final CurrentUserService currentUserService;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<OrderDto> create(@RequestBody OrderDto dto) {
         return ResponseEntity.ok(service.create(dto));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<OrderDto> update(@PathVariable UUID id, @RequestBody OrderDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
@@ -30,7 +34,7 @@ public class OrderController {
         return ResponseEntity.ok(service.findById(id));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<OrderDto>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
@@ -38,6 +42,16 @@ public class OrderController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<OrderDto> changeStatus(@PathVariable UUID id, @RequestBody OrderStatusTransitionDto dto) {
+        return ResponseEntity.ok(service.changeStatus(id, dto, currentUserService.getCurrentUserId()));
+    }
+
+    @GetMapping("/{id}/status-history")
+    public ResponseEntity<List<OrderStatusHistoryDto>> getStatusHistory(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.getStatusHistory(id));
     }
 }

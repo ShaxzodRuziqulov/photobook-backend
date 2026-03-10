@@ -17,14 +17,13 @@ public class RoleService {
     private final RoleMapper mapper;
 
     public RoleDto create(RoleDto dto) {
-        Role Order = mapper.toEntity(dto);
+        Role role = mapper.toEntity(dto);
 
-        return mapper.toDto(repository.save(Order));
+        return mapper.toDto(repository.save(role));
     }
 
     public RoleDto update(UUID id, RoleDto dto) {
         Role role = findByRoleId(id);
-        role.setId(dto.getId());
         role.setName(dto.getName());
         role.setDescription(dto.getDescription());
 
@@ -32,8 +31,8 @@ public class RoleService {
     }
 
     public RoleDto findById(UUID id) {
-        Role order = findByRoleId(id);
-        return mapper.toDto(order);
+        Role role = findByRoleId(id);
+        return mapper.toDto(role);
     }
 
     public List<RoleDto> findAll() {

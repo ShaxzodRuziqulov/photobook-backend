@@ -11,16 +11,16 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/expense-category")
+@RequestMapping("/api/v1/expense-categories")
 public class ExpenseCategoryController {
     private final ExpenseCategoryService service;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<ExpenseCategoryDto> create(@RequestBody ExpenseCategoryDto dto) {
         return ResponseEntity.ok(service.create(dto));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<ExpenseCategoryDto> update(@PathVariable UUID id, @RequestBody ExpenseCategoryDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
@@ -30,7 +30,7 @@ public class ExpenseCategoryController {
         return ResponseEntity.ok(service.findById(id));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<ExpenseCategoryDto>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }

@@ -11,16 +11,16 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/customer")
+@RequestMapping("/api/v1/customers")
 public class CustomerController {
     private final CustomerService service;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<CustomerDto> create(@RequestBody CustomerDto dto) {
         return ResponseEntity.ok(service.create(dto));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody CustomerDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
@@ -30,7 +30,7 @@ public class CustomerController {
         return ResponseEntity.ok(service.findById(id));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<CustomerDto>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }

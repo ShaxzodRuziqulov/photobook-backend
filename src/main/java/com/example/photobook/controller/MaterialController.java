@@ -1,6 +1,7 @@
 package com.example.photobook.controller;
 
 import com.example.photobook.dto.MaterialDto;
+import com.example.photobook.dto.MaterialAdjustDto;
 import com.example.photobook.service.MaterialService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,16 +12,16 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/material")
+@RequestMapping("/api/v1/materials")
 public class MaterialController {
     private final MaterialService service;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<MaterialDto> create(@RequestBody MaterialDto dto) {
         return ResponseEntity.ok(service.create(dto));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<MaterialDto> update(@PathVariable UUID id, @RequestBody MaterialDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
@@ -30,7 +31,7 @@ public class MaterialController {
         return ResponseEntity.ok(service.findById(id));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<MaterialDto>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
@@ -38,6 +39,11 @@ public class MaterialController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/adjust")
+    public ResponseEntity<MaterialDto> adjust(@PathVariable UUID id, @RequestBody MaterialAdjustDto dto) {
+        return ResponseEntity.ok(service.adjust(id, dto));
     }
 }

@@ -11,16 +11,16 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/order-status-history")
+@RequestMapping("/api/v1/order-status-histories")
 public class OrderStatusHistoryController {
     private final OrderStatusHistoryService service;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<OrderStatusHistoryDto> create(@RequestBody OrderStatusHistoryDto dto) {
         return ResponseEntity.ok(service.create(dto));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<OrderStatusHistoryDto> update(@PathVariable UUID id, @RequestBody OrderStatusHistoryDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
@@ -30,7 +30,7 @@ public class OrderStatusHistoryController {
         return ResponseEntity.ok(service.findById(id));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<OrderStatusHistoryDto>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }

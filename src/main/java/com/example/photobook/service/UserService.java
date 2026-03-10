@@ -1,6 +1,7 @@
 package com.example.photobook.service;
 
 import com.example.photobook.dto.UserDto;
+import com.example.photobook.dto.UserRoleUpdateDto;
 import com.example.photobook.entity.Role;
 import com.example.photobook.entity.User;
 import com.example.photobook.entity.enumirated.UserStatus;
@@ -11,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -69,12 +71,25 @@ public class UserService {
         return mapper.toDto(repository.save(user));
     }
 
+    public UserDto updateRoles(UUID id, UserRoleUpdateDto dto) {
+        if (dto.getRoleIds() == null || dto.getRoleIds().isEmpty()) {
+            throw new IllegalArgumentException("role_ids is required");
+        }
+        User user = findByUserId(id);
+        Set<Role> roles = dto.getRoleIds().stream()
+                .filter(Objects::nonNull)
+                .map(roleService::findByRoleId)
+                .collect(java.util.stream.Collectors.toSet());
+        user.setRoles(roles);
+        return mapper.toDto(repository.save(user));
+    }
+
     public User findByUserId(UUID id) {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("user not found"));
     }
 
     public Set<Role> resolveRolesForCreate() {
-        return Set.of(requireRole("ROLE_USER"));
+        return Set.of(requireRole("ROLE_OPERATOR"));
     }
 
     public Role requireRole(String roleName) {

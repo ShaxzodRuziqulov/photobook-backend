@@ -1,6 +1,5 @@
 package com.example.photobook.controller;
 
-import com.example.photobook.dto.CustomerDto;
 import com.example.photobook.dto.ExpenseDto;
 import com.example.photobook.service.ExpenseService;
 import lombok.RequiredArgsConstructor;
@@ -12,16 +11,16 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/expense")
+@RequestMapping("/api/v1/expenses")
 public class ExpenseController {
     private final ExpenseService service;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<ExpenseDto> create(@RequestBody ExpenseDto dto) {
         return ResponseEntity.ok(service.create(dto));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<ExpenseDto> update(@PathVariable UUID id, @RequestBody ExpenseDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
@@ -31,7 +30,7 @@ public class ExpenseController {
         return ResponseEntity.ok(service.findById(id));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<ExpenseDto>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }

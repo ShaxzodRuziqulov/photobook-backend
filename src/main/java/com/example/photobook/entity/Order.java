@@ -68,6 +68,12 @@ public class Order extends BaseEntity {
     @Column(nullable = false, length = 20)
     private OrderStatus status;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<OrderStatusHistory> statusHistory = new ArrayList<>();
 }

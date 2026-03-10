@@ -19,14 +19,17 @@ public class OrderDto {
 
     private OrderKind kind;
     private UUID categoryId;
+    private String categoryName;
     private String orderName;
 
     private String itemType;
 
     private UUID customerId;
+    private String customerName;
     private String receiverName;
 
     private UUID employeeId;
+    private String employeeName;
 
     private Integer pageCount;
     private Integer amount;
@@ -36,5 +39,7 @@ public class OrderDto {
 
     private LocalDate deadline;
     private OrderStatus status;
+    private String imageUrl;
+    private String notes;
     private List<OrderStatusHistory> statusHistory;
 }

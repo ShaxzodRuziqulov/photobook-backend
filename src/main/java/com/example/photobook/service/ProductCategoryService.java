@@ -19,14 +19,13 @@ public class ProductCategoryService {
     private final ProductCategoryMapper mapper;
 
     public ProductCategoryDto create(ProductCategoryDto dto) {
-        ProductCategory order = mapper.toEntity(dto);
+        ProductCategory productCategory = mapper.toEntity(dto);
 
-        return mapper.toDto(repository.save(order));
+        return mapper.toDto(repository.save(productCategory));
     }
 
     public ProductCategoryDto update(UUID id, ProductCategoryDto dto) {
         ProductCategory productCategory = findByProductCategoryId(id);
-        productCategory.setId(dto.getId());
         productCategory.setName(dto.getName());
         productCategory.setKind(dto.getKind());
         productCategory.setDefaultPages(dto.getDefaultPages());
@@ -44,8 +43,8 @@ public class ProductCategoryService {
     }
 
     public void delete(UUID id) {
-        ProductCategory order = findByProductCategoryId(id);
-        repository.delete(order);
+        ProductCategory productCategory = findByProductCategoryId(id);
+        repository.delete(productCategory);
     }
 
     public ProductCategory findByProductCategoryId(UUID productCategoryId) {

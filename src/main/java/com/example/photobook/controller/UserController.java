@@ -1,6 +1,7 @@
 package com.example.photobook.controller;
 
 import com.example.photobook.dto.UserDto;
+import com.example.photobook.dto.UserRoleUpdateDto;
 import com.example.photobook.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -46,5 +47,10 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<UserDto> delete(@PathVariable UUID id) {
         return ResponseEntity.ok(service.delete(id));
+    }
+
+    @PutMapping("/{id}/roles")
+    public ResponseEntity<UserDto> updateRoles(@PathVariable UUID id, @RequestBody UserRoleUpdateDto dto) {
+        return ResponseEntity.ok(service.updateRoles(id, dto));
     }
 }
