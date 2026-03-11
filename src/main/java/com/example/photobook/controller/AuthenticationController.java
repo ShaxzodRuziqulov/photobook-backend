@@ -54,8 +54,7 @@ public class AuthenticationController {
     public ResponseEntity<Void> logout(
             @RequestBody RefreshTokenRequestDto dto,
             HttpServletRequest request,
-            HttpServletResponse response
-    ) {
+            HttpServletResponse response) {
         authService.validateRefreshToken(dto);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null) {

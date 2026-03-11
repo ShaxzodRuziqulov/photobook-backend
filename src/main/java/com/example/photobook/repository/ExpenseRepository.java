@@ -3,6 +3,7 @@ package com.example.photobook.repository;
 import com.example.photobook.entity.Expense;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +14,7 @@ import java.util.UUID;
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 
+    @EntityGraph(attributePaths = {"category", "material"})
     @Query("""
             SELECT e
             FROM Expense e
@@ -24,7 +26,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
               AND (:paymentMethod IS NULL OR :paymentMethod = '' OR LOWER(COALESCE(e.paymentMethod, '')) = LOWER(:paymentMethod))
             ORDER BY e.updatedAt DESC
             """)
-    Page<Expense> findPage(@Param("search") String search, @Param("categoryId") UUID categoryId,
-                           @Param("materialId") UUID materialId, @Param("paymentMethod") String paymentMethod,
+    Page<Expense> findPage(@Param("search") String search,
+                           @Param("categoryId") UUID categoryId,
+                           @Param("materialId") UUID materialId,
+                           @Param("paymentMethod") String paymentMethod,
                            Pageable pageable);
 }

@@ -3,26 +3,18 @@
 **Base URL:** `/api/v1`
 
 **Auth:**
-`Authorization: Bearer <access_token>` (login/refresh dan tashqari)
+`Authorization: Bearer <access_token>` login, refresh va swagger'dan tashqari endpointlar uchun yuboriladi.
 
-**Pagination standard:**
-`page`, `limit`, `sort`, `order`
-
-**Search standard:**
-`q`
-
-**Date filter:**
-`from`, `to` (YYYY-MM-DD)
+**Muhim:**
+- Oddiy list endpointlar `GET /resource`
+- Paging endpointlar `POST /resource/paging`
+- Update endpointlar asosan `PUT`
 
 ---
 
 # 1. Auth
 
 ### POST /auth/login
-
-**Maqsad:** tizimga kirish.
-
-**Body**
 
 ```json
 {
@@ -31,82 +23,53 @@
 }
 ```
 
-**Responses**
-
-`200`
+Response:
 
 ```json
 {
-  "access_token": "string",
-  "refresh_token": "string",
-  "user": {}
+  "accessToken": "string",
+  "refreshToken": "string",
+  "user": {
+    "id": "uuid",
+    "name": "string",
+    "email": "string",
+    "roles": ["ROLE_ADMIN"],
+    "avatarUrl": "string",
+    "phone": "string",
+    "bio": "string"
+  }
 }
 ```
-
-`401` – login yoki password noto‘g‘ri.
-
----
 
 ### POST /auth/refresh
 
-**Maqsad:** yangi access token olish.
-
-**Body**
-
 ```json
 {
-  "refresh_token": "string"
+  "refreshToken": "string"
 }
 ```
-
-**Responses**
-
-`200`
-
-```json
-{
-  "access_token": "string",
-  "refresh_token": "string"
-}
-```
-
-`401` – refresh token yaroqsiz yoki revoked.
-
----
 
 ### POST /auth/logout
 
-**Maqsad:** refresh tokenni bekor qilish.
-
-**Body**
-
 ```json
 {
-  "refresh_token": "string"
+  "refreshToken": "string"
 }
 ```
 
-**Response**
-
-`204` – muvaffaqiyatli chiqish.
-
----
+Response: `204`
 
 ### GET /auth/me
 
-**Maqsad:** joriy user ma’lumotini olish.
-
-**Response**
-
-`200`
+Response:
 
 ```json
 {
   "id": "uuid",
   "name": "string",
   "email": "string",
-  "roles": [],
-  "avatar_url": "string",
+  "roles": ["ROLE_ADMIN"],
+  "avatarUrl": "string",
   "phone": "string",
   "bio": "string"
 }
@@ -118,99 +81,66 @@
 
 ### GET /users
 
-**Maqsad:** userlar ro‘yxati.
-
-**Query**
-
-```
-page
-limit
-q
-is_active
-role
-```
-
-**Response**
-
-`200` – paginated list.
-
----
+Response: `List<UserDto>`
 
 ### POST /users
 
-**Maqsad:** yangi user yaratish.
-
-**Body**
-
 ```json
 {
-  "name": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "middleName": "string",
+  "username": "string",
   "email": "string",
   "password": "string",
-  "avatar_url": "string",
+  "avatarUrl": "string",
   "phone": "string",
   "bio": "string",
-  "is_active": true
+  "isActive": true
 }
 ```
 
-**Responses**
+### GET /users/{id}
 
-`201` – user yaratildi
-`409` – email allaqachon mavjud
+### PUT /users/{id}
 
----
+Body `POST /users` bilan bir xil, `password` optional.
 
-### GET /users/:id
+### DELETE /users/{id}
 
-**Maqsad:** bitta userni olish.
+Soft delete ko‘rinishida `isActive=false`.
 
-`200` – user detail
-`404` – topilmadi
-
----
-
-### PATCH /users/:id
-
-**Maqsad:** userni qisman yangilash.
-
-**Body**
-
-```
-name?
-phone?
-bio?
-avatar_url?
-is_active?
-password?
-```
-
-`200` – yangilangan user
-
----
-
-### DELETE /users/:id
-
-**Maqsad:** userni o‘chirish (yoki soft delete).
-
-`204` – o‘chirildi
-`409` – bog‘liq ma’lumotlar mavjud
-
----
-
-### PUT /users/:id/roles
-
-**Maqsad:** user rolelarini to‘liq almashtirish.
-
-**Body**
+### PUT /users/{id}/roles
 
 ```json
 {
-  "role_ids": ["uuid"]
+  "roleIds": ["uuid"]
 }
 ```
 
-`200` – yangilangan rolelar
+### POST /users/paging
+
+Body:
+
+```json
+{
+  "search": "ali",
+  "isActive": true,
+  "role": "ROLE_ADMIN"
+}
+```
+
+Response:
+
+```json
+{
+  "items": [],
+  "page": 1,
+  "limit": 10,
+  "total": 0,
+  "totalPages": 0
+}
+```
 
 ---
 
@@ -218,53 +148,28 @@ password?
 
 ### GET /roles
 
-**Response**
-
-```json
-[
-  {
-    "id": "uuid",
-    "name": "string",
-    "description": "string"
-  }
-]
-```
-
----
-
 ### POST /roles
-
-**Body**
 
 ```json
 {
-  "name": "string",
+  "name": "ROLE_ADMIN",
   "description": "string"
 }
 ```
 
-`201` – role yaratildi
-`409` – name unique buzildi
+### GET /roles/{id}
 
----
+### PUT /roles/{id}
 
-### PATCH /roles/:id
+### DELETE /roles/{id}
 
-**Body**
+### POST /roles/paging
 
+```json
+{
+  "search": "admin"
+}
 ```
-name?
-description?
-```
-
-`200` – updated role
-
----
-
-### DELETE /roles/:id
-
-`204` – deleted
-`409` – role userlarga biriktirilgan
 
 ---
 
@@ -272,59 +177,33 @@ description?
 
 ### GET /customers
 
-**Query**
-
-```
-page
-limit
-q
-is_active
-```
-
-`200` – paginated list
-
----
-
 ### POST /customers
-
-**Body**
 
 ```json
 {
-  "full_name": "string",
+  "fullName": "string",
   "phone": "string",
   "notes": "string",
-  "is_active": true
+  "isActive": true
 }
 ```
 
-`201` – created
+### GET /customers/{id}
 
----
+### PUT /customers/{id}
 
-### GET /customers/:id
+### DELETE /customers/{id}
 
-`200` – customer detail + last_orders
+Soft delete ko‘rinishida `isActive=false`.
 
----
+### POST /customers/paging
 
-### PATCH /customers/:id
-
+```json
+{
+  "search": "ali",
+  "isActive": true
+}
 ```
-full_name?
-phone?
-notes?
-is_active?
-```
-
-`200` – updated
-
----
-
-### DELETE /customers/:id
-
-`204` – deleted
-`409` – orderlarga bog‘langan
 
 ---
 
@@ -332,51 +211,34 @@ is_active?
 
 ### GET /employees
 
-**Query**
-
-```
-page
-limit
-q
-profession
-is_active
-```
-
----
-
 ### POST /employees
 
 ```json
 {
-  "full_name": "string",
+  "fullName": "string",
   "profession": "string",
-  "phone_number": "string",
-  "is_active": true
+  "phoneNumber": "string",
+  "isActive": true
 }
 ```
 
----
+### GET /employees/{id}
 
-### GET /employees/:id
+### PUT /employees/{id}
 
-`200` – employee detail
+### DELETE /employees/{id}
 
----
+Soft delete ko‘rinishida `isActive=false`.
 
-### PATCH /employees/:id
+### POST /employees/paging
 
+```json
+{
+  "search": "ali",
+  "profession": "Albomchi",
+  "isActive": true
+}
 ```
-full_name?
-profession?
-phone_number?
-is_active?
-```
-
----
-
-### DELETE /employees/:id
-
-`204` – deleted
 
 ---
 
@@ -384,41 +246,30 @@ is_active?
 
 ### GET /product-categories
 
-**Query**
-
-```
-kind
-q
-```
-
----
-
 ### POST /product-categories
 
 ```json
 {
   "name": "string",
-  "kind": "ALBUM | VIGNETTE | PICTURE",
-  "default_pages": 0
+  "kind": "ALBUM",
+  "defaultPages": 12
 }
 ```
 
----
+### GET /product-categories/{id}
 
-### PATCH /product-categories/:id
+### PUT /product-categories/{id}
 
+### DELETE /product-categories/{id}
+
+### POST /product-categories/paging
+
+```json
+{
+  "search": "maktab",
+  "kind": "ALBUM"
+}
 ```
-name?
-kind?
-default_pages?
-```
-
----
-
-### DELETE /product-categories/:id
-
-`204` – deleted
-`409` – orders ishlatayotgan bo‘lsa
 
 ---
 
@@ -426,75 +277,85 @@ default_pages?
 
 ### GET /orders
 
-**Query**
-
-```
-page
-limit
-q
-status
-kind
-customer_id
-employee_id
-category_id
-from
-to
-deadline_from
-deadline_to
-```
-
----
-
 ### POST /orders
 
 ```json
 {
-  "kind": "string",
-  "category_id": "uuid",
-  "order_name": "string",
-  "item_type": "string",
-  "customer_id": "uuid",
-  "receiver_name": "string",
-  "employee_id": "uuid",
-  "page_count": 0,
-  "amount": 0,
-  "processed_count": 0,
-  "accepted_date": "date",
-  "deadline": "date",
-  "status": "string",
+  "kind": "ALBUM",
+  "categoryId": "uuid",
+  "orderName": "string",
+  "itemType": "string",
+  "customerId": "uuid",
+  "receiverName": "string",
+  "employeeId": "uuid",
+  "pageCount": 10,
+  "amount": 100,
+  "processedCount": 0,
+  "acceptedDate": "2026-03-11",
+  "deadline": "2026-03-20",
+  "status": "PENDING",
+  "imageUrl": "string",
   "notes": "string"
 }
 ```
 
----
+### GET /orders/{id}
 
-### PATCH /orders/:id/status
+### PUT /orders/{id}
 
-**Body**
+### DELETE /orders/{id}
+
+### PUT /orders/{id}/status
 
 ```json
 {
-  "to_status": "string",
-  "comment": "string"
+  "toStatus": "IN_PROGRESS"
 }
 ```
 
-`422` – noto‘g‘ri status transition
+### GET /orders/{id}/status-history
 
----
-
-### GET /orders/:id/status-history
+### POST /orders/paging
 
 ```json
-[
-  {
-    "id": "uuid",
-    "from_status": "string",
-    "to_status": "string",
-    "changed_by": "uuid",
-    "changed_at": "datetime"
-  }
-]
+{
+  "search": "maktab",
+  "kind": "ALBUM",
+  "status": "IN_PROGRESS",
+  "customerId": "uuid",
+  "employeeId": "uuid",
+  "categoryId": "uuid",
+  "from": "2026-03-01",
+  "to": "2026-03-31",
+  "deadlineFrom": "2026-03-01",
+  "deadlineTo": "2026-03-31"
+}
+```
+
+Order response ichida odatda quyidagilar ham qaytadi:
+
+```json
+{
+  "id": "uuid",
+  "kind": "ALBUM",
+  "categoryId": "uuid",
+  "categoryName": "string",
+  "orderName": "string",
+  "itemType": "string",
+  "customerId": "uuid",
+  "customerName": "string",
+  "receiverName": "string",
+  "employeeId": "uuid",
+  "employeeName": "string",
+  "pageCount": 0,
+  "amount": 0,
+  "processedCount": 0,
+  "acceptedDate": "2026-03-11",
+  "deadline": "2026-03-20",
+  "status": "PENDING",
+  "imageUrl": "string",
+  "notes": "string"
+}
 ```
 
 ---
@@ -503,31 +364,24 @@ deadline_to
 
 ### GET /materials
 
-**Query**
-
-```
-page
-limit
-q
-item_type
-```
-
----
-
 ### POST /materials
 
 ```json
 {
-  "item_name": "string",
-  "item_type": "string",
-  "unit_name": "string",
+  "itemName": "string",
+  "itemType": "string",
+  "unitName": "string",
   "quantity": 0
 }
 ```
 
----
+### GET /materials/{id}
 
-### POST /materials/:id/adjust
+### PUT /materials/{id}
+
+### DELETE /materials/{id}
+
+### POST /materials/{id}/adjust
 
 ```json
 {
@@ -536,17 +390,20 @@ item_type
 }
 ```
 
-`422` – quantity manfiyga tushib qolsa
+### POST /materials/paging
+
+```json
+{
+  "search": "paper",
+  "itemType": "A4"
+}
+```
 
 ---
 
 # 9. Expense Categories
 
 ### GET /expense-categories
-
-`200` – list
-
----
 
 ### POST /expense-categories
 
@@ -556,12 +413,18 @@ item_type
 }
 ```
 
----
+### GET /expense-categories/{id}
 
-### PATCH /expense-categories/:id
+### PUT /expense-categories/{id}
 
-```
-name?
+### DELETE /expense-categories/{id}
+
+### POST /expense-categories/paging
+
+```json
+{
+  "search": "transport"
+}
 ```
 
 ---
@@ -570,113 +433,57 @@ name?
 
 ### GET /expenses
 
-**Query**
-
-```
-page
-limit
-q
-category_id
-material_id
-payment_method
-from
-to
-```
-
----
-
 ### POST /expenses
 
 ```json
 {
-  "category_id": "uuid",
-  "material_id": "uuid",
+  "categoryId": "uuid",
+  "materialId": "uuid",
   "name": "string",
   "price": 0,
   "description": "string",
-  "payment_method": "string",
-  "receipt_image_url": "string",
-  "expense_date": "date"
+  "paymentMethod": "string",
+  "receiptImageUrl": "string",
+  "expenseDate": "2026-03-11"
 }
 ```
 
----
+### GET /expenses/{id}
 
-# 11. Dashboard / Analytics
+### PUT /expenses/{id}
 
-### GET /dashboard/summary
+### DELETE /expenses/{id}
 
-```
-/dashboard/summary?from=&to=
-```
+### POST /expenses/paging
 
 ```json
 {
-  "orders_total": 0,
-  "orders_done": 0,
-  "orders_in_progress": 0,
-  "revenue_total": 0,
-  "expenses_total": 0,
-  "profit": 0
+  "search": "yoqilgi",
+  "categoryId": "uuid",
+  "materialId": "uuid",
+  "paymentMethod": "cash"
 }
 ```
 
 ---
 
-### GET /dashboard/orders-by-status
+# 11. Dashboard
 
-```json
-[
-  {
-    "status": "string",
-    "count": 0
-  }
-]
+### GET /dashboard/summary
+
+Query:
+
+```text
+from=2026-03-01&to=2026-03-31
 ```
 
----
+### GET /dashboard/orders-by-status
 
 ### GET /dashboard/orders-by-kind
 
-```json
-[
-  {
-    "kind": "string",
-    "count": 0,
-    "amount_sum": 0
-  }
-]
-```
-
----
-
 ### GET /dashboard/revenue-trend
 
-```
-groupBy = day | month
-```
-
-```json
-[
-  {
-    "period": "2026-01",
-    "revenue": 1000
-  }
-]
-```
-
----
-
 ### GET /dashboard/expenses-trend
-
-```json
-[
-  {
-    "period": "2026-01",
-    "expenses": 800
-  }
-]
-```
 
 ---
 
@@ -684,21 +491,33 @@ groupBy = day | month
 
 ### POST /uploads
 
-**Body:** `multipart/form-data`
+Body: `multipart/form-data`
 
-**Response**
+Response:
 
 ```json
 {
-  "url": "string",
-  "key": "string",
-  "mime": "string",
-  "size": 0
+  "url": "/uploads-storage/file.jpg",
+  "key": "file.jpg",
+  "mime": "image/jpeg",
+  "size": 102400
 }
 ```
 
+### DELETE /uploads/{key}
+
+Response: `204`
+
 ---
 
-### DELETE /uploads/:key
+# 13. Order Status Histories
 
-`204` – file removed
+### GET /order-status-histories
+
+### POST /order-status-histories
+
+### GET /order-status-histories/{id}
+
+### PUT /order-status-histories/{id}
+
+### DELETE /order-status-histories/{id}

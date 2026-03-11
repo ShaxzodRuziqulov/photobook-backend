@@ -15,7 +15,6 @@ import java.util.List;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
-    Optional<User> findByUsername(String username);
 
     @EntityGraph(attributePaths = "roles")
     Optional<User> findWithRolesByUsername(String username);

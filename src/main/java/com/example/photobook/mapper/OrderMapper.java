@@ -17,6 +17,7 @@ public interface OrderMapper extends EntityMapper<OrderDto, Order> {
     @Mapping(target = "category", source = "categoryId")
     @Mapping(target = "customer", source = "customerId")
     @Mapping(target = "employee", source = "employeeId")
+    @Mapping(target = "statusHistory", ignore = true)
     Order toEntity(OrderDto dto);
 
     @Override
@@ -26,6 +27,7 @@ public interface OrderMapper extends EntityMapper<OrderDto, Order> {
     @Mapping(target = "customerName", source = "customer.fullName")
     @Mapping(target = "employeeId", source = "employee.id")
     @Mapping(target = "employeeName", source = "employee.fullName")
+    @Mapping(target = "statusHistory", ignore = true)
     OrderDto toDto(Order entity);
 
     default ProductCategory mapProductCategory(UUID id) {

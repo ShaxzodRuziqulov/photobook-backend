@@ -10,8 +10,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:update}
-    show-sql: ${JPA_SHOW_SQL:false}
+    show-sql: ${JPA_SHOW_SQL:true}
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: ${APP_UPLOAD_MAX_FILE_SIZE:20MB}
+      max-request-size: ${APP_UPLOAD_MAX_REQUEST_SIZE:20MB}
 security:
   jwt:
     secret-key: ${SECRET_KEY:f72456084250dd5fa5b18eafffe4cdc1dbdcb36fa0e3608eb85d13b67705ce44}

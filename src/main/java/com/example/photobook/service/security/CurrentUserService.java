@@ -18,7 +18,8 @@ public class CurrentUserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         String username = authentication != null ? authentication.getName() : null;
-        return userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findWithRolesByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     public UUID getCurrentUserId() {

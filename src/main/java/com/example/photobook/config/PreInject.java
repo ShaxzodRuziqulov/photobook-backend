@@ -57,7 +57,7 @@ public class PreInject {
             user.setLastName("last_name");
             user.setMiddleName("mid_name");
             user.setUserStatus(UserStatus.ACTIVE);
-            user.setPassword(encodePassword("123"));
+            user.setPassword(encodePassword("1234"));
             user.setEmail("admin@example.com");
             user.setBio("ADMIN");
             user.setPhone("123456789");

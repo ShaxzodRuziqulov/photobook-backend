@@ -18,6 +18,7 @@ import java.util.UUID;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
+    @EntityGraph(attributePaths = {"category", "customer", "employee"})
     @Query("""
             SELECT o
             FROM Order o
