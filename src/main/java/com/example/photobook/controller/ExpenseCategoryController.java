@@ -1,8 +1,12 @@
 package com.example.photobook.controller;
 
 import com.example.photobook.dto.ExpenseCategoryDto;
+import com.example.photobook.dto.request.PageResponse;
+import com.example.photobook.dto.request.ExpenseCategoryPagingRequest;
 import com.example.photobook.service.ExpenseCategoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,9 +39,16 @@ public class ExpenseCategoryController {
         return ResponseEntity.ok(service.findAll());
     }
 
+    @PostMapping("/paging")
+    public ResponseEntity<PageResponse<ExpenseCategoryDto>> paging(
+            @RequestBody ExpenseCategoryPagingRequest request,
+            @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(new PageResponse<>(service.findPage(request, pageable)));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,8 +1,12 @@
 package com.example.photobook.controller;
 
 import com.example.photobook.dto.CustomerDto;
+import com.example.photobook.dto.request.CustomerPagingRequest;
+import com.example.photobook.dto.request.PageResponse;
 import com.example.photobook.service.CustomerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +37,13 @@ public class CustomerController {
     @GetMapping
     public ResponseEntity<List<CustomerDto>> findAll() {
         return ResponseEntity.ok(service.findAll());
+    }
+
+    @PostMapping("/paging")
+    public ResponseEntity<PageResponse<CustomerDto>> paging(
+            @RequestBody CustomerPagingRequest request,
+            @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(new PageResponse<>(service.findPage(request, pageable)));
     }
 
     @DeleteMapping("/{id}")

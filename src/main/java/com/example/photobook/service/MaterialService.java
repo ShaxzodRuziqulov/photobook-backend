@@ -2,10 +2,13 @@ package com.example.photobook.service;
 
 import com.example.photobook.dto.MaterialDto;
 import com.example.photobook.dto.MaterialAdjustDto;
+import com.example.photobook.dto.request.MaterialPagingRequest;
 import com.example.photobook.entity.Material;
 import com.example.photobook.mapper.MaterialMapper;
 import com.example.photobook.repository.MaterialRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -54,6 +57,10 @@ public class MaterialService {
 
     public List<MaterialDto> findAll() {
         return mapper.toDto(repository.findAll());
+    }
+
+    public Page<MaterialDto> findPage(MaterialPagingRequest request, Pageable pageable) {
+        return repository.findPage(request.getSearch(),request.getItemType(), pageable).map(mapper::toDto);
     }
 
     public void delete(UUID id) {

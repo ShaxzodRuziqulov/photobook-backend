@@ -42,9 +42,17 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS).permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
-
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/user/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                        .requestMatchers("/api/v1/users/**", "/api/v1/roles/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/v1/customers/**",
+                                "/api/v1/materials/**",
+                                "/api/v1/expense-categories/**",
+                                "/api/v1/expenses/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/orders/*/status").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR")
+                        .requestMatchers("/api/v1/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                        .requestMatchers("/api/v1/employees/**", "/api/v1/product-categories/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                        .requestMatchers("/api/v1/uploads/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR")
 
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
                         .anyRequest().authenticated()

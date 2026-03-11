@@ -1,8 +1,12 @@
 package com.example.photobook.controller;
 
 import com.example.photobook.dto.EmployeeDto;
+import com.example.photobook.dto.request.PageResponse;
+import com.example.photobook.dto.request.EmployeePagingRequest;
 import com.example.photobook.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +38,13 @@ public class EmployeeController {
     @GetMapping
     public ResponseEntity<List<EmployeeDto>> findAll() {
         return ResponseEntity.ok(service.findAll());
+    }
+
+    @PostMapping("/paging")
+    public ResponseEntity<PageResponse<EmployeeDto>> paging(
+            @RequestBody EmployeePagingRequest request,
+            @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(new PageResponse<>(service.findPage(request, pageable)));
     }
 
     @DeleteMapping("/{id}")

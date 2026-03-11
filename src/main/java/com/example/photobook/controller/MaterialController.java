@@ -1,9 +1,13 @@
 package com.example.photobook.controller;
 
-import com.example.photobook.dto.MaterialDto;
 import com.example.photobook.dto.MaterialAdjustDto;
+import com.example.photobook.dto.MaterialDto;
+import com.example.photobook.dto.request.PageResponse;
+import com.example.photobook.dto.request.MaterialPagingRequest;
 import com.example.photobook.service.MaterialService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +38,13 @@ public class MaterialController {
     @GetMapping
     public ResponseEntity<List<MaterialDto>> findAll() {
         return ResponseEntity.ok(service.findAll());
+    }
+
+    @PostMapping("/paging")
+    public ResponseEntity<PageResponse<MaterialDto>> paging(
+            @RequestBody MaterialPagingRequest request,
+            @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(new PageResponse<>(service.findPage(request, pageable)));
     }
 
     @DeleteMapping("/{id}")

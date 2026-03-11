@@ -3,11 +3,14 @@ package com.example.photobook.service;
 import com.example.photobook.dto.OrderDto;
 import com.example.photobook.dto.OrderStatusHistoryDto;
 import com.example.photobook.dto.OrderStatusTransitionDto;
+import com.example.photobook.dto.request.OrderPagingRequest;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.mapper.OrderMapper;
 import com.example.photobook.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -79,6 +82,21 @@ public class OrderService {
 
     public List<OrderDto> findAll() {
         return mapper.toDto(repository.findAll());
+    }
+
+    public Page<OrderDto> findPage(OrderPagingRequest request, Pageable pageable) {
+        return repository.findPage(
+                request.getSearch(),
+                request.getKind(),
+                request.getStatus(),
+                request.getCustomerId(),
+                request.getEmployeeId(),
+                request.getCategoryId(),
+                request.getFrom(),
+                request.getTo(),
+                request.getDeadlineFrom(),
+                request.getDeadlineTo(),
+                pageable).map(mapper::toDto);
     }
 
     public void delete(UUID id) {

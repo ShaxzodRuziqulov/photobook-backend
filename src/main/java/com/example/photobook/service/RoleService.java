@@ -1,10 +1,13 @@
 package com.example.photobook.service;
 
 import com.example.photobook.dto.RoleDto;
+import com.example.photobook.dto.request.RolePageRequest;
 import com.example.photobook.entity.Role;
 import com.example.photobook.mapper.RoleMapper;
 import com.example.photobook.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -37,6 +40,10 @@ public class RoleService {
 
     public List<RoleDto> findAll() {
         return mapper.toDto(repository.findAll());
+    }
+
+    public Page<RoleDto> findPage(RolePageRequest request, Pageable pageable) {
+        return repository.findPage(request.getSearch(), pageable).map(mapper::toDto);
     }
 
     public void delete(UUID id) {

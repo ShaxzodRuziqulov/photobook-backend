@@ -2,12 +2,15 @@ package com.example.photobook.service;
 
 import com.example.photobook.dto.UserDto;
 import com.example.photobook.dto.UserRoleUpdateDto;
+import com.example.photobook.dto.request.UserPagingRequest;
 import com.example.photobook.entity.Role;
 import com.example.photobook.entity.User;
 import com.example.photobook.entity.enumirated.UserStatus;
 import com.example.photobook.mapper.UserMapper;
 import com.example.photobook.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +28,7 @@ public class UserService {
     private final RoleService roleService;
 
     public UserDto create(UserDto dto) {
+        validateUserForCreate(dto);
         User user = mapper.toEntity(dto);
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -38,6 +42,7 @@ public class UserService {
     }
 
     public UserDto update(UUID id, UserDto dto) {
+        validateUserForUpdate(dto);
         User user = findByUserId(id);
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
@@ -63,6 +68,14 @@ public class UserService {
 
     public List<UserDto> findAll() {
         return mapper.toDto(repository.findAll());
+    }
+
+    public Page<UserDto> findPage(UserPagingRequest request, Pageable pageable) {
+        return repository.findPage(
+                request.getSearch(),
+                request.getIsActive(),
+                request.getRole(),
+                pageable).map(mapper::toDto);
     }
 
     public UserDto delete(UUID id) {
@@ -98,5 +111,31 @@ public class UserService {
             throw new IllegalArgumentException("Role not found: " + roleName);
         }
         return role;
+    }
+
+    private void validateUserForCreate(UserDto dto) {
+        validateCommon(dto);
+        if (dto.getPassword() == null || dto.getPassword().isBlank()) {
+            throw new IllegalArgumentException("password is required");
+        }
+    }
+
+    private void validateUserForUpdate(UserDto dto) {
+        validateCommon(dto);
+    }
+
+    private void validateCommon(UserDto dto) {
+        if (dto.getUsername() == null || dto.getUsername().isBlank()) {
+            throw new IllegalArgumentException("username is required");
+        }
+        if (dto.getFirstName() == null || dto.getFirstName().isBlank()) {
+            throw new IllegalArgumentException("first_name is required");
+        }
+        if (dto.getLastName() == null || dto.getLastName().isBlank()) {
+            throw new IllegalArgumentException("last_name is required");
+        }
+        if (dto.getMiddleName() == null || dto.getMiddleName().isBlank()) {
+            throw new IllegalArgumentException("middle_name is required");
+        }
     }
 }

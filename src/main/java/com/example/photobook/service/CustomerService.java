@@ -1,10 +1,13 @@
 package com.example.photobook.service;
 
 import com.example.photobook.dto.CustomerDto;
+import com.example.photobook.dto.request.CustomerPagingRequest;
 import com.example.photobook.entity.Customer;
 import com.example.photobook.mapper.CustomerMapper;
 import com.example.photobook.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,11 +20,13 @@ public class CustomerService {
     private final CustomerMapper mapper;
 
     public CustomerDto create(CustomerDto dto) {
+        validateCustomer(dto);
         Customer customer = mapper.toEntity(dto);
         return mapper.toDto(repository.save(customer));
     }
 
     public CustomerDto update(UUID id, CustomerDto dto) {
+        validateCustomer(dto);
         Customer customer = findEntityById(id);
         customer.setFullName(dto.getFullName());
         customer.setPhone(dto.getPhone());
@@ -41,6 +46,13 @@ public class CustomerService {
         return mapper.toDto(repository.findAll());
     }
 
+    public Page<CustomerDto> findPage(CustomerPagingRequest request, Pageable pageable) {
+        return repository.findPage(
+                request.getSearch(),
+                request.getIsActive(),
+                pageable).map(mapper::toDto);
+    }
+
     public CustomerDto delete(UUID id) {
         Customer customer = findEntityById(id);
         customer.setIsActive(false);
@@ -49,5 +61,11 @@ public class CustomerService {
 
     public Customer findEntityById(UUID id) {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("customer not found"));
+    }
+
+    private void validateCustomer(CustomerDto dto) {
+        if (dto.getFullName() == null || dto.getFullName().isBlank()) {
+            throw new IllegalArgumentException("full_name is required");
+        }
     }
 }
