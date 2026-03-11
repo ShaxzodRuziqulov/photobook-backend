@@ -1,6 +1,7 @@
 package com.example.photobook.service;
 
 import com.example.photobook.dto.UploadResponseDto;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,7 +14,12 @@ import java.util.UUID;
 
 @Service
 public class UploadService {
-    private final Path root = Paths.get("uploads-storage");
+
+    private final Path root;
+
+    public UploadService(@Value("${app.upload.dir:uploads-storage}") String uploadDir) {
+        this.root = Paths.get(uploadDir);
+    }
 
     public UploadResponseDto upload(MultipartFile file) {
         if (file == null || file.isEmpty()) {
