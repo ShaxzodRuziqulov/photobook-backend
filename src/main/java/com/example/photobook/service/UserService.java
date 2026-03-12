@@ -1,6 +1,7 @@
 package com.example.photobook.service;
 
 import com.example.photobook.dto.UserDto;
+import com.example.photobook.dto.UserProfileUpdateDto;
 import com.example.photobook.dto.UserRoleUpdateDto;
 import com.example.photobook.dto.request.UserPagingRequest;
 import com.example.photobook.entity.Role;
@@ -8,6 +9,7 @@ import com.example.photobook.entity.User;
 import com.example.photobook.entity.enumirated.UserStatus;
 import com.example.photobook.mapper.UserMapper;
 import com.example.photobook.repository.UserRepository;
+import com.example.photobook.service.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +30,7 @@ public class UserService {
     private final UserMapper mapper;
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
+    private final CurrentUserService currentUserService;
 
     public UserDto create(UserDto dto) {
         validateUserForCreate(dto);
@@ -52,7 +55,6 @@ public class UserService {
         }
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
-        user.setMiddleName(dto.getMiddleName());
         user.setUsername(dto.getUsername());
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -103,6 +105,22 @@ public class UserService {
         return mapper.toDto(repository.save(user));
     }
 
+    public UserDto getCurrentUserProfile() {
+        return mapper.toDto(currentUserService.getCurrentUser());
+    }
+
+    public UserDto updateCurrentUserProfile(UserProfileUpdateDto dto) {
+        validateProfileUpdate(dto);
+        User user = currentUserService.getCurrentUser();
+        user.setFirstName(dto.getFirstName().trim());
+        user.setLastName(dto.getLastName().trim());
+        user.setProfession(normalize(dto.getProfession()));
+        user.setAvatarUrl(normalize(dto.getAvatarUrl()));
+        user.setPhone(normalize(dto.getPhone()));
+        user.setBio(normalize(dto.getBio()));
+        return mapper.toDto(repository.save(user));
+    }
+
     public User findByUserId(UUID id) {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("user not found"));
     }
@@ -140,9 +158,6 @@ public class UserService {
         if (dto.getLastName() == null || dto.getLastName().isBlank()) {
             throw new IllegalArgumentException("last_name is required");
         }
-        if (dto.getMiddleName() == null || dto.getMiddleName().isBlank()) {
-            throw new IllegalArgumentException("middle_name is required");
-        }
     }
 
     private void ensureUsernameAvailable(String username) {
@@ -151,5 +166,20 @@ public class UserService {
         }
     }
 
+    private void validateProfileUpdate(UserProfileUpdateDto dto) {
+        if (dto.getFirstName() == null || dto.getFirstName().isBlank()) {
+            throw new IllegalArgumentException("first_name is required");
+        }
+        if (dto.getLastName() == null || dto.getLastName().isBlank()) {
+            throw new IllegalArgumentException("last_name is required");
+        }
+    }
 
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isBlank() ? null : trimmed;
+    }
 }

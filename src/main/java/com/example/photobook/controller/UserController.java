@@ -1,6 +1,7 @@
 package com.example.photobook.controller;
 
 import com.example.photobook.dto.UserDto;
+import com.example.photobook.dto.UserProfileUpdateDto;
 import com.example.photobook.dto.UserRoleUpdateDto;
 import com.example.photobook.dto.request.PageResponse;
 import com.example.photobook.dto.request.UserPagingRequest;
@@ -29,6 +30,16 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> update(@PathVariable UUID id, @RequestBody UserDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> me() {
+        return ResponseEntity.ok(service.getCurrentUserProfile());
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UserDto> updateMe(@RequestBody UserProfileUpdateDto dto) {
+        return ResponseEntity.ok(service.updateCurrentUserProfile(dto));
     }
 
     @GetMapping("/{id}")

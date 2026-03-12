@@ -33,6 +33,7 @@ public class ProductCategoryService {
         ProductCategory productCategory = findByProductCategoryId(id);
         productCategory.setName(dto.getName());
         productCategory.setKind(dto.getKind());
+        productCategory.setSize(dto.getSize());
         productCategory.setDefaultPages(dto.getDefaultPages());
 
         return mapper.toDto(repository.save(productCategory));

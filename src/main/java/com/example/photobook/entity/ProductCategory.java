@@ -22,5 +22,8 @@ public class ProductCategory extends BaseEntity {
     private OrderKind kind;
 
     @Column(name = "default_pages")
-    private Integer defaultPages;
+    private String defaultPages;
+
+    @Column(name = "size")
+    private String size;
 }
