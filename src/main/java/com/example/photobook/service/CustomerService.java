@@ -25,6 +25,12 @@ public class CustomerService {
         return mapper.toDto(repository.save(customer));
     }
 
+    public Customer createForOrder(String customerName) {
+        Customer customer = new Customer();
+        customer.setFullName(customerName);
+        return repository.save(customer);
+    }
+
     public CustomerDto update(UUID id, CustomerDto dto) {
         validateCustomer(dto);
         Customer customer = findEntityById(id);

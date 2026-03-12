@@ -4,7 +4,9 @@ import com.example.photobook.dto.OrderDto;
 import com.example.photobook.dto.OrderStatusHistoryDto;
 import com.example.photobook.dto.OrderStatusTransitionDto;
 import com.example.photobook.dto.request.OrderPagingRequest;
+import com.example.photobook.entity.Customer;
 import com.example.photobook.entity.Order;
+import com.example.photobook.entity.User;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.mapper.OrderMapper;
 import com.example.photobook.repository.OrderRepository;
@@ -14,10 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +25,7 @@ public class OrderService {
     private final OrderMapper mapper;
     private final ProductCategoryService productCategoryService;
     private final CustomerService customerService;
-    private final EmployeeService employeeService;
+    private final UserService userService;
     private final OrderStatusHistoryService orderStatusHistoryService;
 
     public OrderDto create(OrderDto dto) {
@@ -35,12 +34,8 @@ public class OrderService {
         if (dto.getCategoryId() != null) {
             order.setCategory(productCategoryService.findByProductCategoryId(dto.getCategoryId()));
         }
-        if (dto.getCustomerId() != null) {
-            order.setCustomer(customerService.findEntityById(dto.getCustomerId()));
-        }
-        if (dto.getEmployeeId() != null) {
-            order.setEmployee(employeeService.findEntityById(dto.getEmployeeId()));
-        }
+        order.setCustomer(resolveCustomer(dto));
+        order.setEmployees(resolveEmployees(dto.getEmployeeIds()));
         order.setImageUrl(dto.getImageUrl());
         order.setNotes(dto.getNotes());
 
@@ -56,13 +51,9 @@ public class OrderService {
         }
         order.setOrderName(dto.getOrderName());
         order.setItemType(dto.getItemType());
-        if (dto.getCustomerId() != null) {
-            order.setCustomer(customerService.findEntityById(dto.getCustomerId()));
-        }
+        order.setCustomer(resolveCustomer(dto));
         order.setReceiverName(dto.getReceiverName());
-        if (dto.getEmployeeId() != null) {
-            order.setEmployee(employeeService.findEntityById(dto.getEmployeeId()));
-        }
+        order.setEmployees(resolveEmployees(dto.getEmployeeIds()));
         order.setPageCount(dto.getPageCount());
         order.setAmount(dto.getAmount());
         order.setProcessedCount(dto.getProcessedCount());
@@ -159,11 +150,14 @@ public class OrderService {
         if (dto.getCategoryId() == null) {
             throw new IllegalArgumentException("category_id is required");
         }
-        if (dto.getCustomerId() == null) {
-            throw new IllegalArgumentException("customer_id is required");
+        if (dto.getCustomerId() == null && (dto.getCustomerName() == null || dto.getCustomerName().isBlank())) {
+            throw new IllegalArgumentException("customer_id or customer_name is required");
         }
-        if (dto.getEmployeeId() == null) {
-            throw new IllegalArgumentException("employee_id is required");
+        if (dto.getEmployeeIds() == null || dto.getEmployeeIds().isEmpty()) {
+            throw new IllegalArgumentException("employee_ids is required");
+        }
+        if (dto.getEmployeeIds().stream().anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalArgumentException("employee_ids contains invalid value");
         }
         if (dto.getAmount() == null || dto.getAmount() <= 0) {
             throw new IllegalArgumentException("amount must be greater than 0");
@@ -183,5 +177,19 @@ public class OrderService {
         if (dto.getDeadline().isBefore(dto.getAcceptedDate())) {
             throw new IllegalArgumentException("deadline cannot be earlier than accepted_date");
         }
+    }
+
+    private Set<User> resolveEmployees(List<UUID> employeeIds) {
+        return employeeIds.stream()
+                .distinct()
+                .map(userService::findByUserId)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private Customer resolveCustomer(OrderDto dto) {
+        if (dto.getCustomerId() != null) {
+            return customerService.findEntityById(dto.getCustomerId());
+        }
+        return customerService.createForOrder(dto.getCustomerName().trim());
     }
 }

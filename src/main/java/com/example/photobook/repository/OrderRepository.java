@@ -18,20 +18,26 @@ import java.util.UUID;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
-    @EntityGraph(attributePaths = {"category", "customer", "employee"})
+    @EntityGraph(attributePaths = {"category", "customer", "employees"})
     @Query("""
-            SELECT o
+            SELECT DISTINCT o
             FROM Order o
+            LEFT JOIN o.employees employee
             WHERE (:search IS NULL OR :search = '' OR
                    LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.receiverName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.customer.fullName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
-                   LOWER(COALESCE(o.employee.fullName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(CONCAT(
+                       COALESCE(employee.lastName, ''), ' ',
+                       COALESCE(employee.firstName, ''), ' ',
+                       COALESCE(employee.middleName, '')
+                   )) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(COALESCE(employee.username, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.category.name, '')) LIKE LOWER(CONCAT('%', :search, '%')))
               AND (:kind IS NULL OR o.kind = :kind)
               AND (:status IS NULL OR o.status = :status)
               AND (:customerId IS NULL OR o.customer.id = :customerId)
-              AND (:employeeId IS NULL OR o.employee.id = :employeeId)
+              AND (:employeeId IS NULL OR employee.id = :employeeId)
               AND (:categoryId IS NULL OR o.category.id = :categoryId)
               AND (:from IS NULL OR o.acceptedDate >= :from)
               AND (:to IS NULL OR o.acceptedDate <= :to)

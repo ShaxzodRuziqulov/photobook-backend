@@ -28,8 +28,8 @@ public class OrderDto {
     private String customerName;
     private String receiverName;
 
-    private UUID employeeId;
-    private String employeeName;
+    private List<UUID> employeeIds;
+    private List<String> employeeNames;
 
     private Integer pageCount;
     private Integer amount;

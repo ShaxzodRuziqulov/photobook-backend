@@ -11,10 +11,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.List;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
+    boolean existsByUsernameIgnoreCase(String username);
 
     @EntityGraph(attributePaths = "roles")
     Optional<User> findWithRolesByUsername(String username);
@@ -28,8 +28,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                    LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(u.firstName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(u.lastName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
-                   LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
-                   LOWER(COALESCE(u.phone, '')) LIKE LOWER(CONCAT('%', :search, '%')))
+                   LOWER(COALESCE(u.middleName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(COALESCE(u.phone, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(COALESCE(u.profession, '')) LIKE LOWER(CONCAT('%', :search, '%')))
               AND (:isActive IS NULL OR u.isActive = :isActive)
               AND (:role IS NULL OR :role = '' OR LOWER(r.name) = LOWER(:role))
             ORDER BY u.updatedAt DESC

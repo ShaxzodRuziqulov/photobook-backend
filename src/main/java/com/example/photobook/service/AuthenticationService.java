@@ -73,7 +73,6 @@ public class AuthenticationService {
         AuthUserResponse userResponse = new AuthUserResponse();
         userResponse.setId(user.getId());
         userResponse.setName((user.getFirstName() + " " + user.getLastName()).trim());
-        userResponse.setEmail(user.getEmail());
         userResponse.setRoles(roles);
         userResponse.setAvatarUrl(user.getAvatarUrl());
         userResponse.setPhone(user.getPhone());

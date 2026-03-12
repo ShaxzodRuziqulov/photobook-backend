@@ -9,7 +9,9 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -18,8 +20,7 @@ import java.util.List;
         name = "orders",
         indexes = {
                 @Index(name = "idx_orders_category_id", columnList = "category_id"),
-                @Index(name = "idx_orders_customer_id", columnList = "customer_id"),
-                @Index(name = "idx_orders_employee_id", columnList = "employee_id")
+                @Index(name = "idx_orders_customer_id", columnList = "customer_id")
         }
 )
 public class Order extends BaseEntity {
@@ -45,9 +46,17 @@ public class Order extends BaseEntity {
     @Column(name = "receiver_name", nullable = false, length = 180)
     private String receiverName;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "employee_id", nullable = false)
-    private Employee employee;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "order_employees",
+            joinColumns = @JoinColumn(name = "order_id", nullable = false),
+            inverseJoinColumns = @JoinColumn(name = "user_id", nullable = false),
+            indexes = {
+                    @Index(name = "idx_order_employees_order_id", columnList = "order_id"),
+                    @Index(name = "idx_order_employees_user_id", columnList = "user_id")
+            }
+    )
+    private Set<User> employees = new HashSet<>();
 
     @Column(name = "page_count", nullable = false)
     private Integer pageCount = 0;

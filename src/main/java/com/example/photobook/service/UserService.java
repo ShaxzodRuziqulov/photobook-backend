@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -21,6 +22,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserService {
     private final UserRepository repository;
     private final UserMapper mapper;
@@ -29,6 +31,7 @@ public class UserService {
 
     public UserDto create(UserDto dto) {
         validateUserForCreate(dto);
+        ensureUsernameAvailable(dto.getUsername());
         User user = mapper.toEntity(dto);
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -44,16 +47,19 @@ public class UserService {
     public UserDto update(UUID id, UserDto dto) {
         validateUserForUpdate(dto);
         User user = findByUserId(id);
+        if (!user.getUsername().equalsIgnoreCase(dto.getUsername())) {
+            ensureUsernameAvailable(dto.getUsername());
+        }
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setMiddleName(dto.getMiddleName());
         user.setUsername(dto.getUsername());
-        user.setEmail(dto.getEmail());
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
         user.setAvatarUrl(dto.getAvatarUrl());
         user.setPhone(dto.getPhone());
+        user.setProfession(dto.getProfession());
         user.setBio(dto.getBio());
         if (dto.getIsActive() != null) {
             user.setIsActive(dto.getIsActive());
@@ -138,4 +144,12 @@ public class UserService {
             throw new IllegalArgumentException("middle_name is required");
         }
     }
+
+    private void ensureUsernameAvailable(String username) {
+        if (repository.existsByUsernameIgnoreCase(username)) {
+            throw new IllegalArgumentException("username already exists");
+        }
+    }
+
+
 }

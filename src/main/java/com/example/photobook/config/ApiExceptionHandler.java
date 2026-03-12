@@ -1,6 +1,7 @@
 package com.example.photobook.config;
 
 import com.example.photobook.dto.ErrorResponseDto;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -27,6 +28,22 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(ErrorResponseDto.builder()
                 .message(exception.getMessage())
                 .errors(Map.of("request", List.of(exception.getMessage())))
+                .build());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+        String message = "Request violates data constraints";
+        exception.getMostSpecificCause();
+        if (exception.getMostSpecificCause().getMessage() != null) {
+            String details = exception.getMostSpecificCause().getMessage().toLowerCase();
+            if (details.contains("username")) {
+                message = "username already exists";
+            }
+        }
+        return ResponseEntity.badRequest().body(ErrorResponseDto.builder()
+                .message(message)
+                .errors(Map.of("request", List.of(message)))
                 .build());
     }
 
