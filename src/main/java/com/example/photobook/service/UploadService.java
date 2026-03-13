@@ -113,11 +113,6 @@ public class UploadService {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("upload not found"));
     }
 
-    public Upload findUploadByKey(String key) {
-        return repository.findByKey(key)
-                .orElseThrow(() -> new IllegalArgumentException("upload not found"));
-    }
-
     public Upload attachToOwner(UUID uploadId, OwnerType ownerType, UUID ownerId) {
         if (uploadId == null) {
             throw new IllegalArgumentException("uploadId is required");
