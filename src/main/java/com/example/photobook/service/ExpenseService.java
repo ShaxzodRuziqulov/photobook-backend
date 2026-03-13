@@ -3,6 +3,8 @@ package com.example.photobook.service;
 import com.example.photobook.dto.ExpenseDto;
 import com.example.photobook.dto.request.ExpensePagingRequest;
 import com.example.photobook.entity.Expense;
+import com.example.photobook.entity.Upload;
+import com.example.photobook.entity.enumirated.OwnerType;
 import com.example.photobook.mapper.ExpenseMapper;
 import com.example.photobook.repository.ExpenseRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class ExpenseService {
     private final ExpenseMapper mapper;
     private final ExpenseCategoryService categoryService;
     private final MaterialService materialService;
+    private final UploadService uploadService;
 
     public ExpenseDto create(ExpenseDto dto) {
         validateExpense(dto);
@@ -30,7 +33,9 @@ public class ExpenseService {
         if (dto.getMaterialId() != null) {
             expense.setMaterial(materialService.findByMaterialId(dto.getMaterialId()));
         }
-        return mapper.toDto(repository.save(expense));
+        Expense savedExpense = repository.save(expense);
+        attachUploadIfPresent(savedExpense, dto.getUploadId());
+        return mapper.toDto(savedExpense);
     }
 
     public ExpenseDto update(UUID id, ExpenseDto dto) {
@@ -48,8 +53,9 @@ public class ExpenseService {
         expense.setPaymentMethod(dto.getPaymentMethod());
         expense.setReceiptImageUrl(dto.getReceiptImageUrl());
         expense.setExpenseDate(dto.getExpenseDate());
-
-        return mapper.toDto(repository.save(expense));
+        Expense savedExpense = repository.save(expense);
+        attachUploadIfPresent(savedExpense, dto.getUploadId());
+        return mapper.toDto(savedExpense);
     }
 
     public ExpenseDto findById(UUID id) {
@@ -92,5 +98,15 @@ public class ExpenseService {
         if (dto.getExpenseDate() == null) {
             throw new IllegalArgumentException("expense_date is required");
         }
+    }
+
+    private void attachUploadIfPresent(Expense expense, UUID uploadId) {
+        if (uploadId == null) {
+            return;
+        }
+        Upload upload = uploadService.attachToOwner(uploadId, OwnerType.EXPENSE, expense.getId());
+        expense.setUpload(upload);
+        expense.setReceiptImageUrl(uploadService.buildFileUrl(upload));
+        repository.save(expense);
     }
 }

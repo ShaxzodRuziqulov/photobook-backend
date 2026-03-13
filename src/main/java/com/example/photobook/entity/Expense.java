@@ -44,4 +44,7 @@ public class Expense extends BaseEntity {
 
     @Column(name = "expense_date", nullable = false)
     private LocalDate expenseDate;
+
+    @ManyToOne
+    private Upload upload;
 }

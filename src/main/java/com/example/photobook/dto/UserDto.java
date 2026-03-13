@@ -13,7 +13,6 @@ public class UserDto {
     private UUID id;
     private String firstName;
     private String lastName;
-    private String middleName;
     private String profession;
     private String username;
     private String email;
@@ -22,5 +21,6 @@ public class UserDto {
     private String phone;
     private String bio;
     private Boolean isActive;
+    private UUID uploadId;
     private Set<Role> roles;
 }

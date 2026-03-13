@@ -10,9 +10,11 @@ public interface UserMapper extends EntityMapper<UserDto, User> {
 
     @Override
     @Mapping(target = "password", source = "password")
+    @Mapping(target = "upload", ignore = true)
     User toEntity(UserDto dto);
 
     @Override
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "uploadId", source = "upload.id")
     UserDto toDto(User entity);
 }

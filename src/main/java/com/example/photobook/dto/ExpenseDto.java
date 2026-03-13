@@ -19,4 +19,5 @@ public class ExpenseDto {
     private String paymentMethod;
     private String receiptImageUrl;
     private LocalDate expenseDate;
+    private UUID uploadId;
 }

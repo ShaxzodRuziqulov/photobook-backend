@@ -15,11 +15,13 @@ public interface ExpenseMapper extends EntityMapper<ExpenseDto, Expense>{
     @Override
     @Mapping(target = "category", source = "categoryId")
     @Mapping(target = "material", source = "materialId")
+    @Mapping(target = "upload", ignore = true)
     Expense toEntity(ExpenseDto dto);
 
     @Override
     @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "materialId", source = "material.id")
+    @Mapping(target = "uploadId", source = "upload.id")
     ExpenseDto toDto(Expense entity);
 
     default ExpenseCategory mapExpenseCategory(UUID id) {

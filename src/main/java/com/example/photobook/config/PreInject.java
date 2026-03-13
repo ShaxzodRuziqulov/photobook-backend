@@ -55,7 +55,6 @@ public class PreInject {
             user.setRoles(Set.of(roleAdmin));
             user.setFirstName("first_name");
             user.setLastName("last_name");
-            user.setMiddleName("mid_name");
             user.setUserStatus(UserStatus.ACTIVE);
             user.setPassword(encodePassword("1234"));
             user.setBio("ADMIN");

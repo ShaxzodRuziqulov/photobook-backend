@@ -6,6 +6,8 @@ import com.example.photobook.dto.UserRoleUpdateDto;
 import com.example.photobook.dto.request.UserPagingRequest;
 import com.example.photobook.entity.Role;
 import com.example.photobook.entity.User;
+import com.example.photobook.entity.Upload;
+import com.example.photobook.entity.enumirated.OwnerType;
 import com.example.photobook.entity.enumirated.UserStatus;
 import com.example.photobook.mapper.UserMapper;
 import com.example.photobook.repository.UserRepository;
@@ -31,6 +33,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
     private final CurrentUserService currentUserService;
+    private final UploadService uploadService;
 
     public UserDto create(UserDto dto) {
         validateUserForCreate(dto);
@@ -44,7 +47,9 @@ public class UserService {
         }
         user.setUserStatus(UserStatus.ACTIVE);
         user.setRoles(resolveRolesForCreate());
-        return mapper.toDto(repository.save(user));
+        User savedUser = repository.save(user);
+        attachUploadIfPresent(savedUser, dto.getUploadId());
+        return mapper.toDto(savedUser);
     }
 
     public UserDto update(UUID id, UserDto dto) {
@@ -66,7 +71,9 @@ public class UserService {
         if (dto.getIsActive() != null) {
             user.setIsActive(dto.getIsActive());
         }
-        return mapper.toDto(repository.save(user));
+        User savedUser = repository.save(user);
+        attachUploadIfPresent(savedUser, dto.getUploadId());
+        return mapper.toDto(savedUser);
     }
 
     public UserDto findById(UUID id) {
@@ -181,5 +188,15 @@ public class UserService {
         }
         String trimmed = value.trim();
         return trimmed.isBlank() ? null : trimmed;
+    }
+
+    private void attachUploadIfPresent(User user, UUID uploadId) {
+        if (uploadId == null) {
+            return;
+        }
+        Upload upload = uploadService.attachToOwner(uploadId, OwnerType.USER, user.getId());
+        user.setUpload(upload);
+        user.setAvatarUrl(uploadService.buildFileUrl(upload));
+        repository.save(user);
     }
 }

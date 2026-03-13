@@ -41,5 +41,6 @@ public class OrderDto {
     private OrderStatus status;
     private String imageUrl;
     private String notes;
+    private UUID uploadId;
     private List<OrderStatusHistory> statusHistory;
 }

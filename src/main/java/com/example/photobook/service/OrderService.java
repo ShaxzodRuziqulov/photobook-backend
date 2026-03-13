@@ -6,7 +6,9 @@ import com.example.photobook.dto.OrderStatusTransitionDto;
 import com.example.photobook.dto.request.OrderPagingRequest;
 import com.example.photobook.entity.Customer;
 import com.example.photobook.entity.Order;
+import com.example.photobook.entity.Upload;
 import com.example.photobook.entity.User;
+import com.example.photobook.entity.enumirated.OwnerType;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.mapper.OrderMapper;
 import com.example.photobook.repository.OrderRepository;
@@ -29,6 +31,7 @@ public class OrderService {
     private final CustomerService customerService;
     private final UserService userService;
     private final OrderStatusHistoryService orderStatusHistoryService;
+    private final UploadService uploadService;
 
     public OrderDto create(OrderDto dto) {
         validateOrder(dto);
@@ -40,8 +43,9 @@ public class OrderService {
         order.setEmployees(resolveEmployees(dto.getEmployeeIds()));
         order.setImageUrl(dto.getImageUrl());
         order.setNotes(dto.getNotes());
-
-        return mapper.toDto(repository.save(order));
+        Order savedOrder = repository.save(order);
+        attachUploadIfPresent(savedOrder, dto.getUploadId());
+        return mapper.toDto(savedOrder);
     }
 
     public OrderDto update(UUID id, OrderDto dto) {
@@ -64,8 +68,9 @@ public class OrderService {
         order.setStatus(dto.getStatus());
         order.setImageUrl(dto.getImageUrl());
         order.setNotes(dto.getNotes());
-
-        return mapper.toDto(repository.save(order));
+        Order savedOrder = repository.save(order);
+        attachUploadIfPresent(savedOrder, dto.getUploadId());
+        return mapper.toDto(savedOrder);
     }
 
     public OrderDto findById(UUID id) {
@@ -193,5 +198,15 @@ public class OrderService {
             return customerService.findEntityById(dto.getCustomerId());
         }
         return customerService.createForOrder(dto.getCustomerName().trim());
+    }
+
+    private void attachUploadIfPresent(Order order, UUID uploadId) {
+        if (uploadId == null) {
+            return;
+        }
+        Upload upload = uploadService.attachToOwner(uploadId, OwnerType.ORDER, order.getId());
+        order.setUpload(upload);
+        order.setImageUrl(uploadService.buildFileUrl(upload));
+        repository.save(order);
     }
 }

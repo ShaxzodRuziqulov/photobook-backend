@@ -20,6 +20,7 @@ public interface OrderMapper extends EntityMapper<OrderDto, Order> {
     @Mapping(target = "category", source = "categoryId")
     @Mapping(target = "customer", source = "customerId")
     @Mapping(target = "employees", source = "employeeIds")
+    @Mapping(target = "upload", ignore = true)
     @Mapping(target = "statusHistory", ignore = true)
     Order toEntity(OrderDto dto);
 
@@ -30,6 +31,7 @@ public interface OrderMapper extends EntityMapper<OrderDto, Order> {
     @Mapping(target = "customerName", source = "customer.fullName")
     @Mapping(target = "employeeIds", expression = "java(mapEmployeeIds(entity.getEmployees()))")
     @Mapping(target = "employeeNames", expression = "java(mapEmployeeNames(entity.getEmployees()))")
+    @Mapping(target = "uploadId", source = "upload.id")
     @Mapping(target = "statusHistory", ignore = true)
     OrderDto toDto(Order entity);
 
@@ -110,7 +112,6 @@ public interface OrderMapper extends EntityMapper<OrderDto, Order> {
         StringBuilder result = new StringBuilder();
         appendPart(result, employee.getLastName());
         appendPart(result, employee.getFirstName());
-        appendPart(result, employee.getMiddleName());
         String fullName = result.toString().trim();
         return fullName.isEmpty() ? employee.getUsername() : fullName;
     }

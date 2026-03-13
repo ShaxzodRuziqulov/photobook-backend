@@ -43,6 +43,9 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
+    @ManyToOne
+    private Upload upload;
+
     @Column(name = "receiver_name", nullable = false, length = 180)
     private String receiverName;
 

@@ -51,6 +51,9 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @ManyToOne
+    private Upload upload;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",

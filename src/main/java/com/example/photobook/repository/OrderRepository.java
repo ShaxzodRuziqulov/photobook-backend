@@ -29,8 +29,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                    LOWER(COALESCE(o.customer.fullName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(CONCAT(
                        COALESCE(employee.lastName, ''), ' ',
-                       COALESCE(employee.firstName, ''), ' ',
-                       COALESCE(employee.middleName, '')
+                       COALESCE(employee.firstName, '')
                    )) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(employee.username, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.category.name, '')) LIKE LOWER(CONCAT('%', :search, '%')))
