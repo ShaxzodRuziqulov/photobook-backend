@@ -1,5 +1,6 @@
 package com.example.photobook.mapper;
 
+import com.example.photobook.dto.EmployeeDto;
 import com.example.photobook.dto.OrderDto;
 import com.example.photobook.entity.Customer;
 import com.example.photobook.entity.Order;
@@ -10,7 +11,6 @@ import org.mapstruct.Mapping;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Mapper(componentModel = "spring")
@@ -19,7 +19,7 @@ public interface OrderMapper extends EntityMapper<OrderDto, Order> {
     @Override
     @Mapping(target = "category", source = "categoryId")
     @Mapping(target = "customer", source = "customerId")
-    @Mapping(target = "employees", source = "employeeIds")
+    @Mapping(target = "employees", ignore = true)
     @Mapping(target = "upload", ignore = true)
     @Mapping(target = "statusHistory", ignore = true)
     Order toEntity(OrderDto dto);
@@ -29,8 +29,7 @@ public interface OrderMapper extends EntityMapper<OrderDto, Order> {
     @Mapping(target = "categoryName", source = "category.name")
     @Mapping(target = "customerId", source = "customer.id")
     @Mapping(target = "customerName", source = "customer.fullName")
-    @Mapping(target = "employeeIds", expression = "java(mapEmployeeIds(entity.getEmployees()))")
-    @Mapping(target = "employeeNames", expression = "java(mapEmployeeNames(entity.getEmployees()))")
+    @Mapping(target = "employees", expression = "java(mapEmployees(entity.getEmployees()))")
     @Mapping(target = "uploadId", source = "upload.id")
     @Mapping(target = "statusHistory", ignore = true)
     OrderDto toDto(Order entity);
@@ -44,10 +43,6 @@ public interface OrderMapper extends EntityMapper<OrderDto, Order> {
         return category;
     }
 
-    default UUID mapProductCategory(ProductCategory category) {
-        return category == null ? null : category.getId();
-    }
-
     default Customer mapCustomer(UUID id) {
         if (id == null) {
             return null;
@@ -57,52 +52,24 @@ public interface OrderMapper extends EntityMapper<OrderDto, Order> {
         return customer;
     }
 
-    default UUID mapCustomer(Customer customer) {
-        return customer == null ? null : customer.getId();
-    }
-
-    default User mapEmployee(UUID id) {
-        if (id == null) {
-            return null;
-        }
-        User employee = new User();
-        employee.setId(id);
-        return employee;
-    }
-
-    default UUID mapEmployee(User employee) {
-        return employee == null ? null : employee.getId();
-    }
-
-    default Set<User> mapEmployeeIds(List<UUID> employeeIds) {
-        if (employeeIds == null || employeeIds.isEmpty()) {
-            return Set.of();
-        }
-        return employeeIds.stream()
-                .map(this::mapEmployee)
-                .filter(java.util.Objects::nonNull)
-                .collect(java.util.stream.Collectors.toSet());
-    }
-
-    default List<UUID> mapEmployeeIds(Set<User> employees) {
-        if (employees == null || employees.isEmpty()) {
-            return List.of();
-        }
-        return employees.stream()
-                .map(User::getId)
-                .filter(java.util.Objects::nonNull)
-                .sorted()
-                .toList();
-    }
-
-    default List<String> mapEmployeeNames(Set<User> employees) {
+    default List<EmployeeDto> mapEmployees(java.util.Set<User> employees) {
         if (employees == null || employees.isEmpty()) {
             return List.of();
         }
         return employees.stream()
                 .sorted(Comparator.comparing(User::getId))
-                .map(this::buildEmployeeName)
+                .map(this::toEmployeeDto)
                 .toList();
+    }
+
+    default EmployeeDto toEmployeeDto(User employee) {
+        if (employee == null) {
+            return null;
+        }
+        EmployeeDto dto = new EmployeeDto();
+        dto.setEmployeeIds(employee.getId());
+        dto.setEmployeeNames(buildEmployeeName(employee));
+        return dto;
     }
 
     default String buildEmployeeName(User employee) {

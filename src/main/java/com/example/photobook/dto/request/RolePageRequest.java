@@ -5,6 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RolePageRequest extends BasePagingRequest {
+public class RolePageRequest {
     private String search;
 }

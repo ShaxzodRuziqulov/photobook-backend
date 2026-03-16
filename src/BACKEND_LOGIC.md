@@ -1,646 +1,800 @@
-# Frontend uchun kerak bo'ladigan backend logikasi
+# BACKEND LOGIC
 
-Bu hujjat frontend normal ishlashi uchun backendda qanday logika bo'lishi kerakligini tushuntiradi. Siz entity CRUDlarni qilib bo'lgansiz, endi frontend bilan to'g'ri integratsiya bo'lishi uchun qo'shimcha business logic, auth, filtering va analytics qismlari kerak bo'ladi.
+Bu fayl hozirgi backendning amaldagi logikasini tushuntiradi. Bu yerda nazariy tavsiya emas, frontend va backend integratsiyasi uchun real contract yozilgan.
 
-## 1. Asosiy modullar
+## 1. Asosiy ma'lumot
 
-Loyihadagi frontend quyidagi backend modullarga tayanadi:
+- Base path: `/api/v1`
+- Auth turi: `Authorization: Bearer <access_token>`
+- Public yo'llar:
+  - `/api/v1/auth/**`
+  - `/uploads-storage/**`
+  - swagger yo'llari
+- Static upload URL: `/uploads-storage/{key}`
 
-- `auth`
-- `users`
-- `roles`
-- `employees`
-- `customers`
-- `product_categories`
-- `orders`
-- `materials`
-- `uploads`
-- `dashboard`
+## 2. Response format
 
-Asosiy ish oqimi `orders` modulida bo'ladi. Qolgan modullar esa order yaratish, update qilish va dashboardni to'ldirish uchun xizmat qiladi.
+### Oddiy endpointlar
 
-## 2. Auth logikasi
+Ko'p endpointlar DTO ni to'g'ridan-to'g'ri qaytaradi.
 
-Frontend ishlashi uchun quyidagi endpointlar kerak:
-
-- `POST /auth/login`
-- `POST /auth/refresh`
-- `POST /auth/logout`
-- `GET /auth/me`
-
-### Login oqimi
-
-1. User `username/email` va `password` yuboradi.
-2. Backend passwordni tekshiradi.
-3. To'g'ri bo'lsa `access_token` va `refresh_token` qaytaradi.
-4. Frontend `access_token`ni saqlaydi va keyingi requestlarda `Bearer token` yuboradi.
-5. `401` qaytsa frontend refresh token orqali yangi access token oladi.
-6. Refresh ham xato bo'lsa user login pagega qaytariladi.
-
-### Auth ichidagi majburiy logika
-
-- Password faqat `hash` ko'rinishida saqlanishi kerak.
-- Refresh token DBda yoki xavfsiz storage'da saqlanishi kerak.
-- Revoked tokenlar qayta ishlatilmasligi kerak.
-- `GET /auth/me` endpoint current user va rolelarini qaytarishi kerak.
-
-### Tavsiya etilgan response
+Misol:
 
 ```json
 {
-  "access_token": "string",
-  "refresh_token": "string",
-  "user": {
-    "id": "uuid",
-    "name": "Ali Valiyev",
-    "email": "ali@gmail.com",
-    "roles": ["ADMIN"],
-    "avatar_url": "https://cdn.site/avatar.jpg",
-    "phone": "+998901234567",
-    "bio": "..."
+  "id": "uuid",
+  "name": "Sample"
+}
+```
+
+### Paging endpointlar
+
+Paging endpointlar `POST /resource/paging` ko'rinishida.
+
+Response format:
+
+```json
+{
+  "content": [],
+  "pageNumber": 0,
+  "pageSize": 20,
+  "totalElements": 120,
+  "totalPages": 6,
+  "last": false
+}
+```
+
+Muhim:
+
+- `pageNumber` 0-based
+- `pageSize` Spring pageable qiymati
+- paging filter body orqali yuboriladi
+
+### Error format
+
+Validation va business xatolar odatda:
+
+```json
+{
+  "message": "category_id is required",
+  "errors": {
+    "request": ["category_id is required"]
   }
 }
 ```
 
-## 3. Users va roles logikasi
-
-Bu qism admin panel va ruxsatlar uchun kerak.
-
-### Users bo'yicha kerakli amallar
-
-- user yaratish
-- userni edit qilish
-- userni o'chirish
-- userni aktiv/deaktiv qilish
-- userga role biriktirish
-
-### Endpointlar
-
-- `GET /users`
-- `POST /users`
-- `GET /users/:id`
-- `PATCH /users/:id`
-- `DELETE /users/:id`
-- `PUT /users/:id/roles`
-- `GET /roles`
-
-### Tavsiya etilgan schema
-
-#### `users`
-
-- `id`
-- `name`
-- `email`
-- `password_hash`
-- `avatar_url`
-- `phone`
-- `bio`
-- `is_active`
-- `created_at`
-- `updated_at`
-
-#### `roles`
-
-- `id`
-- `name`
-- `description`
-
-#### `user_roles`
-
-- `user_id`
-- `role_id`
-
-## 4. Employees logikasi
-
-Frontenddagi `Employees` sahifasi uchun alohida employee moduli kerak bo'lishi mumkin.
-
-### Employees uchun fieldlar
-
-- `full_name`
-- `profession`
-- `phone_number`
-- `is_active`
-
-### Endpointlar
-
-- `GET /employees`
-- `POST /employees`
-- `GET /employees/:id`
-- `PATCH /employees/:id`
-- `DELETE /employees/:id`
-
-### Eslatma
-
-Agar tizimga kiradigan xodim va oddiy ishlab chiqarish xodimi bitta obyekt bo'lsa, `users` ichida professionni ham saqlash mumkin. Agar ular alohida bo'lsa, `users` va `employees`ni ajratgan yaxshi.
-
-## 5. Customers logikasi
-
-Buyurtma yaratishda mijoz albatta kerak bo'ladi.
-
-### Kerakli imkoniyatlar
-
-- customer yaratish
-- customer qidirish
-- customer detail ko'rish
-- customer order history ko'rish
-
-### Endpointlar
-
-- `GET /customers`
-- `POST /customers`
-- `GET /customers/:id`
-- `PATCH /customers/:id`
-- `DELETE /customers/:id`
-
-### Tavsiya etilgan schema
-
-- `id`
-- `full_name`
-- `phone`
-- `notes`
-- `is_active`
-- `created_at`
-- `updated_at`
-
-### Muhim nuqta
-
-Frontend hozir `customerName` bilan ishlayapti. Backendda esa `customer_id` saqlash kerak. Response ichida qulaylik uchun `customer_name` qaytarib berish mumkin.
-
-## 6. Product categories logikasi
-
-Frontend categorylarni 3 turga bo'ladi:
-
-- `ALBUM`
-- `VIGNETTE`
-- `PICTURE`
-
-### Tavsiya etilgan schema
-
-- `id`
-- `name`
-- `kind`
-- `default_pages`
-- `created_at`
-- `updated_at`
-
-### Endpointlar
-
-- `GET /product-categories`
-- `POST /product-categories`
-- `PATCH /product-categories/:id`
-- `DELETE /product-categories/:id`
-
-### Filter
-
-Categorylarni tur bo'yicha olish kerak:
-
-- `GET /product-categories?kind=ALBUM`
-- `GET /product-categories?kind=VIGNETTE`
-- `GET /product-categories?kind=PICTURE`
-
-## 7. Orders logikasi
-
-Bu frontend uchun eng muhim modul.
-
-Frontenddagi sahifalarda order uchun quyidagi fieldlar ishlatilmoqda:
-
-- `categoryName`
-- `orderName`
-- `itemType`
-- `customerName`
-- `receiverName`
-- `employeeName`
-- `pageNumber`
-- `amountNumber`
-- `processNumber`
-- `createdData`
-- `termData`
-- `status`
-- `imageUrl`
-
-Backendda esa buni normal schema ko'rinishida saqlash kerak.
-
-### Tavsiya etilgan orders schema
-
-- `id`
-- `kind`
-- `category_id`
-- `order_name`
-- `item_type`
-- `customer_id`
-- `receiver_name`
-- `employee_id`
-- `page_count`
-- `amount`
-- `processed_count`
-- `accepted_date`
-- `deadline`
-- `status`
-- `image_url`
-- `notes`
-- `created_at`
-- `updated_at`
-
-### `kind` enum
-
-- `ALBUM`
-- `VIGNETTE`
-- `PICTURE`
-
-### `status` enum
-
-- `KUTILMOQDA`
-- `JARAYONDA`
-- `BAJARILGAN`
-
-## 8. Frontend va backend field mapping
-
-Frontenddagi fieldlar bilan backenddagi fieldlar bir xil emas. Shu sabab mapping qatlam bo'lishi kerak.
-
-| Frontend field | Backend field |
-|---|---|
-| `categoryName` | `category_id` |
-| `orderName` | `order_name` |
-| `itemType` | `item_type` |
-| `customerName` | `customer_id` |
-| `receiverName` | `receiver_name` |
-| `employeeName` | `employee_id` |
-| `pageNumber` | `page_count` |
-| `amountNumber` | `amount` |
-| `processNumber` | `processed_count` |
-| `createdData` | `accepted_date` |
-| `termData` | `deadline` |
-| `imageUrl` | `image_url` |
-
-### Amaliy tavsiya
-
-DBga faqat `id`lar saqlansin:
-
-- `customer_id`
-- `employee_id`
-- `category_id`
-
-Lekin response ichida frontend uchun quyidagilar ham qaytsin:
-
-- `customer_name`
-- `employee_name`
-- `category_name`
-
-## 9. Orders endpointlari
-
-### Asosiy endpointlar
-
-- `GET /orders`
-- `POST /orders`
-- `GET /orders/:id`
-- `PATCH /orders/:id`
-- `DELETE /orders/:id`
-- `PATCH /orders/:id/status`
-- `GET /orders/:id/status-history`
-
-### `GET /orders` filterlari
-
-Quyidagi query parametrlar kerak bo'ladi:
-
-- `page`
-- `limit`
-- `q`
-- `kind`
-- `status`
-- `customer_id`
-- `employee_id`
-- `category_id`
-- `from`
-- `to`
-- `deadline_from`
-- `deadline_to`
-
-### Misol
-
-```http
-GET /orders?kind=ALBUM&status=JARAYONDA&q=maktab&from=2026-03-01&to=2026-03-31
-```
-
-## 10. Orders business logic
-
-CRUDdan tashqari quyidagi logikalar majburiy:
-
-- `processed_count` hech qachon `amount`dan katta bo'lmasin
-- `deadline` `accepted_date`dan kichik bo'lmasin
-- `category_id`, `customer_id`, `employee_id` mavjudligi tekshirilsin
-- status transition nazorat qilinsin
-- delete paytida bog'liqlik yoki soft delete ko'rilsin
-- order list qaytganda relationlar join qilinsin
-
-### Status transition qoidalari
-
-Ruxsat beriladigan o'tishlar:
-
-- `KUTILMOQDA -> JARAYONDA`
-- `JARAYONDA -> BAJARILGAN`
-- kerak bo'lsa `JARAYONDA -> KUTILMOQDA`
-
-Ko'pincha `BAJARILGAN -> ortga` o'tishni cheklagan yaxshi.
-
-## 11. Order status history
-
-Status almashganini audit qilish uchun alohida jadval foydali bo'ladi.
-
-### Tavsiya etilgan schema
-
-- `id`
-- `order_id`
-- `from_status`
-- `to_status`
-- `changed_by`
-- `changed_at`
-
-### Foydasi
-
-- kim statusni o'zgartirganini bilish
-- qachon o'zgarganini ko'rish
-- xatoni tekshirish
-- dashboard yoki audit uchun ishlatish
-
-## 12. Materials logikasi
-
-Frontenddagi `Materials.vue` uchun quyidagi backend logika kerak:
-
-- material list
-- create
-- update
-- delete
-- quantity adjust
-
-### Schema
-
-- `id`
-- `item_name`
-- `item_type`
-- `unit_name`
-- `quantity`
-- `created_at`
-- `updated_at`
-
-### Endpointlar
-
-- `GET /materials`
-- `POST /materials`
-- `PATCH /materials/:id`
-- `DELETE /materials/:id`
-- `POST /materials/:id/adjust`
-
-### `adjust` endpoint misoli
+Upload size xatosi:
 
 ```json
 {
-  "delta": -10,
-  "reason": "Ishlab chiqarishga berildi"
+  "message": "Maximum upload size exceeded",
+  "errors": {
+    "file": ["Maximum upload size exceeded"]
+  }
 }
 ```
 
-### Business rule
-
-- quantity manfiy bo'lib ketmasligi kerak
-- har adjust operation log qilinsa yaxshi bo'ladi
-
-## 13. Upload logikasi
-
-Frontend orderga rasm biriktiryapti, shuning uchun upload endpoint kerak.
+## 3. Auth
 
 ### Endpointlar
 
-- `POST /uploads`
-- `DELETE /uploads/:key`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/refresh`
+- `GET /api/v1/auth/me`
+- `POST /api/v1/auth/logout`
 
-### `POST /uploads`
+### Login
 
 Request:
 
-- `multipart/form-data`
+```json
+{
+  "username": "admin",
+  "password": "secret"
+}
+```
 
 Response:
 
 ```json
 {
-  "url": "https://cdn.example.com/order/file.jpg",
-  "key": "orders/file.jpg",
-  "mime": "image/jpeg",
+  "access_token": "jwt",
+  "refresh_token": "jwt",
+  "user": {
+    "id": "uuid",
+    "name": "Ali Valiyev",
+    "email": null,
+    "roles": ["ROLE_ADMIN"],
+    "avatar_url": "/uploads-storage/file.png",
+    "phone": "+998901234567",
+    "bio": "text"
+  }
+}
+```
+
+Muhim:
+
+- login `username` bilan ishlaydi
+- `email` field response classda bor, lekin hozir service uni to'ldirmaydi
+- refresh token DBda saqlanmaydi, JWT asosida validatsiya qilinadi
+
+### Refresh
+
+Request:
+
+```json
+{
+  "refreshToken": "jwt"
+}
+```
+
+Response:
+
+```json
+{
+  "access_token": "jwt",
+  "refresh_token": "jwt"
+}
+```
+
+### Me
+
+Current user profilini qaytaradi.
+
+### Logout
+
+Request body:
+
+```json
+{
+  "refreshToken": "jwt"
+}
+```
+
+Response: `204 No Content`
+
+Muhim:
+
+- logout refresh tokenni format bo'yicha tekshiradi
+- token blacklist saqlash logikasi yo'q
+
+## 4. Permission logikasi
+
+### `ROLE_ADMIN`
+
+Ruxsat:
+
+- users
+- roles
+- customers
+- materials
+- expense categories
+- expenses
+- product categories
+- orders
+- uploads
+- dashboard
+
+### `ROLE_MANAGER`
+
+Ruxsat:
+
+- customers
+- materials
+- expense categories
+- expenses
+- product categories
+- orders
+- uploads
+- dashboard
+
+### `ROLE_OPERATOR`
+
+Ruxsat:
+
+- `GET /api/v1/orders/**`
+- `PUT /api/v1/orders/{id}/status`
+- `/api/v1/uploads/**`
+- `GET /api/v1/users/me`
+- `PUT /api/v1/users/me`
+
+Muhim:
+
+- operator order create/update/delete qila olmaydi
+- uploads endpoint operator uchun ochiq, lekin users/orders/expenses attach logikasi servis ichida tekshiriladi
+
+## 5. Users
+
+### Endpointlar
+
+- `POST /api/v1/users`
+- `PUT /api/v1/users/{id}`
+- `GET /api/v1/users/{id}`
+- `GET /api/v1/users`
+- `POST /api/v1/users/paging`
+- `DELETE /api/v1/users/{id}`
+- `PUT /api/v1/users/{id}/roles`
+- `GET /api/v1/users/me`
+- `PUT /api/v1/users/me`
+
+### UserDto fieldlar
+
+```json
+{
+  "id": "uuid",
+  "firstName": "Ali",
+  "lastName": "Valiyev",
+  "profession": "Designer",
+  "username": "ali",
+  "email": null,
+  "password": "secret",
+  "avatarUrl": "/uploads-storage/file.png",
+  "phone": "+998901234567",
+  "bio": "text",
+  "isActive": true,
+  "uploadId": "uuid",
+  "roles": []
+}
+```
+
+### Yaratish logikasi
+
+- `username` majburiy
+- `firstName` majburiy
+- `lastName` majburiy
+- `password` majburiy
+- password hash qilinadi
+- default role: `ROLE_OPERATOR`
+- `userStatus = ACTIVE`
+- `isActive` bo'sh bo'lsa `true`
+- `uploadId` berilsa avatar attach qilinadi
+
+### Update logikasi
+
+- `password` ixtiyoriy
+- `username` o'zgarsa unique tekshiriladi
+- `uploadId` berilsa avatar attach qilinadi
+
+### `/users/me`
+
+Current login bo'lgan user profili uchun ishlaydi.
+
+Update body:
+
+```json
+{
+  "firstName": "Ali",
+  "lastName": "Valiyev",
+  "profession": "Designer",
+  "email": null,
+  "avatarUrl": "/uploads-storage/file.png",
+  "phone": "+998901234567",
+  "bio": "text",
+  "uploadId": "uuid"
+}
+```
+
+Muhim:
+
+- `uploadId` berilsa backend `avatarUrl` ni o'zi set qiladi
+- `uploadId` berilmasa `avatarUrl` ni plain string sifatida update qilish mumkin
+
+### Delete logikasi
+
+- hard delete emas
+- `isActive = false`
+- agar userga upload bog'langan bo'lsa, u ham tozalanadi
+
+### Role update
+
+Request:
+
+```json
+{
+  "roleIds": ["uuid"]
+}
+```
+
+## 6. Roles
+
+### Endpointlar
+
+- `POST /api/v1/roles`
+- `PUT /api/v1/roles/{id}`
+- `GET /api/v1/roles/{id}`
+- `GET /api/v1/roles`
+- `POST /api/v1/roles/paging`
+- `DELETE /api/v1/roles/{id}`
+
+### RoleDto
+
+```json
+{
+  "id": "uuid",
+  "name": "ROLE_ADMIN",
+  "description": "Admin"
+}
+```
+
+## 7. Customers
+
+### Endpointlar
+
+- `POST /api/v1/customers`
+- `PUT /api/v1/customers/{id}`
+- `GET /api/v1/customers/{id}`
+- `GET /api/v1/customers`
+- `POST /api/v1/customers/paging`
+- `DELETE /api/v1/customers/{id}`
+
+### CustomerDto
+
+```json
+{
+  "id": "uuid",
+  "fullName": "Ali Valiyev",
+  "phone": "+998901234567",
+  "notes": "VIP",
+  "isActive": true
+}
+```
+
+### Muhim logika
+
+- order create/update da `customerId` yoki `customerName` ishlatiladi
+- agar `customerId` bo'lmasa va `customerName` kelsa, backend order ichida yangi customer yaratadi
+- delete behavior servicega bog'liq, lekin controller soft/hard ni alohida ajratmaydi
+
+## 8. Product Categories
+
+### Endpointlar
+
+- `POST /api/v1/product-categories`
+- `PUT /api/v1/product-categories/{id}`
+- `GET /api/v1/product-categories/{id}`
+- `GET /api/v1/product-categories`
+- `POST /api/v1/product-categories/paging`
+- `DELETE /api/v1/product-categories/{id}`
+
+### ProductCategoryDto
+
+```json
+{
+  "id": "uuid",
+  "name": "Premium Album",
+  "kind": "ALBUM",
+  "defaultPages": "20",
+  "size": "30x40"
+}
+```
+
+### `kind` qiymatlari
+
+- `ALBUM`
+- `VIGNETTE`
+- `PICTURE`
+
+## 9. Orders
+
+Bu backendning asosiy moduli.
+
+### Endpointlar
+
+- `POST /api/v1/orders`
+- `PUT /api/v1/orders/{id}`
+- `GET /api/v1/orders/{id}`
+- `GET /api/v1/orders`
+- `POST /api/v1/orders/paging`
+- `DELETE /api/v1/orders/{id}`
+- `PUT /api/v1/orders/{id}/status`
+- `GET /api/v1/orders/{id}/status-history`
+
+### OrderDto
+
+```json
+{
+  "id": "uuid",
+  "kind": "ALBUM",
+  "categoryId": "uuid",
+  "categoryName": "Premium Album",
+  "orderName": "Nikoh albomi",
+  "itemType": "Premium",
+  "customerId": "uuid",
+  "customerName": "Ali Valiyev",
+  "receiverName": "Ali",
+  "employees": [
+    {
+      "employeeIds": "uuid",
+      "employeeNames": "Vali"
+    }
+  ],
+  "pageCount": 20,
+  "amount": 2,
+  "processedCount": 0,
+  "acceptedDate": "2026-03-16",
+  "deadline": "2026-03-20",
+  "status": "PENDING",
+  "imageUrl": "/uploads-storage/file.png",
+  "notes": "text",
+  "uploadId": "uuid",
+  "statusHistory": []
+}
+```
+
+### Create va update validation
+
+- `orderName` majburiy
+- `categoryId` majburiy
+- `customerId` yoki `customerName` majburiy
+- `employees` majburiy va bo'sh bo'lmasligi kerak
+- `employees` ichida `null` bo'lmasligi kerak
+- har bir `employees[].employeeIds` majburiy
+- `amount > 0`
+- `processedCount >= 0`
+- `processedCount <= amount`
+- `acceptedDate` majburiy
+- `deadline` majburiy
+- `deadline >= acceptedDate`
+
+### Create va update business logic
+
+- `categoryId` bo'yicha category topiladi
+- `customerId` bo'lsa mavjud customer ishlatiladi
+- `customerId` bo'lmasa `customerName` dan yangi customer yaratiladi
+- `employees[].employeeIds` dagi userlar resolve qilinadi
+- `uploadId` bo'lsa upload `ORDER` ga attach qilinadi
+- attachdan keyin `imageUrl` avtomatik set qilinadi
+
+### Status o'zgarishi
+
+Request:
+
+```json
+{
+  "toStatus": "IN_PROGRESS"
+}
+```
+
+Ruxsat etilgan transitionlar:
+
+- `PENDING -> IN_PROGRESS`
+- `IN_PROGRESS -> PENDING`
+- `IN_PROGRESS -> COMPLETED`
+
+Ruxsat etilmaydi:
+
+- `PENDING -> COMPLETED`
+- `COMPLETED -> *`
+
+Status o'zgarsa:
+
+- order status update qilinadi
+- `order_status_history` yozuvi yaratiladi
+- `changedBy` current user dan olinadi
+
+### Paging filter
+
+Request body:
+
+```json
+{
+  "search": "nikoh",
+  "kind": "ALBUM",
+  "status": "IN_PROGRESS",
+  "customerId": "uuid",
+  "employeeId": "uuid",
+  "categoryId": "uuid",
+  "from": "2026-03-01",
+  "to": "2026-03-31",
+  "deadlineFrom": "2026-03-10",
+  "deadlineTo": "2026-03-20"
+}
+```
+
+### Delete
+
+- order o'chirilganda ownerga tegishli upload ham tozalanadi
+
+## 10. Order Status History
+
+### Endpointlar
+
+- `GET /api/v1/orders/{id}/status-history`
+- qo'shimcha CRUD endpoint ham bor:
+  - `POST /api/v1/order-status-histories`
+  - `PUT /api/v1/order-status-histories/{id}`
+  - `GET /api/v1/order-status-histories/{id}`
+  - `GET /api/v1/order-status-histories`
+  - `DELETE /api/v1/order-status-histories/{id}`
+
+Frontend uchun asosan kerakli endpoint:
+
+- `GET /api/v1/orders/{id}/status-history`
+
+## 11. Materials
+
+### Endpointlar
+
+- `POST /api/v1/materials`
+- `PUT /api/v1/materials/{id}`
+- `GET /api/v1/materials/{id}`
+- `GET /api/v1/materials`
+- `POST /api/v1/materials/paging`
+- `DELETE /api/v1/materials/{id}`
+- `POST /api/v1/materials/{id}/adjust`
+
+### MaterialDto
+
+```json
+{
+  "id": "uuid",
+  "itemName": "Photo paper",
+  "itemType": "Glossy",
+  "unitName": "sheet",
+  "quantity": 100
+}
+```
+
+### Validation
+
+- `itemName` majburiy
+- `unitName` majburiy
+- `quantity >= 0`
+
+### Adjust
+
+Request:
+
+```json
+{
+  "delta": -2,
+  "reason": "used"
+}
+```
+
+Muhim:
+
+- backend faqat `delta` ni ishlatadi
+- `reason` business uchun saqlanmaydi
+- yangi `quantity` manfiy bo'lsa xato qaytadi
+
+## 12. Expense Categories
+
+### Endpointlar
+
+- `POST /api/v1/expense-categories`
+- `PUT /api/v1/expense-categories/{id}`
+- `GET /api/v1/expense-categories/{id}`
+- `GET /api/v1/expense-categories`
+- `POST /api/v1/expense-categories/paging`
+- `DELETE /api/v1/expense-categories/{id}`
+
+### ExpenseCategoryDto
+
+```json
+{
+  "id": "uuid",
+  "name": "Transport"
+}
+```
+
+## 13. Expenses
+
+### Endpointlar
+
+- `POST /api/v1/expenses`
+- `PUT /api/v1/expenses/{id}`
+- `GET /api/v1/expenses/{id}`
+- `GET /api/v1/expenses`
+- `POST /api/v1/expenses/paging`
+- `DELETE /api/v1/expenses/{id}`
+
+### ExpenseDto
+
+```json
+{
+  "id": "uuid",
+  "categoryId": "uuid",
+  "materialId": "uuid",
+  "name": "Qog'oz xaridi",
+  "price": 120000,
+  "description": "text",
+  "paymentMethod": "cash",
+  "receiptImageUrl": "/uploads-storage/file.png",
+  "expenseDate": "2026-03-16",
+  "uploadId": "uuid"
+}
+```
+
+### Validation
+
+- `categoryId` majburiy
+- `name` majburiy
+- `price >= 0`
+- `expenseDate` majburiy
+
+### Business logic
+
+- `categoryId` bo'yicha category resolve qilinadi
+- `materialId` bo'lsa material resolve qilinadi
+- `uploadId` bo'lsa upload `EXPENSE` ga attach qilinadi
+- attachdan keyin `receiptImageUrl` avtomatik set qilinadi
+
+### Delete
+
+- expense o'chirilganda unga tegishli upload ham tozalanadi
+
+## 14. Uploads
+
+Bu qism hozir real ishlaydi va frontend uchun eng muhim integration pointlardan biri.
+
+### Endpointlar
+
+- `POST /api/v1/uploads`
+- `DELETE /api/v1/uploads/{key}`
+- `GET /uploads-storage/{key}`
+
+### Upload request
+
+`multipart/form-data`
+
+Fieldlar:
+
+- `file` - majburiy
+- `ownerType` - ixtiyoriy
+- `ownerId` - ixtiyoriy
+
+`ownerType` qiymatlari:
+
+- `USER`
+- `ORDER`
+- `EXPENSE`
+
+### Upload response
+
+```json
+{
+  "id": "uuid",
+  "url": "/uploads-storage/uuid-photo.png",
+  "key": "uuid-photo.png",
+  "mime": "image/png",
   "size": 102400
 }
 ```
 
-### Oqim
+### Validatsiya
 
-1. Frontend rasmni upload qiladi.
-2. Backend file storagega saqlaydi.
-3. `url` qaytaradi.
-4. Frontend shu `url`ni order create yoki update requestiga qo'shadi.
+- `file` bo'sh bo'lmasligi kerak
+- faqat `image/*`
+- fayl hajmi `spring.servlet.multipart.max-file-size` dan oshmasligi kerak
+- `ownerType` va `ownerId` ikkalasi birga kelishi kerak
+- owner mavjud bo'lishi kerak
 
-## 14. Dashboard logikasi
+### Saqlash logikasi
 
-Dashboard uchun oddiy CRUD emas, agregatsiya kerak bo'ladi.
+- default papka: `uploads-storage`
+- env: `APP_UPLOAD_DIR`
+- fayl nomi sanitizatsiya qilinadi
+- DBga `key`, `mimeType`, `size`, `ownerType`, `ownerId` saqlanadi
+
+### Frontend uchun to'g'ri flow
+
+1. Rasmni `POST /api/v1/uploads` orqali yuklang.
+2. Response dan `id`, `url`, `key` ni oling.
+3. Create/update requestga `uploadId` yuboring.
+4. UI preview uchun `url` ni ishlating.
+
+Amaliy ishlatish:
+
+- `uploadId` - create/update uchun
+- `url` - preview uchun
+- `key` - alohida delete qilish uchun
+
+### Attach logikasi
+
+`uploadId` create/update requestga berilganda:
+
+- order uchun `imageUrl` avtomatik set qilinadi
+- expense uchun `receiptImageUrl` avtomatik set qilinadi
+- user uchun `avatarUrl` avtomatik set qilinadi
+
+### Replace logikasi
+
+Bitta ownerga yangi upload attach qilinsa:
+
+- ownerning eski uploadi topiladi
+- eski DB yozuvi o'chiriladi
+- eski fayl diskdan o'chiriladi
+- owner yangi uploadga o'tadi
+
+### Delete logikasi
+
+`DELETE /api/v1/uploads/{key}` chaqirilsa:
+
+1. upload topiladi
+2. owner reference null qilinadi
+3. fizik fayl o'chiriladi
+4. upload DBdan o'chiriladi
+
+### Owner delete bo'lsa
+
+- user delete bo'lsa upload ham tozalanadi
+- order delete bo'lsa upload ham tozalanadi
+- expense delete bo'lsa upload ham tozalanadi
+
+### Muhim production cheklovi
+
+Upload hozir lokal diskda saqlanadi. Persistent volume bo'lmasa deploy yoki restartdan keyin fayllar yo'qolishi mumkin.
+
+## 15. Dashboard
 
 ### Endpointlar
 
-- `GET /dashboard/summary`
-- `GET /dashboard/orders-by-status`
-- `GET /dashboard/orders-by-kind`
-- `GET /dashboard/revenue-trend`
-- `GET /dashboard/expenses-trend`
+- `GET /api/v1/dashboard/summary`
+- `GET /api/v1/dashboard/orders-by-status`
+- `GET /api/v1/dashboard/orders-by-kind`
+- `GET /api/v1/dashboard/revenue-trend`
+- `GET /api/v1/dashboard/expenses-trend`
 
-### `summary` response misoli
+### Summary
 
-```json
-{
-  "orders_total": 120,
-  "orders_done": 45,
-  "orders_in_progress": 50,
-  "revenue_total": 15000000,
-  "expenses_total": 7000000,
-  "profit": 8000000
-}
-```
+Query param:
 
-### Dashboard ichida hisoblanadigan narsalar
+- `from` - ixtiyoriy `YYYY-MM-DD`
+- `to` - ixtiyoriy `YYYY-MM-DD`
 
-- jami orderlar soni
-- bajarilgan orderlar
-- jarayondagi orderlar
-- orderlar tur bo'yicha soni
-- revenue
-- expenses
-- profit
-- vaqt bo'yicha trend
+Response `DashboardSummaryDto`.
 
-## 15. Response format bir xil bo'lishi kerak
+### Orders by status
 
-Frontendni soddalashtirish uchun barcha list endpointlar bir xil formatda qaytishi kerak.
+Response `List<DashboardCountDto>`.
 
-### List response
+### Orders by kind
 
-```json
-{
-  "items": [],
-  "meta": {
-    "page": 1,
-    "limit": 10,
-    "total": 120,
-    "total_pages": 12
-  }
-}
-```
+Response `List<DashboardCountDto>`.
 
-### Error response
+### Revenue trend
 
-```json
-{
-  "message": "Validation error",
-  "errors": {
-    "customer_id": ["Customer topilmadi"],
-    "deadline": ["Deadline accepted_date dan kichik bo'lmasligi kerak"]
-  }
-}
-```
+Response `List<DashboardAmountTrendDto>`.
 
-## 16. Validation qoidalari
+### Expenses trend
 
-Har requestda validation qatlam bo'lishi kerak.
+Response `List<DashboardAmountTrendDto>`.
 
-### Orders uchun
+## 16. Frontend uchun tavsiya qilingan oqimlar
 
-- `order_name` bo'sh bo'lmasin
-- `category_id` majburiy
-- `customer_id` majburiy
-- `employee_id` majburiy
-- `amount > 0`
-- `processed_count >= 0`
-- `processed_count <= amount`
-- `accepted_date` valid date bo'lsin
-- `deadline` valid date bo'lsin
-- `deadline >= accepted_date`
+### Order yaratish
 
-### Users uchun
+1. Category, customer, employee listni oling.
+2. Agar rasm bo'lsa upload qiling.
+3. Upload response dan `id` ni oling.
+4. `POST /api/v1/orders` da `uploadId` yuboring.
 
-- `email` unique bo'lsin
-- `password` minimal talabga mos bo'lsin
-- `role_ids` valid bo'lsin
+### Expense yaratish
 
-### Materials uchun
+1. Expense category va materiallarni oling.
+2. Agar chek rasmi bo'lsa upload qiling.
+3. `uploadId` bilan `POST /api/v1/expenses` qiling.
 
-- `item_name` bo'sh bo'lmasin
-- `quantity >= 0`
-- `unit_name` bo'sh bo'lmasin
+### Avatar update
 
-## 17. Permission va role logic
+1. Upload qiling.
+2. `PUT /api/v1/users/me` da `uploadId` yuboring.
 
-Kamida quyidagicha ruxsat tizimi bo'lishi kerak:
+## 17. Hozir implement qilinmagan yoki chala joylar
 
-- `ADMIN`
-- `MANAGER`
-- `OPERATOR`
+- `email` user/auth response ichida to'liq ishlatilmaydi
+- logout token revoke qilmaydi
+- `user-tasks` controller bor, lekin endpoint yo'q
+- upload storage object storage emas, lokal disk
+- ayrim eski CRUD endpointlar frontend uchun kerak bo'lmasa ham mavjud
 
-### Tavsiya etilgan permissionlar
+## 18. Qisqa xulosa
 
-#### `ADMIN`
+Frontend uchun eng muhim real qoidalar:
 
-- users va roles boshqaradi
-- ordersni to'liq boshqaradi
-- materialsni boshqaradi
-- dashboard ko'radi
-
-#### `MANAGER`
-
-- orders yaratadi va update qiladi
-- customers bilan ishlaydi
-- materials bilan ishlaydi
-- dashboard ko'radi
-
-#### `OPERATOR`
-
-- orderlarni ko'radi
-- status update qiladi
-- lekin users va rolesni boshqarmaydi
-
-## 18. Service qatlamida bo'lishi kerak bo'lgan metodlar
-
-Har modulda controllerdan tashqari service bo'lsin.
-
-### `orders.service`
-
-- `createOrder(dto, currentUser)`
-- `updateOrder(id, dto, currentUser)`
-- `deleteOrder(id, currentUser)`
-- `listOrders(filters)`
-- `getOrderById(id)`
-- `changeStatus(id, dto, currentUser)`
-- `getStatusHistory(id)`
-
-### `auth.service`
-
-- `login(dto)`
-- `refresh(dto)`
-- `logout(dto)`
-- `getCurrentUser(userId)`
-
-### `materials.service`
-
-- `createMaterial(dto)`
-- `updateMaterial(id, dto)`
-- `deleteMaterial(id)`
-- `adjustQuantity(id, dto)`
-- `listMaterials(filters)`
-
-## 19. Controller ichidagi emas, service ichidagi business logic
-
-Masalan `createOrder` ichida quyidagi ketma-ketlik bo'lishi kerak:
-
-1. `category_id` mavjudligini tekshiradi
-2. `customer_id` mavjudligini tekshiradi
-3. `employee_id` mavjudligini tekshiradi
-4. `amount` va `processed_count` ni validatsiya qiladi
-5. `deadline` va `accepted_date` ni validatsiya qiladi
-6. orderni yaratadi
-7. response uchun category, customer va employee nomlarini join qilib qaytaradi
-
-Bu logika controller ichiga yozilmasligi kerak. Controller faqat request qabul qiladi va service'ga uzatadi.
-
-## 20. Minimum production-ready checklist
-
-Agar frontend muammosiz ishlasin desangiz, CRUDdan tashqari quyidagilar bo'lishi kerak:
-
-- auth
-- access token
-- refresh token
-- auth middleware
-- role middleware
-- request validation
-- global error handler
-- pagination
-- filtering
-- sorting
-- relation join
-- upload
-- status history
-- consistent response format
-- `created_at` va `updated_at`
-- soft delete yoki referential check
-
-## 21. Yakuniy xulosa
-
-Siz entity CRUDlarni yozib bo'lgan bo'lsangiz, frontendni ishlatish uchun endi eng kerakli backend logikalar quyidagilar:
-
-- `auth + refresh token`
-- `users + roles`
-- `employees`
-- `customers`
-- `product categories`
-- `orders` uchun to'liq business logic
-- `materials`
-- `uploads`
-- `dashboard analytics`
-- `validation`
-- `permissions`
-- `joined response fields`
-
-Eng muhim qism `orders` bo'lib, frontend asosan shu modulga tayanadi. Aynan shu yerda relationlar, filterlar, status logikasi va response mapping to'g'ri yozilsa, frontend backend bilan silliq ishlaydi.
+- hamma protected requestda bearer token yuboring
+- list kerak bo'lsa `GET /resource`, filter+paging kerak bo'lsa `POST /resource/paging`
+- uploadda `uploadId`, `url`, `key` ni aralashtirmang
+- order/expense/user image maydonlarini upload ishlatayotganda backendning o'zi set qiladi
+- status update faqat `PUT /orders/{id}/status` orqali qiling

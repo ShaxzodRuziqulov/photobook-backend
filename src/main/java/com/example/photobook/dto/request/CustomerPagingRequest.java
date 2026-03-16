@@ -5,7 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CustomerPagingRequest extends BasePagingRequest {
+public class CustomerPagingRequest {
     private String search;
-    private Boolean isActive;
 }

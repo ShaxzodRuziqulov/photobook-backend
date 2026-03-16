@@ -49,13 +49,12 @@ public class CustomerService {
     }
 
     public List<CustomerDto> findAll() {
-        return mapper.toDto(repository.findAll());
+        return mapper.toDto(repository.findAllIsActive());
     }
 
     public Page<CustomerDto> findPage(CustomerPagingRequest request, Pageable pageable) {
         return repository.findPage(
                 request.getSearch(),
-                request.getIsActive(),
                 pageable).map(mapper::toDto);
     }
 

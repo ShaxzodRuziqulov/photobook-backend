@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface UploadRepository extends JpaRepository<Upload, UUID> {
     Optional<Upload> findByKey(String key);
+    Optional<Upload> findByOwnerTypeAndOwnerId(com.example.photobook.entity.enumirated.OwnerType ownerType, UUID ownerId);
 }

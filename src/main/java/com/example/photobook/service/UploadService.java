@@ -8,6 +8,7 @@ import com.example.photobook.repository.ExpenseRepository;
 import com.example.photobook.repository.OrderRepository;
 import com.example.photobook.repository.UploadRepository;
 import com.example.photobook.repository.UserRepository;
+import org.springframework.util.unit.DataSize;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,18 +27,21 @@ public class UploadService {
     private final OrderRepository orderRepository;
     private final ExpenseRepository expenseRepository;
     private final Path root;
+    private final long maxFileSizeBytes;
 
     public UploadService(
             UploadRepository repository,
             UserRepository userRepository,
             OrderRepository orderRepository,
             ExpenseRepository expenseRepository,
-            @Value("${app.upload.dir:uploads-storage}") String uploadDir) {
+            @Value("${app.upload.dir:uploads-storage}") String uploadDir,
+            @Value("${spring.servlet.multipart.max-file-size:20MB}") DataSize maxFileSize) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.expenseRepository = expenseRepository;
-        this.root = Paths.get(uploadDir);
+        this.root = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.maxFileSizeBytes = maxFileSize.toBytes();
     }
 
     private void validate(MultipartFile file, UploadDto dto) {
@@ -58,7 +62,7 @@ public class UploadService {
         if (mime == null || !mime.startsWith("image/")) {
             throw new IllegalArgumentException("Only image files allowed");
         }
-        if (file.getSize() > 5 * 1024 * 1024) {
+        if (file.getSize() > maxFileSizeBytes) {
             throw new IllegalArgumentException("File too large");
         }
     }
@@ -100,17 +104,18 @@ public class UploadService {
             throw new IllegalArgumentException("key is required");
         }
 
-        try {
-            Upload upload = repository.findByKey(key).orElseThrow(() -> new IllegalArgumentException("key not found"));
-            Files.deleteIfExists(root.resolve(key));
-            repository.delete(upload);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to delete file");
-        }
+        Upload upload = repository.findByKey(key).orElseThrow(() -> new IllegalArgumentException("key not found"));
+        deleteUpload(upload);
     }
 
-    public Upload findUploadById(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("upload not found"));
+    public void deleteOwnedUpload(OwnerType ownerType, UUID ownerId, UUID keepUploadId) {
+        if (ownerType == null || ownerId == null) {
+            return;
+        }
+
+        repository.findByOwnerTypeAndOwnerId(ownerType, ownerId)
+                .filter(upload -> !upload.getId().equals(keepUploadId))
+                .ifPresent(this::deleteUpload);
     }
 
     public Upload attachToOwner(UUID uploadId, OwnerType ownerType, UUID ownerId) {
@@ -127,6 +132,12 @@ public class UploadService {
         validateOwner(ownerType, ownerId);
 
         Upload upload = findUploadById(uploadId);
+        if (upload.getOwnerType() != null && upload.getOwnerId() != null
+                && (upload.getOwnerType() != ownerType || !upload.getOwnerId().equals(ownerId))) {
+            clearOwnerReference(upload.getOwnerType(), upload.getOwnerId(), upload.getId());
+        }
+
+        deleteOwnedUpload(ownerType, ownerId, uploadId);
         upload.setOwnerType(ownerType);
         upload.setOwnerId(ownerId);
         return repository.save(upload);
@@ -134,6 +145,20 @@ public class UploadService {
 
     public String buildFileUrl(Upload upload) {
         return upload == null ? null : "/uploads-storage/" + upload.getKey();
+    }
+
+    private void deleteUpload(Upload upload) {
+        try {
+            clearOwnerReference(upload.getOwnerType(), upload.getOwnerId(), upload.getId());
+            Files.deleteIfExists(root.resolve(upload.getKey()));
+            repository.delete(upload);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to delete file");
+        }
+    }
+
+    public Upload findUploadById(UUID id) {
+        return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("upload not found"));
     }
 
     private UploadResponseDto toResponse(Upload upload) {
@@ -156,5 +181,39 @@ public class UploadService {
         if (!exists) {
             throw new IllegalArgumentException("owner not found");
         }
+    }
+
+    private void clearOwnerReference(OwnerType ownerType, UUID ownerId, UUID uploadId) {
+        if (ownerType == null || ownerId == null || uploadId == null) {
+            return;
+        }
+
+        switch (ownerType) {
+            case USER -> userRepository.findById(ownerId)
+                    .filter(user -> hasUpload(user.getUpload(), uploadId))
+                    .ifPresent(user -> {
+                        user.setUpload(null);
+                        user.setAvatarUrl(null);
+                        userRepository.save(user);
+                    });
+            case ORDER -> orderRepository.findById(ownerId)
+                    .filter(order -> hasUpload(order.getUpload(), uploadId))
+                    .ifPresent(order -> {
+                        order.setUpload(null);
+                        order.setImageUrl(null);
+                        orderRepository.save(order);
+                    });
+            case EXPENSE -> expenseRepository.findById(ownerId)
+                    .filter(expense -> hasUpload(expense.getUpload(), uploadId))
+                    .ifPresent(expense -> {
+                        expense.setUpload(null);
+                        expense.setReceiptImageUrl(null);
+                        expenseRepository.save(expense);
+                    });
+        }
+    }
+
+    private boolean hasUpload(Upload upload, UUID uploadId) {
+        return upload != null && uploadId.equals(upload.getId());
     }
 }

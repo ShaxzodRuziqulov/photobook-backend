@@ -5,8 +5,8 @@ import com.example.photobook.dto.UserProfileUpdateDto;
 import com.example.photobook.dto.UserRoleUpdateDto;
 import com.example.photobook.dto.request.UserPagingRequest;
 import com.example.photobook.entity.Role;
-import com.example.photobook.entity.User;
 import com.example.photobook.entity.Upload;
+import com.example.photobook.entity.User;
 import com.example.photobook.entity.enumirated.OwnerType;
 import com.example.photobook.entity.enumirated.UserStatus;
 import com.example.photobook.mapper.UserMapper;
@@ -82,7 +82,7 @@ public class UserService {
     }
 
     public List<UserDto> findAll() {
-        return mapper.toDto(repository.findAll());
+        return mapper.toDto(repository.findAllIsActive());
     }
 
     public Page<UserDto> findPage(UserPagingRequest request, Pageable pageable) {
@@ -95,6 +95,7 @@ public class UserService {
 
     public UserDto delete(UUID id) {
         User user = findByUserId(id);
+        uploadService.deleteOwnedUpload(OwnerType.USER, user.getId(), null);
         user.setIsActive(false);
         return mapper.toDto(repository.save(user));
     }
@@ -122,10 +123,14 @@ public class UserService {
         user.setFirstName(dto.getFirstName().trim());
         user.setLastName(dto.getLastName().trim());
         user.setProfession(normalize(dto.getProfession()));
-        user.setAvatarUrl(normalize(dto.getAvatarUrl()));
         user.setPhone(normalize(dto.getPhone()));
         user.setBio(normalize(dto.getBio()));
-        return mapper.toDto(repository.save(user));
+        if (dto.getUploadId() == null) {
+            user.setAvatarUrl(normalize(dto.getAvatarUrl()));
+        }
+        User savedUser = repository.save(user);
+        attachUploadIfPresent(savedUser, dto.getUploadId());
+        return mapper.toDto(savedUser);
     }
 
     public User findByUserId(UUID id) {
@@ -133,7 +138,7 @@ public class UserService {
     }
 
     public Set<Role> resolveRolesForCreate() {
-        return Set.of(requireRole("ROLE_OPERATOR"));
+        return Set.of(requireRole("ROLE_USER"));
     }
 
     public Role requireRole(String roleName) {

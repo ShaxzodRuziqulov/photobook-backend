@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -19,10 +20,15 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
                    LOWER(c.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR 
                    LOWER(c.notes) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(c.phone, '')) LIKE LOWER(CONCAT('%', :search, '%')))
-              AND (:isActive IS NULL OR c.isActive = :isActive)
+              AND (:isActive IS NULL OR c.isActive = true )
             ORDER BY c.updatedAt DESC
             """)
     Page<Customer> findPage(@Param("search") String search,
-                            @Param("isActive") Boolean isActive,
                             Pageable pageable);
+
+    @Query("""
+            SELECT c
+            FROM Customer c WHERE c.isActive = true
+            """)
+    List<Customer> findAllIsActive();
 }

@@ -5,6 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ExpenseCategoryPagingRequest extends BasePagingRequest {
+public class ExpenseCategoryPagingRequest {
     private String search;
 }

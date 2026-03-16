@@ -9,17 +9,20 @@ import java.util.List;
 @Getter
 @Setter
 public class PageResponse<T> {
-    private List<T> items;
-    private int page;
-    private int limit;
-    private long total;
+    private List<T> content;
+    private int pageNumber;
+    private int pageSize;
+    private long totalElements;
     private int totalPages;
+    private boolean last;
 
     public PageResponse(Page<T> page) {
-        this.items = page.getContent();
-        this.page = page.getNumber() + 1;
-        this.limit = page.getSize();
-        this.total = page.getTotalElements();
+        this.content = page.getContent();
+        this.pageNumber = page.getNumber();
+        this.pageSize = page.getSize();
+        this.totalElements = page.getTotalElements();
         this.totalPages = page.getTotalPages();
+        this.last = page.isLast();
     }
+
 }

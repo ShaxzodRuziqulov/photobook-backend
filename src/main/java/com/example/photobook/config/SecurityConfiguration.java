@@ -68,6 +68,9 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/**")
                         .hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR")
 
+                        .requestMatchers("/api/v1/user-tasks/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR")
+
                         .requestMatchers(HttpMethod.PUT, "/api/v1/orders/*/status")
                         .hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR")
 

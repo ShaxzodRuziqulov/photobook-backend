@@ -78,6 +78,7 @@ public class ExpenseService {
 
     public void delete(UUID id) {
         Expense expense = findEntityById(id);
+        uploadService.deleteOwnedUpload(OwnerType.EXPENSE, expense.getId(), null);
         repository.delete(expense);
     }
 
