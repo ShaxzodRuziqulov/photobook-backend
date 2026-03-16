@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -56,47 +57,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                          @Param("deadlineTo") LocalDate deadlineTo,
                          Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "customer"})
-    @Query("""
-            SELECT DISTINCT o
-            FROM Order o
-            JOIN o.employees employee
-            WHERE employee.id = :employeeId
-              AND (:statuses IS NULL OR o.status IN :statuses)
-              AND (:from IS NULL OR o.acceptedDate >= :from)
-              AND (:to IS NULL OR o.acceptedDate <= :to)
-              AND (:deadlineFrom IS NULL OR o.deadline >= :deadlineFrom)
-              AND (:deadlineTo IS NULL OR o.deadline <= :deadlineTo)
-            ORDER BY o.updatedAt DESC
-            """)
-    Page<Order> findTasksPageByEmployeeId(@Param("employeeId") UUID employeeId,
-                                          @Param("statuses") List<OrderStatus> statuses,
-                                          @Param("from") LocalDate from,
-                                          @Param("to") LocalDate to,
-                                          @Param("deadlineFrom") LocalDate deadlineFrom,
-                                          @Param("deadlineTo") LocalDate deadlineTo,
-                                          Pageable pageable);
-
-    @EntityGraph(attributePaths = {"category", "customer"})
-    @Query("""
-            SELECT DISTINCT o
-            FROM Order o
-            JOIN o.employees employee
-            WHERE employee.id = :employeeId
-              AND (:statuses IS NULL OR o.status IN :statuses)
-              AND (:from IS NULL OR o.acceptedDate >= :from)
-              AND (:to IS NULL OR o.acceptedDate <= :to)
-              AND (:deadlineFrom IS NULL OR o.deadline >= :deadlineFrom)
-              AND (:deadlineTo IS NULL OR o.deadline <= :deadlineTo)
-            ORDER BY o.updatedAt DESC
-            """)
-    List<Order> findTasksByEmployeeId(@Param("employeeId") UUID employeeId,
-                                      @Param("statuses") List<OrderStatus> statuses,
-                                      @Param("from") LocalDate from,
-                                      @Param("to") LocalDate to,
-                                      @Param("deadlineFrom") LocalDate deadlineFrom,
-                                      @Param("deadlineTo") LocalDate deadlineTo);
-
     @EntityGraph(attributePaths = {"category", "customer", "employees"})
     @Query("""
             SELECT o
@@ -105,6 +65,35 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             WHERE o.id = :orderId
               AND employee.id = :employeeId
             """)
-    java.util.Optional<Order> findTaskByIdAndEmployeeId(@Param("orderId") UUID orderId,
-                                                        @Param("employeeId") UUID employeeId);
+    Optional<Order> findTaskByIdAndEmployeeId(@Param("orderId") UUID orderId,
+                                              @Param("employeeId") UUID employeeId);
+
+    @EntityGraph(attributePaths = {"category", "customer"})
+    @Query("""
+            SELECT DISTINCT o
+            FROM Order o
+            JOIN o.employees employee
+            WHERE employee.id = :employeeId
+              AND (:statuses IS NULL OR o.status IN :statuses)
+              AND (:from IS NULL OR o.acceptedDate >= :from)
+              AND (:to IS NULL OR o.acceptedDate <= :to)
+              AND (:deadlineFrom IS NULL OR o.deadline >= :deadlineFrom)
+              AND (:deadlineTo IS NULL OR o.deadline <= :deadlineTo)
+              AND (
+                         :search IS NULL OR
+                         LOWER(CAST(o.orderName AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR
+                         LOWER(CAST(COALESCE(o.receiverName,'') AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+                       )
+            ORDER BY o.updatedAt DESC
+            """)
+    Page<Order> findTasksPageByEmployeeId(
+            @Param("employeeId") UUID employeeId,
+            @Param("statuses") List<OrderStatus> statuses,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to,
+            @Param("deadlineFrom") LocalDate deadlineFrom,
+            @Param("deadlineTo") LocalDate deadlineTo,
+            @Param("search") String search,
+            Pageable pageable
+    );
 }

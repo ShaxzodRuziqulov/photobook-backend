@@ -9,12 +9,10 @@ import com.example.photobook.repository.OrderRepository;
 import com.example.photobook.service.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,38 +30,22 @@ public class UserTaskService {
     }
 
     public Page<UserTaskDto> findMyTasksPage(UserTaskPagingRequest request, Pageable pageable) {
+
         UUID currentUserId = currentUserService.getCurrentUserId();
+
         String search = normalizeSearch(request.getSearch());
         List<OrderStatus> statuses = normalizeStatuses(request.getStatuses());
 
-        if (search == null) {
-            return orderRepository.findTasksPageByEmployeeId(
-                    currentUserId,
-                    statuses,
-                    request.getFrom(),
-                    request.getTo(),
-                    request.getDeadlineFrom(),
-                    request.getDeadlineTo(),
-                    pageable
-            ).map(this::toDto);
-        }
-
-        List<UserTaskDto> filtered = orderRepository.findTasksByEmployeeId(
-                        currentUserId,
-                        statuses,
-                        request.getFrom(),
-                        request.getTo(),
-                        request.getDeadlineFrom(),
-                        request.getDeadlineTo()
-                ).stream()
-                .filter(order -> matchesSearch(order, search))
-                .map(this::toDto)
-                .toList();
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), filtered.size());
-        List<UserTaskDto> content = start >= filtered.size() ? List.of() : filtered.subList(start, end);
-        return new PageImpl<>(content, pageable, filtered.size());
+        return orderRepository.findTasksPageByEmployeeId(
+                currentUserId,
+                statuses,
+                request.getFrom(),
+                request.getTo(),
+                request.getDeadlineFrom(),
+                request.getDeadlineTo(),
+                search,
+                pageable
+        ).map(this::toDto);
     }
 
     public UserTaskDto updateMyTask(UUID id, UserTaskUpdateDto dto) {
@@ -103,21 +85,6 @@ public class UserTaskService {
         }
         String trimmed = search.trim();
         return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private boolean matchesSearch(Order order, String search) {
-        if (search == null) {
-            return true;
-        }
-        String needle = search.toLowerCase(Locale.ROOT);
-        return contains(order.getOrderName(), needle)
-                || contains(order.getReceiverName(), needle)
-                || contains(order.getCustomer() == null ? null : order.getCustomer().getFullName(), needle)
-                || contains(order.getCategory() == null ? null : order.getCategory().getName(), needle);
-    }
-
-    private boolean contains(String value, String needle) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
     }
 
     private Order findOwnedTask(UUID orderId, UUID currentUserId) {

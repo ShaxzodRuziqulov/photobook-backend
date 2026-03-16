@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -15,4 +16,5 @@ public class MaterialDto {
     private String itemType;
     private String unitName;
     private BigDecimal quantity = BigDecimal.ZERO;
+    private LocalDateTime updatedAt;
 }
