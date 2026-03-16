@@ -7,4 +7,5 @@ import lombok.Setter;
 @Setter
 public class CustomerPagingRequest {
     private String search;
+    private Boolean isActive;
 }

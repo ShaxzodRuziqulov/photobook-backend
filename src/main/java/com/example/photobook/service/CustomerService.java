@@ -55,6 +55,7 @@ public class CustomerService {
     public Page<CustomerDto> findPage(CustomerPagingRequest request, Pageable pageable) {
         return repository.findPage(
                 request.getSearch(),
+                request.getIsActive(),
                 pageable).map(mapper::toDto);
     }
 

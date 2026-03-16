@@ -20,10 +20,11 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
                    LOWER(c.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR 
                    LOWER(c.notes) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(c.phone, '')) LIKE LOWER(CONCAT('%', :search, '%')))
-              AND (:isActive IS NULL OR c.isActive = true )
+              AND (:isActive IS NULL OR c.isActive = :isActive)
             ORDER BY c.updatedAt DESC
             """)
     Page<Customer> findPage(@Param("search") String search,
+                            @Param("isActive") Boolean isActive,
                             Pageable pageable);
 
     @Query("""
