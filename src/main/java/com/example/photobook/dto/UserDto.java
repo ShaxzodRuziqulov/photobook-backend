@@ -15,7 +15,6 @@ public class UserDto {
     private String lastName;
     private String profession;
     private String username;
-    private String email;
     private String password;
     private String avatarUrl;
     private String phone;

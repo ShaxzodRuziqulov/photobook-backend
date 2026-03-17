@@ -9,7 +9,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -53,6 +55,9 @@ public class User extends BaseEntity implements UserDetails {
 
     @ManyToOne
     private Upload upload;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<OrderEmployee> orderAssignments = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

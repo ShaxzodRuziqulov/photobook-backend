@@ -1,7 +1,5 @@
 package com.example.photobook.dto;
 
-
-import com.example.photobook.entity.OrderStatusHistory;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import lombok.Getter;
@@ -32,8 +30,6 @@ public class OrderDto {
 
     private Integer pageCount;
     private Integer amount;
-
-    private Integer processedCount;
     private LocalDate acceptedDate;
 
     private LocalDate deadline;
@@ -41,5 +37,5 @@ public class OrderDto {
     private String imageUrl;
     private String notes;
     private UUID uploadId;
-    private List<OrderStatusHistory> statusHistory;
+    private List<OrderStatusHistoryDto> statusHistory;
 }

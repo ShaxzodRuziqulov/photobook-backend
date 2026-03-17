@@ -19,11 +19,12 @@ import java.util.UUID;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
-    @EntityGraph(attributePaths = {"category", "customer"})
+    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
     @Query("""
             SELECT DISTINCT o
             FROM Order o
-            LEFT JOIN o.employees employee
+            LEFT JOIN o.employees assignment
+            LEFT JOIN assignment.user employee
             WHERE (:search IS NULL OR :search = '' OR
                    LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.receiverName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
@@ -57,22 +58,37 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                          @Param("deadlineTo") LocalDate deadlineTo,
                          Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "customer", "employees"})
+    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
+    Optional<Order> findById(UUID id);
+
+    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
+    @Query("""
+            SELECT DISTINCT o
+            FROM Order o
+            LEFT JOIN o.employees assignment
+            LEFT JOIN assignment.user employee
+            ORDER BY o.updatedAt DESC
+            """)
+    List<Order> findAllWithDetails();
+
+    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
     @Query("""
             SELECT o
             FROM Order o
-            JOIN o.employees employee
+            JOIN o.employees assignment
+            JOIN assignment.user employee
             WHERE o.id = :orderId
               AND employee.id = :employeeId
             """)
     Optional<Order> findTaskByIdAndEmployeeId(@Param("orderId") UUID orderId,
                                               @Param("employeeId") UUID employeeId);
 
-    @EntityGraph(attributePaths = {"category", "customer"})
+    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
     @Query("""
             SELECT DISTINCT o
             FROM Order o
-            JOIN o.employees employee
+            JOIN o.employees assignment
+            JOIN assignment.user employee
             WHERE employee.id = :employeeId
               AND (:statuses IS NULL OR o.status IN :statuses)
               AND (:from IS NULL OR o.acceptedDate >= :from)

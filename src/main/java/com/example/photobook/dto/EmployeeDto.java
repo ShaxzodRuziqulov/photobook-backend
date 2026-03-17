@@ -8,6 +8,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class EmployeeDto {
-    private UUID employeeIds;
-    private String employeeNames;
+    private UUID employeeId;
+    private String employeeName;
+    private Integer processedCount;
 }

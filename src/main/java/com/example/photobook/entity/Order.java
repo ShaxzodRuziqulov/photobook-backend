@@ -9,9 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -49,26 +47,14 @@ public class Order extends BaseEntity {
     @Column(name = "receiver_name", nullable = false, length = 180)
     private String receiverName;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "order_employees",
-            joinColumns = @JoinColumn(name = "order_id", nullable = false),
-            inverseJoinColumns = @JoinColumn(name = "user_id", nullable = false),
-            indexes = {
-                    @Index(name = "idx_order_employees_order_id", columnList = "order_id"),
-                    @Index(name = "idx_order_employees_user_id", columnList = "user_id")
-            }
-    )
-    private Set<User> employees = new HashSet<>();
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderEmployee> employees = new ArrayList<>();
 
     @Column(name = "page_count", nullable = false)
     private Integer pageCount = 0;
 
     @Column(nullable = false)
     private Integer amount = 0;
-
-    @Column(name = "processed_count", nullable = false)
-    private Integer processedCount = 0;
 
     @Column(name = "accepted_date", nullable = false)
     private LocalDate acceptedDate;
@@ -88,4 +74,17 @@ public class Order extends BaseEntity {
 
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<OrderStatusHistory> statusHistory = new ArrayList<>();
+
+    public void replaceEmployees(List<OrderEmployee> employees) {
+        this.employees.clear();
+        if (employees == null) {
+            return;
+        }
+        employees.forEach(this::addEmployee);
+    }
+
+    public void addEmployee(OrderEmployee employee) {
+        employees.add(employee);
+        employee.setOrder(this);
+    }
 }

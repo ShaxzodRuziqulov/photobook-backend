@@ -12,7 +12,6 @@ import java.util.UUID;
 public class AuthUserResponse {
     private UUID id;
     private String name;
-    private String email;
     private List<String> roles;
     @JsonProperty("avatar_url")
     private String avatarUrl;

@@ -7,6 +7,7 @@ import com.example.photobook.dto.OrderStatusTransitionDto;
 import com.example.photobook.dto.request.OrderPagingRequest;
 import com.example.photobook.entity.Customer;
 import com.example.photobook.entity.Order;
+import com.example.photobook.entity.OrderEmployee;
 import com.example.photobook.entity.Upload;
 import com.example.photobook.entity.User;
 import com.example.photobook.entity.enumirated.OrderStatus;
@@ -20,11 +21,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,7 +51,7 @@ public class OrderService {
         Order saved = repository.save(order);
         attachUpload(saved, dto.getUploadId());
 
-        return mapper.toDto(saved);
+        return toDto(saved);
     }
 
     public OrderDto update(UUID id, OrderDto dto) {
@@ -61,43 +63,20 @@ public class OrderService {
         Order saved = repository.save(order);
         attachUpload(saved, dto.getUploadId());
 
-        return mapper.toDto(saved);
-    }
-
-    private void fillOrderFields(Order order, OrderDto dto) {
-
-        order.setKind(dto.getKind());
-        order.setOrderName(dto.getOrderName());
-        order.setItemType(dto.getItemType());
-        order.setReceiverName(dto.getReceiverName());
-        order.setPageCount(dto.getPageCount());
-        order.setAmount(dto.getAmount());
-        order.setProcessedCount(dto.getProcessedCount());
-        order.setAcceptedDate(dto.getAcceptedDate());
-        order.setDeadline(dto.getDeadline());
-        order.setStatus(dto.getStatus());
-        order.setNotes(dto.getNotes());
-        order.setImageUrl(dto.getImageUrl());
-
-        order.setCustomer(resolveCustomer(dto));
-        order.setEmployees(resolveEmployees(dto.getEmployees()));
-
-        if (dto.getCategoryId() != null) {
-            order.setCategory(productCategoryService
-                    .findByProductCategoryId(dto.getCategoryId()));
-        }
+        return toDto(saved);
     }
 
     public OrderDto findById(UUID id) {
-        return mapper.toDto(findByOrderId(id));
+        return toDto(findByOrderId(id));
     }
 
     public List<OrderDto> findAll() {
-        return mapper.toDto(repository.findAll());
+        return repository.findAllWithDetails().stream()
+                .map(this::toDto)
+                .toList();
     }
 
     public Page<OrderDto> findPage(OrderPagingRequest request, Pageable pageable) {
-
         return repository.findPage(
                 request.getSearch(),
                 request.getKind(),
@@ -110,11 +89,10 @@ public class OrderService {
                 request.getDeadlineFrom(),
                 request.getDeadlineTo(),
                 pageable
-        ).map(mapper::toDto);
+        ).map(this::toDto);
     }
 
     public void delete(UUID id) {
-
         Order order = findByOrderId(id);
 
         uploadService.deleteOwnedUpload(
@@ -140,7 +118,7 @@ public class OrderService {
         OrderStatus to = dto.getToStatus();
 
         if (from == to) {
-            return mapper.toDto(order);
+            return toDto(order);
         }
 
         if (!isValidTransition(from, to)) {
@@ -159,7 +137,7 @@ public class OrderService {
         historyDto.setChangedAt(LocalDateTime.now());
         historyService.create(historyDto);
 
-        return mapper.toDto(saved);
+        return toDto(saved);
     }
 
     public List<OrderStatusHistoryDto> getStatusHistory(UUID orderId) {
@@ -171,8 +149,24 @@ public class OrderService {
                 .orElseThrow(() -> new IllegalArgumentException("order not found"));
     }
 
-    private boolean isValidTransition(OrderStatus from, OrderStatus to) {
+    private void fillOrderFields(Order order, OrderDto dto) {
+        order.setKind(dto.getKind());
+        order.setOrderName(dto.getOrderName());
+        order.setItemType(normalize(dto.getItemType()));
+        order.setReceiverName(dto.getReceiverName().trim());
+        order.setPageCount(dto.getPageCount());
+        order.setAmount(dto.getAmount());
+        order.setAcceptedDate(dto.getAcceptedDate());
+        order.setDeadline(dto.getDeadline());
+        order.setStatus(dto.getStatus());
+        order.setNotes(normalize(dto.getNotes()));
+        order.setImageUrl(normalize(dto.getImageUrl()));
+        order.setCustomer(resolveCustomer(dto));
+        order.setCategory(productCategoryService.findByProductCategoryId(dto.getCategoryId()));
+        order.replaceEmployees(resolveEmployees(dto.getEmployees()));
+    }
 
+    private boolean isValidTransition(OrderStatus from, OrderStatus to) {
         Map<OrderStatus, Set<OrderStatus>> transitions = Map.of(
                 OrderStatus.PENDING, Set.of(OrderStatus.IN_PROGRESS),
                 OrderStatus.IN_PROGRESS, Set.of(OrderStatus.PENDING, OrderStatus.COMPLETED),
@@ -185,81 +179,137 @@ public class OrderService {
     }
 
     private void validateOrder(OrderDto dto) {
-
-        if (dto.getKind() == null)
+        if (dto.getKind() == null) {
             throw new IllegalArgumentException("kind is required");
-
-        if (dto.getOrderName() == null || dto.getOrderName().isBlank())
+        }
+        if (dto.getOrderName() == null || dto.getOrderName().isBlank()) {
             throw new IllegalArgumentException("order_name is required");
-
-        if (dto.getCategoryId() == null)
+        }
+        if (dto.getCategoryId() == null) {
             throw new IllegalArgumentException("category_id is required");
-
+        }
         if (dto.getCustomerId() == null &&
-                (dto.getCustomerName() == null || dto.getCustomerName().isBlank()))
+                (dto.getCustomerName() == null || dto.getCustomerName().isBlank())) {
             throw new IllegalArgumentException("customer_id or customer_name is required");
-
-        if (dto.getReceiverName() == null || dto.getReceiverName().isBlank())
+        }
+        if (dto.getReceiverName() == null || dto.getReceiverName().isBlank()) {
             throw new IllegalArgumentException("receiver_name is required");
-
-        if (dto.getEmployees() == null || dto.getEmployees().isEmpty())
-            throw new IllegalArgumentException("employees is required");
-
-        if (dto.getEmployees().stream().anyMatch(java.util.Objects::isNull))
+        }
+        if (dto.getEmployees() == null || dto.getEmployees().isEmpty()) {
+            throw new IllegalArgumentException("order must have at least one employee");
+        }
+        if (dto.getEmployees().stream().anyMatch(java.util.Objects::isNull)) {
             throw new IllegalArgumentException("employees contains invalid value");
-
-        if (dto.getEmployees().stream()
-                .map(EmployeeDto::getEmployeeIds)
-                .anyMatch(java.util.Objects::isNull))
-            throw new IllegalArgumentException("employees.employeeIds contains invalid value");
-
-        if (dto.getPageCount() == null || dto.getPageCount() < 0)
+        }
+        if (dto.getEmployees().stream().map(EmployeeDto::getEmployeeId).anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalArgumentException("employees.employeeId is required");
+        }
+        long distinctEmployeeCount = dto.getEmployees().stream()
+                .map(EmployeeDto::getEmployeeId)
+                .distinct()
+                .count();
+        if (distinctEmployeeCount != dto.getEmployees().size()) {
+            throw new IllegalArgumentException("employees must be unique per order");
+        }
+        if (dto.getEmployees().stream().map(EmployeeDto::getProcessedCount).anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalArgumentException("employees.processedCount is required");
+        }
+        if (dto.getEmployees().stream().map(EmployeeDto::getProcessedCount).anyMatch(count -> count < 0)) {
+            throw new IllegalArgumentException("employees.processedCount must be >= 0");
+        }
+        if (dto.getPageCount() == null || dto.getPageCount() < 0) {
             throw new IllegalArgumentException("page_count must be >= 0");
-
-        if (dto.getAmount() == null || dto.getAmount() <= 0)
+        }
+        if (dto.getAmount() == null || dto.getAmount() <= 0) {
             throw new IllegalArgumentException("amount must be > 0");
-
-        if (dto.getProcessedCount() == null || dto.getProcessedCount() < 0)
-            throw new IllegalArgumentException("processed_count must be >= 0");
-
-        if (dto.getProcessedCount() > dto.getAmount())
-            throw new IllegalArgumentException("processed_count cannot be greater than amount");
-
-        if (dto.getAcceptedDate() == null)
+        }
+        if (dto.getAcceptedDate() == null) {
             throw new IllegalArgumentException("accepted_date is required");
-
-        if (dto.getDeadline() == null)
+        }
+        if (dto.getDeadline() == null) {
             throw new IllegalArgumentException("deadline is required");
-
-        if (dto.getDeadline().isBefore(dto.getAcceptedDate()))
+        }
+        if (dto.getDeadline().isBefore(dto.getAcceptedDate())) {
             throw new IllegalArgumentException("deadline cannot be earlier than accepted_date");
-
-        if (dto.getStatus() == null)
+        }
+        if (dto.getStatus() == null) {
             throw new IllegalArgumentException("status is required");
+        }
     }
 
-    private Set<User> resolveEmployees(List<EmployeeDto> employees) {
+    private List<OrderEmployee> resolveEmployees(List<EmployeeDto> employees) {
+        List<UUID> employeeIds = employees.stream()
+                .map(EmployeeDto::getEmployeeId)
+                .distinct()
+                .toList();
+
+        Map<UUID, User> usersById = userService.findAllByIds(employeeIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
 
         return employees.stream()
-                .map(EmployeeDto::getEmployeeIds)
-                .distinct()
-                .map(userService::findByUserId)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+                .map(employeeDto -> toOrderEmployee(employeeDto, usersById))
+                .toList();
+    }
+
+    private OrderEmployee toOrderEmployee(EmployeeDto employeeDto, Map<UUID, User> usersById) {
+        User user = usersById.get(employeeDto.getEmployeeId());
+        if (user == null) {
+            throw new IllegalArgumentException("employee not found: " + employeeDto.getEmployeeId());
+        }
+
+        OrderEmployee assignment = new OrderEmployee();
+        assignment.setUser(user);
+        assignment.setProcessedCount(employeeDto.getProcessedCount());
+        return assignment;
     }
 
     private Customer resolveCustomer(OrderDto dto) {
-
         if (dto.getCustomerId() != null) {
             return customerService.findEntityById(dto.getCustomerId());
         }
-
         return customerService.createForOrder(dto.getCustomerName().trim());
     }
 
-    private void attachUpload(Order order, UUID uploadId) {
+    private OrderDto toDto(Order order) {
+        OrderDto dto = mapper.toDto(order);
+        dto.setEmployees(mapEmployees(order));
+        return dto;
+    }
 
-        if (uploadId == null)
+    private List<EmployeeDto> mapEmployees(Order order) {
+        return order.getEmployees().stream()
+                .sorted(Comparator.comparing(assignment -> assignment.getUser().getId()))
+                .map(this::toEmployeeDto)
+                .toList();
+    }
+
+    private EmployeeDto toEmployeeDto(OrderEmployee assignment) {
+        EmployeeDto dto = new EmployeeDto();
+        dto.setEmployeeId(assignment.getUser().getId());
+        dto.setEmployeeName(buildFullName(assignment.getUser()));
+        dto.setProcessedCount(assignment.getProcessedCount());
+        return dto;
+    }
+
+    private String buildFullName(User user) {
+        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
+        String fullName = (firstName + " " + lastName).trim();
+        return fullName.isEmpty() ? user.getUsername() : fullName;
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private void attachUpload(Order order, UUID uploadId) {
+        if (uploadId == null) {
             return;
+        }
 
         Upload upload = uploadService.attachToOwner(
                 uploadId,

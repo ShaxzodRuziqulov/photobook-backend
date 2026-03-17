@@ -137,6 +137,17 @@ public class UserService {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("user not found"));
     }
 
+    public List<User> findAllByIds(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<User> users = repository.findAllById(ids);
+        if (users.size() != ids.size()) {
+            throw new IllegalArgumentException("one or more employees not found");
+        }
+        return users;
+    }
+
     public Set<Role> resolveRolesForCreate() {
         return Set.of(requireRole("ROLE_USER"));
     }

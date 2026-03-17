@@ -4,6 +4,7 @@ import com.example.photobook.dto.UserTaskDto;
 import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
 import com.example.photobook.entity.Order;
+import com.example.photobook.entity.OrderEmployee;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.repository.OrderRepository;
 import com.example.photobook.service.security.CurrentUserService;
@@ -26,11 +27,10 @@ public class UserTaskService {
     public UserTaskDto getUserTaskById(UUID id) {
         UUID currentUserId = currentUserService.getCurrentUserId();
         Order order = findOwnedTask(id, currentUserId);
-        return toDto(order);
+        return toDto(order, findAssignment(order, currentUserId));
     }
 
     public Page<UserTaskDto> findMyTasksPage(UserTaskPagingRequest request, Pageable pageable) {
-
         UUID currentUserId = currentUserService.getCurrentUserId();
 
         String search = normalizeSearch(request.getSearch());
@@ -45,12 +45,13 @@ public class UserTaskService {
                 request.getDeadlineTo(),
                 search,
                 pageable
-        ).map(this::toDto);
+        ).map(order -> toDto(order, findAssignment(order, currentUserId)));
     }
 
     public UserTaskDto updateMyTask(UUID id, UserTaskUpdateDto dto) {
         UUID currentUserId = currentUserService.getCurrentUserId();
         Order order = findOwnedTask(id, currentUserId);
+        OrderEmployee assignment = findAssignment(order, currentUserId);
 
         if (dto.getProcessedCount() != null) {
             if (dto.getProcessedCount() < 0) {
@@ -59,7 +60,7 @@ public class UserTaskService {
             if (dto.getProcessedCount() > order.getAmount()) {
                 throw new IllegalArgumentException("processed_count cannot be greater than amount");
             }
-            order.setProcessedCount(dto.getProcessedCount());
+            assignment.setProcessedCount(dto.getProcessedCount());
         }
 
         if (dto.getNotes() != null) {
@@ -72,7 +73,8 @@ public class UserTaskService {
             order.setStatus(dto.getStatus());
         }
 
-        return toDto(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        return toDto(saved, findAssignment(saved, currentUserId));
     }
 
     private List<OrderStatus> normalizeStatuses(List<OrderStatus> statuses) {
@@ -92,6 +94,13 @@ public class UserTaskService {
                 .orElseThrow(() -> new IllegalArgumentException("task not found"));
     }
 
+    private OrderEmployee findAssignment(Order order, UUID currentUserId) {
+        return order.getEmployees().stream()
+                .filter(employee -> employee.getUser().getId().equals(currentUserId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("task assignment not found"));
+    }
+
     private void validateStatusTransition(OrderStatus from, OrderStatus to) {
         if (from == to) {
             return;
@@ -106,7 +115,7 @@ public class UserTaskService {
         }
     }
 
-    private UserTaskDto toDto(Order order) {
+    private UserTaskDto toDto(Order order, OrderEmployee assignment) {
         UserTaskDto dto = new UserTaskDto();
         dto.setOrderId(order.getId());
         dto.setKind(order.getKind());
@@ -119,7 +128,7 @@ public class UserTaskService {
         dto.setReceiverName(order.getReceiverName());
         dto.setPageCount(order.getPageCount());
         dto.setAmount(order.getAmount());
-        dto.setProcessedCount(order.getProcessedCount());
+        dto.setProcessedCount(assignment.getProcessedCount());
         dto.setAcceptedDate(order.getAcceptedDate());
         dto.setDeadline(order.getDeadline());
         dto.setStatus(order.getStatus());
