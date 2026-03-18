@@ -5,11 +5,8 @@ import com.example.photobook.dto.OrderDto;
 import com.example.photobook.dto.OrderStatusHistoryDto;
 import com.example.photobook.dto.OrderStatusTransitionDto;
 import com.example.photobook.dto.request.OrderPagingRequest;
-import com.example.photobook.entity.Customer;
-import com.example.photobook.entity.Order;
-import com.example.photobook.entity.OrderEmployee;
-import com.example.photobook.entity.Upload;
-import com.example.photobook.entity.User;
+import com.example.photobook.entity.*;
+import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.entity.enumirated.OwnerType;
 import com.example.photobook.mapper.OrderMapper;
@@ -21,11 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,10 +36,11 @@ public class OrderService {
     private final UploadService uploadService;
 
     public OrderDto create(OrderDto dto) {
-        validateOrder(dto);
+        List<EmployeeDto> employees = dto.getEmployees();
+        validateOrder(dto, employees);
 
         Order order = mapper.toEntity(dto);
-        fillOrderFields(order, dto);
+        fillOrderFields(order, dto, employees);
 
         Order saved = repository.save(order);
         attachUpload(saved, dto.getUploadId());
@@ -55,10 +49,11 @@ public class OrderService {
     }
 
     public OrderDto update(UUID id, OrderDto dto) {
-        validateOrder(dto);
+        List<EmployeeDto> employees = dto.getEmployees();
+        validateOrder(dto, employees);
 
         Order order = findByOrderId(id);
-        fillOrderFields(order, dto);
+        fillOrderFields(order, dto, employees);
 
         Order saved = repository.save(order);
         attachUpload(saved, dto.getUploadId());
@@ -125,7 +120,12 @@ public class OrderService {
             throw new IllegalArgumentException("Invalid order status transition");
         }
 
+        if (to == OrderStatus.COMPLETED && hasIncompleteEmployees(order)) {
+            throw new IllegalArgumentException("All employees must be completed before order is completed");
+        }
+
         order.setStatus(to);
+        alignWorkflow(order);
 
         Order saved = repository.save(order);
 
@@ -149,7 +149,7 @@ public class OrderService {
                 .orElseThrow(() -> new IllegalArgumentException("order not found"));
     }
 
-    private void fillOrderFields(Order order, OrderDto dto) {
+    private void fillOrderFields(Order order, OrderDto dto, List<EmployeeDto> employees) {
         order.setKind(dto.getKind());
         order.setOrderName(dto.getOrderName());
         order.setItemType(normalize(dto.getItemType()));
@@ -163,13 +163,15 @@ public class OrderService {
         order.setImageUrl(normalize(dto.getImageUrl()));
         order.setCustomer(resolveCustomer(dto));
         order.setCategory(productCategoryService.findByProductCategoryId(dto.getCategoryId()));
-        order.replaceEmployees(resolveEmployees(dto.getEmployees()));
+        syncEmployees(order, employees);
+        alignWorkflow(order);
     }
 
     private boolean isValidTransition(OrderStatus from, OrderStatus to) {
         Map<OrderStatus, Set<OrderStatus>> transitions = Map.of(
-                OrderStatus.PENDING, Set.of(OrderStatus.IN_PROGRESS),
-                OrderStatus.IN_PROGRESS, Set.of(OrderStatus.PENDING, OrderStatus.COMPLETED),
+                OrderStatus.PENDING, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.PAUSED),
+                OrderStatus.IN_PROGRESS, Set.of(OrderStatus.PAUSED, OrderStatus.COMPLETED),
+                OrderStatus.PAUSED, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED),
                 OrderStatus.COMPLETED, Set.of()
         );
 
@@ -178,7 +180,13 @@ public class OrderService {
                 .contains(to);
     }
 
-    private void validateOrder(OrderDto dto) {
+    private void validateOrder(OrderDto dto, List<EmployeeDto> employees) {
+        validateOrderFields(dto);
+        validateEmployees(employees);
+        validateEmployeeWorkflow(employees);
+    }
+
+    private void validateOrderFields(OrderDto dto) {
         if (dto.getKind() == null) {
             throw new IllegalArgumentException("kind is required");
         }
@@ -194,28 +202,6 @@ public class OrderService {
         }
         if (dto.getReceiverName() == null || dto.getReceiverName().isBlank()) {
             throw new IllegalArgumentException("receiver_name is required");
-        }
-        if (dto.getEmployees() == null || dto.getEmployees().isEmpty()) {
-            throw new IllegalArgumentException("order must have at least one employee");
-        }
-        if (dto.getEmployees().stream().anyMatch(java.util.Objects::isNull)) {
-            throw new IllegalArgumentException("employees contains invalid value");
-        }
-        if (dto.getEmployees().stream().map(EmployeeDto::getEmployeeId).anyMatch(java.util.Objects::isNull)) {
-            throw new IllegalArgumentException("employees.employeeId is required");
-        }
-        long distinctEmployeeCount = dto.getEmployees().stream()
-                .map(EmployeeDto::getEmployeeId)
-                .distinct()
-                .count();
-        if (distinctEmployeeCount != dto.getEmployees().size()) {
-            throw new IllegalArgumentException("employees must be unique per order");
-        }
-        if (dto.getEmployees().stream().map(EmployeeDto::getProcessedCount).anyMatch(java.util.Objects::isNull)) {
-            throw new IllegalArgumentException("employees.processedCount is required");
-        }
-        if (dto.getEmployees().stream().map(EmployeeDto::getProcessedCount).anyMatch(count -> count < 0)) {
-            throw new IllegalArgumentException("employees.processedCount must be >= 0");
         }
         if (dto.getPageCount() == null || dto.getPageCount() < 0) {
             throw new IllegalArgumentException("page_count must be >= 0");
@@ -237,6 +223,50 @@ public class OrderService {
         }
     }
 
+    private void validateEmployees(List<EmployeeDto> employees) {
+        if (employees == null || employees.isEmpty()) {
+            throw new IllegalArgumentException("order must have at least one employee");
+        }
+        if (employees.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("employees contains invalid value");
+        }
+        if (employees.stream().anyMatch(e -> e.getEmployeeId() == null)) {
+            throw new IllegalArgumentException("employees.employeeId is required");
+        }
+        if (employees.stream().anyMatch(e -> e.getProcessedCount() != null && e.getProcessedCount() < 0)) {
+            throw new IllegalArgumentException("employees.processedCount must be >= 0");
+        }
+        long distinctEmployeeCount = employees.stream()
+                .map(EmployeeDto::getEmployeeId)
+                .distinct()
+                .count();
+        if (distinctEmployeeCount != employees.size()) {
+            throw new IllegalArgumentException("employees must be unique per order");
+        }
+    }
+
+    private void validateEmployeeWorkflow(List<EmployeeDto> employees) {
+        if (employees.stream().anyMatch(e -> e.getStepOrder() == null)) {
+            throw new IllegalArgumentException("employees.stepOrder is required");
+        }
+        long distinctStepCount = employees.stream()
+                .map(EmployeeDto::getStepOrder)
+                .distinct()
+                .count();
+        if (distinctStepCount != employees.size()) {
+            throw new IllegalArgumentException("employees.stepOrder must be unique");
+        }
+        List<Integer> steps = employees.stream()
+                .map(EmployeeDto::getStepOrder)
+                .sorted()
+                .toList();
+        for (int i = 0; i < steps.size(); i++) {
+            if (steps.get(i) != i + 1) {
+                throw new IllegalArgumentException("stepOrder must be sequential starting from 1");
+            }
+        }
+    }
+
     private List<OrderEmployee> resolveEmployees(List<EmployeeDto> employees) {
         List<UUID> employeeIds = employees.stream()
                 .map(EmployeeDto::getEmployeeId)
@@ -251,6 +281,33 @@ public class OrderService {
                 .toList();
     }
 
+    private void syncEmployees(Order order, List<EmployeeDto> employees) {
+        List<OrderEmployee> resolvedEmployees = resolveEmployees(employees);
+        Map<UUID, OrderEmployee> existingByUserId = order.getEmployees().stream()
+                .collect(Collectors.toMap(
+                        assignment -> assignment.getUser().getId(),
+                        Function.identity(),
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ));
+
+        Set<UUID> incomingUserIds = resolvedEmployees.stream()
+                .map(assignment -> assignment.getUser().getId())
+                .collect(Collectors.toSet());
+
+        order.getEmployees().removeIf(existing -> !incomingUserIds.contains(existing.getUser().getId()));
+
+        for (OrderEmployee resolvedEmployee : resolvedEmployees) {
+            UUID userId = resolvedEmployee.getUser().getId();
+            OrderEmployee existing = existingByUserId.get(userId);
+            if (existing != null) {
+                existing.setStepOrder(resolvedEmployee.getStepOrder());
+                continue;
+            }
+            order.addEmployee(resolvedEmployee);
+        }
+    }
+
     private OrderEmployee toOrderEmployee(EmployeeDto employeeDto, Map<UUID, User> usersById) {
         User user = usersById.get(employeeDto.getEmployeeId());
         if (user == null) {
@@ -259,7 +316,9 @@ public class OrderService {
 
         OrderEmployee assignment = new OrderEmployee();
         assignment.setUser(user);
-        assignment.setProcessedCount(employeeDto.getProcessedCount());
+        assignment.setProcessedCount(employeeDto.getProcessedCount() == null ? 0 : employeeDto.getProcessedCount());
+        assignment.setStepOrder(employeeDto.getStepOrder());
+        assignment.setWorkStatus(EmployeeWorkStatus.PENDING);
         return assignment;
     }
 
@@ -273,12 +332,20 @@ public class OrderService {
     private OrderDto toDto(Order order) {
         OrderDto dto = mapper.toDto(order);
         dto.setEmployees(mapEmployees(order));
+        dto.setProcessedCount(calculateCompletedCount(order));
+        dto.setCurrentStepProcessedCount(calculateCurrentStepProcessedCount(order));
+
+        OrderEmployee activeEmployee = findActiveEmployee(order);
+        if (activeEmployee != null) {
+            dto.setActiveEmployeeId(activeEmployee.getUser().getId());
+            dto.setActiveEmployeeName(buildFullName(activeEmployee.getUser()));
+        }
         return dto;
     }
 
     private List<EmployeeDto> mapEmployees(Order order) {
         return order.getEmployees().stream()
-                .sorted(Comparator.comparing(assignment -> assignment.getUser().getId()))
+                .sorted(Comparator.comparing(OrderEmployee::getStepOrder))
                 .map(this::toEmployeeDto)
                 .toList();
     }
@@ -288,7 +355,82 @@ public class OrderService {
         dto.setEmployeeId(assignment.getUser().getId());
         dto.setEmployeeName(buildFullName(assignment.getUser()));
         dto.setProcessedCount(assignment.getProcessedCount());
+        dto.setStepOrder(assignment.getStepOrder());
+        dto.setWorkStatus(assignment.getWorkStatus());
         return dto;
+    }
+
+    private void alignWorkflow(Order order) {
+        List<OrderEmployee> sortedEmployees = getSortedEmployees(order);
+        if (sortedEmployees.isEmpty()) {
+            return;
+        }
+
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            sortedEmployees.forEach(employee -> employee.setWorkStatus(EmployeeWorkStatus.COMPLETED));
+            return;
+        }
+
+        OrderEmployee currentEmployee = sortedEmployees.stream()
+                .filter(employee -> employee.getWorkStatus() != EmployeeWorkStatus.COMPLETED)
+                .findFirst()
+                .orElse(null);
+
+        if (currentEmployee == null) {
+            order.setStatus(OrderStatus.COMPLETED);
+            sortedEmployees.forEach(employee -> employee.setWorkStatus(EmployeeWorkStatus.COMPLETED));
+            return;
+        }
+
+        if (order.getStatus() == OrderStatus.PAUSED || order.getStatus() == OrderStatus.PENDING) {
+            sortedEmployees.stream()
+                    .filter(employee -> employee.getWorkStatus() != EmployeeWorkStatus.COMPLETED)
+                    .forEach(employee -> employee.setWorkStatus(EmployeeWorkStatus.PENDING));
+            return;
+        }
+
+        order.setStatus(OrderStatus.IN_PROGRESS);
+        for (OrderEmployee employee : sortedEmployees) {
+            if (employee.getWorkStatus() == EmployeeWorkStatus.COMPLETED) {
+                continue;
+            }
+            employee.setWorkStatus(employee == currentEmployee
+                    ? EmployeeWorkStatus.STARTED
+                    : EmployeeWorkStatus.PENDING);
+        }
+    }
+
+    private List<OrderEmployee> getSortedEmployees(Order order) {
+        return order.getEmployees().stream()
+                .sorted(Comparator.comparing(OrderEmployee::getStepOrder))
+                .toList();
+    }
+
+    private OrderEmployee findActiveEmployee(Order order) {
+        return getSortedEmployees(order).stream()
+                .filter(employee -> employee.getWorkStatus() == EmployeeWorkStatus.STARTED)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private int calculateCompletedCount(Order order) {
+        return getSortedEmployees(order).stream()
+                .reduce((first, second) -> second)
+                .map(OrderEmployee::getProcessedCount)
+                .orElse(0);
+    }
+
+    private int calculateCurrentStepProcessedCount(Order order) {
+        OrderEmployee activeEmployee = findActiveEmployee(order);
+        if (activeEmployee != null) {
+            return activeEmployee.getProcessedCount();
+        }
+        return calculateCompletedCount(order);
+    }
+
+    private boolean hasIncompleteEmployees(Order order) {
+        return order.getEmployees().stream()
+                .anyMatch(employee -> employee.getWorkStatus() != EmployeeWorkStatus.COMPLETED);
     }
 
     private String buildFullName(User user) {
@@ -321,3 +463,4 @@ public class OrderService {
         order.setImageUrl(uploadService.buildFileUrl(upload));
     }
 }
+

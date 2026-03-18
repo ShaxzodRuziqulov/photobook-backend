@@ -1,5 +1,6 @@
 package com.example.photobook.entity;
 
+import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,4 +30,11 @@ public class OrderEmployee extends BaseEntity {
 
     @Column(name = "processed_count", nullable = false)
     private Integer processedCount = 0;
+
+    @Column(name = "step_order", nullable = false)
+    private Integer stepOrder;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "work_status", nullable = false, length = 20)
+    private EmployeeWorkStatus workStatus;
 }

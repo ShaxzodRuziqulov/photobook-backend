@@ -9,9 +9,13 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:update}
+      ddl-auto: ${JPA_DDL_AUTO:validate}
     show-sql: ${JPA_SHOW_SQL:true}
     open-in-view: false
+  liquibase:
+    change-log: classpath:liquibase/master.xml
+    enabled: true
+    drop-first: false
   servlet:
     multipart:
       max-file-size: ${APP_UPLOAD_MAX_FILE_SIZE:20MB}

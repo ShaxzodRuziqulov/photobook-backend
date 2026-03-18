@@ -6,6 +6,7 @@ import lombok.Getter;
 public enum OrderStatus {
     PENDING("KUTILMOQDA"),
     IN_PROGRESS("JARAYONDA"),
+    PAUSED("TO'XTATILGAN"),
     COMPLETED("BAJARILGAN");
 
     private final String description;

@@ -1,6 +1,6 @@
 package com.example.photobook.dto;
 
-import com.example.photobook.entity.enumirated.OrderStatus;
+import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,5 +9,5 @@ import lombok.Setter;
 public class UserTaskUpdateDto {
     private Integer processedCount;
     private String notes;
-    private OrderStatus status;
+    private EmployeeWorkStatus workStatus;
 }

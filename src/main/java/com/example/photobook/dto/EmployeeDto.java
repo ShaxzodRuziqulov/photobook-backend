@@ -1,5 +1,6 @@
 package com.example.photobook.dto;
 
+import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,4 +12,6 @@ public class EmployeeDto {
     private UUID employeeId;
     private String employeeName;
     private Integer processedCount;
+    private Integer stepOrder;
+    private EmployeeWorkStatus workStatus;
 }

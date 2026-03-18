@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="18032026-01-create-upload" author="shaxzod">
+        <createTable tableName="upload">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="key" type="varchar(255)"/>
+            <column name="mime_type" type="varchar(255)"/>
+            <column name="size" type="bigint"/>
+            <column name="owner_type" type="varchar(20)"/>
+            <column name="owner_id" type="uuid"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="18032026-02-create-roles" author="shaxzod">
+        <createTable tableName="roles">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="varchar(255)"/>
+        </createTable>
+        <addUniqueConstraint tableName="roles" columnNames="name" constraintName="uk_roles_name"/>
+    </changeSet>
+
+    <changeSet id="18032026-03-create-customers" author="Shaxzod">
+        <createTable tableName="customers">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="full_name" type="varchar(180)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="phone" type="varchar(40)"/>
+            <column name="notes" type="varchar(255)"/>
+            <column name="is_active" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="18032026-04-create-product-categories" author="shaxzod">
+        <createTable tableName="product_categories">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="varchar(120)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="kind" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="default_pages" type="varchar(255)"/>
+            <column name="size" type="varchar(255)"/>
+        </createTable>
+        <addUniqueConstraint tableName="product_categories" columnNames="name"
+                             constraintName="uk_product_categories_name"/>
+    </changeSet>
+
+    <changeSet id="18032026-05-create-users" author="shaxzod">
+        <createTable tableName="users">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_name" type="varchar(120)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="varchar(120)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="username" type="varchar(80)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="avatar_url" type="varchar(500)"/>
+            <column name="phone" type="varchar(40)"/>
+            <column name="profession" type="varchar(120)"/>
+            <column name="bio" type="text"/>
+            <column name="user_status" type="varchar(20)"/>
+            <column name="is_active" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="upload_id" type="uuid"/>
+        </createTable>
+        <addUniqueConstraint tableName="users" columnNames="username" constraintName="uk_users_username"/>
+        <addForeignKeyConstraint baseTableName="users" baseColumnNames="upload_id"
+                                 referencedTableName="upload" referencedColumnNames="id"
+                                 constraintName="fk_users_upload"/>
+    </changeSet>
+
+    <changeSet id="18032026-06-create-user-roles" author="shaxzod">
+        <createTable tableName="user_roles">
+            <column name="user_id" type="uuid">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="role_id" type="uuid">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+        </createTable>
+        <createIndex tableName="user_roles" indexName="idx_user_roles_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="user_roles" indexName="idx_user_roles_role_id">
+            <column name="role_id"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="user_roles" baseColumnNames="user_id"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 constraintName="fk_user_roles_user"/>
+        <addForeignKeyConstraint baseTableName="user_roles" baseColumnNames="role_id"
+                                 referencedTableName="roles" referencedColumnNames="id"
+                                 constraintName="fk_user_roles_role"/>
+    </changeSet>
+
+    <changeSet id="18032026-07-create-materials" author="shaxzod">
+        <createTable tableName="materials">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="item_name" type="varchar(180)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="item_type" type="varchar(120)"/>
+            <column name="unit_name" type="varchar(60)"/>
+            <column name="quantity" type="decimal(19,3)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="18032026-08-create-expense-categories" author="shaxzod">
+        <createTable tableName="expense_categories">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="varchar(140)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="expense_categories" columnNames="name"
+                             constraintName="uk_expense_categories_name"/>
+    </changeSet>
+
+    <changeSet id="18032026-09-create-expenses" author="shaxzod">
+        <createTable tableName="expenses">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="material_id" type="uuid"/>
+            <column name="name" type="varchar(180)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="price" type="decimal(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="payment_method" type="varchar(60)"/>
+            <column name="receipt_image_url" type="varchar(500)"/>
+            <column name="expense_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="upload_id" type="uuid"/>
+        </createTable>
+        <createIndex tableName="expenses" indexName="idx_expenses_category_id">
+            <column name="category_id"/>
+        </createIndex>
+        <createIndex tableName="expenses" indexName="idx_expenses_material_id">
+            <column name="material_id"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="expenses" baseColumnNames="category_id"
+                                 referencedTableName="expense_categories" referencedColumnNames="id"
+                                 constraintName="fk_expenses_category"/>
+        <addForeignKeyConstraint baseTableName="expenses" baseColumnNames="material_id"
+                                 referencedTableName="materials" referencedColumnNames="id"
+                                 constraintName="fk_expenses_material"/>
+        <addForeignKeyConstraint baseTableName="expenses" baseColumnNames="upload_id"
+                                 referencedTableName="upload" referencedColumnNames="id"
+                                 constraintName="fk_expenses_upload"/>
+    </changeSet>
+
+    <changeSet id="18032026-10-create-orders" author="shaxzod">
+        <createTable tableName="orders">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="kind" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_name" type="varchar(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="item_type" type="varchar(120)"/>
+            <column name="customer_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="upload_id" type="uuid"/>
+            <column name="receiver_name" type="varchar(180)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="page_count" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accepted_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deadline" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="image_url" type="varchar(500)"/>
+            <column name="notes" type="text"/>
+        </createTable>
+        <createIndex tableName="orders" indexName="idx_orders_category_id">
+            <column name="category_id"/>
+        </createIndex>
+        <createIndex tableName="orders" indexName="idx_orders_customer_id">
+            <column name="customer_id"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="orders" baseColumnNames="category_id"
+                                 referencedTableName="product_categories" referencedColumnNames="id"
+                                 constraintName="fk_orders_category"/>
+        <addForeignKeyConstraint baseTableName="orders" baseColumnNames="customer_id"
+                                 referencedTableName="customers" referencedColumnNames="id"
+                                 constraintName="fk_orders_customer"/>
+        <addForeignKeyConstraint baseTableName="orders" baseColumnNames="upload_id"
+                                 referencedTableName="upload" referencedColumnNames="id"
+                                 constraintName="fk_orders_upload"/>
+    </changeSet>
+
+    <changeSet id="18032026-11-create-order-employees" author="shaxzod">
+        <createTable tableName="order_employees">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="processed_count" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="step_order" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="work_status" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="order_employees" columnNames="order_id, user_id"
+                             constraintName="uk_order_employees_order_user"/>
+        <createIndex tableName="order_employees" indexName="idx_order_employees_order_id">
+            <column name="order_id"/>
+        </createIndex>
+        <createIndex tableName="order_employees" indexName="idx_order_employees_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="order_employees" baseColumnNames="order_id"
+                                 referencedTableName="orders" referencedColumnNames="id"
+                                 constraintName="fk_order_employees_order" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="order_employees" baseColumnNames="user_id"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 constraintName="fk_order_employees_user"/>
+    </changeSet>
+
+    <changeSet id="18032026-12-create-order-status-history" author="shaxzod">
+        <createTable tableName="order_status_history">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="from_status" type="varchar(20)"/>
+            <column name="to_status" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="changed_by" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="changed_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="order_status_history" indexName="idx_osh_order_id">
+            <column name="order_id"/>
+        </createIndex>
+        <createIndex tableName="order_status_history" indexName="idx_osh_changed_by">
+            <column name="changed_by"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="order_status_history" baseColumnNames="order_id"
+                                 referencedTableName="orders" referencedColumnNames="id"
+                                 constraintName="fk_osh_order"/>
+        <addForeignKeyConstraint baseTableName="order_status_history" baseColumnNames="changed_by"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 constraintName="fk_osh_changed_by"/>
+    </changeSet>
+
+</databaseChangeLog>

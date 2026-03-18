@@ -34,11 +34,18 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
         String message = "Request violates data constraints";
-        exception.getMostSpecificCause();
         if (exception.getMostSpecificCause().getMessage() != null) {
             String details = exception.getMostSpecificCause().getMessage().toLowerCase();
             if (details.contains("username")) {
                 message = "username already exists";
+            } else if (details.contains("uk_order_employees_order_user")
+                    || details.contains("order_employees")
+                    && details.contains("order_id")
+                    && details.contains("user_id")) {
+                message = "employee already assigned to this order";
+            } else if (details.contains("product_categories") || details.contains("product category")
+                    || details.contains("uk") && details.contains("name")) {
+                message = "product category name already exists";
             }
         }
         return ResponseEntity.badRequest().body(ErrorResponseDto.builder()

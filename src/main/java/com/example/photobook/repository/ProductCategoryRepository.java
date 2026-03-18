@@ -13,6 +13,10 @@ import java.util.UUID;
 
 @Repository
 public interface ProductCategoryRepository extends JpaRepository<ProductCategory, UUID> {
+    boolean existsByNameIgnoreCase(String name);
+
+    boolean existsByNameIgnoreCaseAndIdNot(String name, UUID id);
+
     @Query("""
             SELECT p
             FROM ProductCategory p

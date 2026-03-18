@@ -27,6 +27,10 @@ public class OrderDto {
     private String receiverName;
 
     private List<EmployeeDto> employees;
+    private Integer processedCount;
+    private Integer currentStepProcessedCount;
+    private UUID activeEmployeeId;
+    private String activeEmployeeName;
 
     private Integer pageCount;
     private Integer amount;

@@ -5,6 +5,7 @@ import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.OrderEmployee;
+import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.repository.OrderRepository;
 import com.example.photobook.service.security.CurrentUserService;
@@ -52,13 +53,21 @@ public class UserTaskService {
         UUID currentUserId = currentUserService.getCurrentUserId();
         Order order = findOwnedTask(id, currentUserId);
         OrderEmployee assignment = findAssignment(order, currentUserId);
+        validateActionableTask(order, assignment);
 
         if (dto.getProcessedCount() != null) {
+            if (dto.getProcessedCount() < assignment.getProcessedCount()) {
+                throw new IllegalArgumentException("processed_count cannot be decreased");
+            }
             if (dto.getProcessedCount() < 0) {
                 throw new IllegalArgumentException("processed_count must be greater than or equal to 0");
             }
             if (dto.getProcessedCount() > order.getAmount()) {
                 throw new IllegalArgumentException("processed_count cannot be greater than amount");
+            }
+            OrderEmployee previousAssignment = findPreviousAssignment(order, assignment);
+            if (previousAssignment != null && dto.getProcessedCount() > previousAssignment.getProcessedCount()) {
+                throw new IllegalArgumentException("processed_count cannot exceed previous step progress");
             }
             assignment.setProcessedCount(dto.getProcessedCount());
         }
@@ -68,9 +77,14 @@ public class UserTaskService {
             order.setNotes(trimmed.isEmpty() ? null : trimmed);
         }
 
-        if (dto.getStatus() != null) {
-            validateStatusTransition(order.getStatus(), dto.getStatus());
-            order.setStatus(dto.getStatus());
+        if (dto.getWorkStatus() != null) {
+            validateWorkStatusTransition(assignment.getWorkStatus(), dto.getWorkStatus());
+            if (dto.getWorkStatus() == EmployeeWorkStatus.COMPLETED &&
+                    assignment.getProcessedCount() < order.getAmount()) {
+                throw new IllegalArgumentException("Current step cannot be completed before full amount is processed");
+            }
+            assignment.setWorkStatus(dto.getWorkStatus());
+            moveWorkflow(order, assignment);
         }
 
         Order saved = orderRepository.save(order);
@@ -101,17 +115,12 @@ public class UserTaskService {
                 .orElseThrow(() -> new IllegalArgumentException("task assignment not found"));
     }
 
-    private void validateStatusTransition(OrderStatus from, OrderStatus to) {
-        if (from == to) {
-            return;
+    private void validateActionableTask(Order order, OrderEmployee assignment) {
+        if (order.getStatus() != OrderStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("Only in-progress orders can be updated");
         }
-        boolean valid = switch (from) {
-            case PENDING -> to == OrderStatus.IN_PROGRESS;
-            case IN_PROGRESS -> to == OrderStatus.PENDING || to == OrderStatus.COMPLETED;
-            case COMPLETED -> false;
-        };
-        if (!valid) {
-            throw new IllegalArgumentException("Invalid order status transition");
+        if (assignment.getWorkStatus() != EmployeeWorkStatus.STARTED) {
+            throw new IllegalArgumentException("Only the current active task can be updated");
         }
     }
 
@@ -129,11 +138,66 @@ public class UserTaskService {
         dto.setPageCount(order.getPageCount());
         dto.setAmount(order.getAmount());
         dto.setProcessedCount(assignment.getProcessedCount());
+        dto.setOrderProcessedCount(calculateOrderProcessedCount(order));
+        dto.setStepOrder(assignment.getStepOrder());
+        dto.setWorkStatus(assignment.getWorkStatus());
+        dto.setCanWork(order.getStatus() == OrderStatus.IN_PROGRESS &&
+                assignment.getWorkStatus() == EmployeeWorkStatus.STARTED);
         dto.setAcceptedDate(order.getAcceptedDate());
         dto.setDeadline(order.getDeadline());
         dto.setStatus(order.getStatus());
         dto.setImageUrl(order.getImageUrl());
         dto.setNotes(order.getNotes());
         return dto;
+    }
+
+    private void validateWorkStatusTransition(EmployeeWorkStatus from, EmployeeWorkStatus to) {
+        if (from == to) {
+            return;
+        }
+        boolean valid = switch (from) {
+            case PENDING -> false;
+            case STARTED -> to == EmployeeWorkStatus.COMPLETED;
+            case COMPLETED -> false;
+        };
+        if (!valid) {
+            throw new IllegalArgumentException("Invalid employee work status transition");
+        }
+    }
+
+    private void moveWorkflow(Order order, OrderEmployee assignment) {
+        if (assignment.getWorkStatus() != EmployeeWorkStatus.COMPLETED) {
+            return;
+        }
+
+        OrderEmployee nextAssignment = order.getEmployees().stream()
+                .filter(employee -> employee.getStepOrder() > assignment.getStepOrder())
+                .sorted(java.util.Comparator.comparing(OrderEmployee::getStepOrder))
+                .findFirst()
+                .orElse(null);
+
+        if (nextAssignment == null) {
+            order.setStatus(OrderStatus.COMPLETED);
+            return;
+        }
+
+        nextAssignment.setWorkStatus(EmployeeWorkStatus.STARTED);
+        order.setStatus(OrderStatus.IN_PROGRESS);
+    }
+
+    private OrderEmployee findPreviousAssignment(Order order, OrderEmployee assignment) {
+        return order.getEmployees().stream()
+                .filter(employee -> employee.getStepOrder() < assignment.getStepOrder())
+                .sorted(java.util.Comparator.comparing(OrderEmployee::getStepOrder).reversed())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private int calculateOrderProcessedCount(Order order) {
+        return order.getEmployees().stream()
+                .sorted(java.util.Comparator.comparing(OrderEmployee::getStepOrder))
+                .reduce((first, second) -> second)
+                .map(OrderEmployee::getProcessedCount)
+                .orElse(0);
     }
 }

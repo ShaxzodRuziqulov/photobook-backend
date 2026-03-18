@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="18032026-13-seed-default-roles" author="shaxzod">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">select count(*) from roles</sqlCheck>
+        </preConditions>
+
+        <insert tableName="roles">
+            <column name="id" value="00000000-0000-0000-0000-000000000001"/>
+            <column name="created_at" valueComputed="now()"/>
+            <column name="updated_at" valueComputed="now()"/>
+            <column name="name" value="ROLE_ADMIN"/>
+            <column name="description" value="Admin"/>
+        </insert>
+
+        <insert tableName="roles">
+            <column name="id" value="00000000-0000-0000-0000-000000000002"/>
+            <column name="created_at" valueComputed="now()"/>
+            <column name="updated_at" valueComputed="now()"/>
+            <column name="name" value="ROLE_MANAGER"/>
+            <column name="description" value="Manager"/>
+        </insert>
+
+        <insert tableName="roles">
+            <column name="id" value="00000000-0000-0000-0000-000000000003"/>
+            <column name="created_at" valueComputed="now()"/>
+            <column name="updated_at" valueComputed="now()"/>
+            <column name="name" value="ROLE_OPERATOR"/>
+            <column name="description" value="Operator"/>
+        </insert>
+
+        <insert tableName="roles">
+            <column name="id" value="00000000-0000-0000-0000-000000000004"/>
+            <column name="created_at" valueComputed="now()"/>
+            <column name="updated_at" valueComputed="now()"/>
+            <column name="name" value="ROLE_USER"/>
+            <column name="description" value="Legacy User"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

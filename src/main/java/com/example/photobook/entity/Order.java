@@ -75,14 +75,6 @@ public class Order extends BaseEntity {
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<OrderStatusHistory> statusHistory = new ArrayList<>();
 
-    public void replaceEmployees(List<OrderEmployee> employees) {
-        this.employees.clear();
-        if (employees == null) {
-            return;
-        }
-        employees.forEach(this::addEmployee);
-    }
-
     public void addEmployee(OrderEmployee employee) {
         employees.add(employee);
         employee.setOrder(this);
