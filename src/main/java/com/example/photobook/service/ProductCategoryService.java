@@ -1,7 +1,7 @@
 package com.example.photobook.service;
 
-import com.example.photobook.dto.request.ProductCategoryPagingRequest;
 import com.example.photobook.dto.ProductCategoryDto;
+import com.example.photobook.dto.request.ProductCategoryPagingRequest;
 import com.example.photobook.entity.ProductCategory;
 import com.example.photobook.mapper.ProductCategoryMapper;
 import com.example.photobook.repository.ProductCategoryRepository;
@@ -23,7 +23,6 @@ public class ProductCategoryService {
 
     public ProductCategoryDto create(ProductCategoryDto dto) {
         validateProductCategory(dto);
-        ensureNameAvailable(dto.getName(), null);
         ProductCategory productCategory = mapper.toEntity(dto);
 
         return mapper.toDto(repository.save(productCategory));
@@ -31,7 +30,6 @@ public class ProductCategoryService {
 
     public ProductCategoryDto update(UUID id, ProductCategoryDto dto) {
         validateProductCategory(dto);
-        ensureNameAvailable(dto.getName(), id);
         ProductCategory productCategory = findByProductCategoryId(id);
         productCategory.setName(dto.getName());
         productCategory.setKind(dto.getKind());
@@ -72,16 +70,6 @@ public class ProductCategoryService {
         }
         if (dto.getKind() == null) {
             throw new IllegalArgumentException("kind is required");
-        }
-    }
-
-    private void ensureNameAvailable(String name, UUID currentId) {
-        boolean exists = currentId == null
-                ? repository.existsByNameIgnoreCase(name)
-                : repository.existsByNameIgnoreCaseAndIdNot(name, currentId);
-
-        if (exists) {
-            throw new IllegalArgumentException("product category name already exists");
         }
     }
 }
