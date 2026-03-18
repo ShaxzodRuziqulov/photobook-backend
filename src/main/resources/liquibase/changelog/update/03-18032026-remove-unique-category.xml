@@ -6,9 +6,23 @@
         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
     <changeSet id="drop-unique-product-category-name" author="shaxzod">
-        <dropUniqueConstraint
-                tableName="product_categories"
-                constraintName="product_categories_name_key"/>
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT CASE
+                           WHEN EXISTS (
+                               SELECT 1
+                               FROM pg_constraint
+                               WHERE conname IN ('uk_product_categories_name', 'product_categories_name_key')
+                           ) THEN 1
+                           ELSE 0
+                       END
+            </sqlCheck>
+        </preConditions>
+
+        <sql>
+            ALTER TABLE public.product_categories DROP CONSTRAINT IF EXISTS uk_product_categories_name;
+            ALTER TABLE public.product_categories DROP CONSTRAINT IF EXISTS product_categories_name_key;
+        </sql>
     </changeSet>
 
 </databaseChangeLog>
