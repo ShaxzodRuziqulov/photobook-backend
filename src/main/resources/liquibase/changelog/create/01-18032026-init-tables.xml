@@ -85,8 +85,6 @@
             <column name="default_pages" type="varchar(255)"/>
             <column name="size" type="varchar(255)"/>
         </createTable>
-        <addUniqueConstraint tableName="product_categories" columnNames="name"
-                             constraintName="uk_product_categories_name"/>
     </changeSet>
 
     <changeSet id="18032026-05-create-users" author="shaxzod">
