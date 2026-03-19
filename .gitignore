@@ -3,6 +3,33 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+.m2/
+AppData/
+uploads-storage/
+
+### Maven ###
+.flattened-pom.xml
+dependency-reduced-pom.xml
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+*.lastUpdated
+_remote.repositories
+resolver-status.properties
+
+### Logs ###
+*.log
+logs/
+
+### Temp ###
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.swp
 
 ### STS ###
 .apt_generated
@@ -31,3 +58,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### OS ###
+.DS_Store
+Thumbs.db
+Desktop.ini
