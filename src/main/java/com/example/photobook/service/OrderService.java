@@ -11,6 +11,7 @@ import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.entity.enumirated.OwnerType;
 import com.example.photobook.mapper.OrderMapper;
 import com.example.photobook.repository.OrderRepository;
+import com.example.photobook.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -150,20 +151,32 @@ public class OrderService {
     }
 
     private void fillOrderFields(Order order, OrderDto dto, List<EmployeeDto> employees) {
+        fillBasicFields(order, dto);
+        resolveRelations(order, dto);
+        syncEmployees(order, employees);
+        applyWorkflow(order);
+    }
+
+    private void fillBasicFields(Order order, OrderDto dto) {
         order.setKind(dto.getKind());
         order.setOrderName(dto.getOrderName());
-        order.setItemType(normalize(dto.getItemType()));
+        order.setItemType(StringUtils.normalize(dto.getItemType()));
         order.setReceiverName(dto.getReceiverName().trim());
         order.setPageCount(dto.getPageCount());
         order.setAmount(dto.getAmount());
         order.setAcceptedDate(dto.getAcceptedDate());
         order.setDeadline(dto.getDeadline());
         order.setStatus(dto.getStatus());
-        order.setNotes(normalize(dto.getNotes()));
-        order.setImageUrl(normalize(dto.getImageUrl()));
-        order.setCustomer(resolveCustomer(dto));
+        order.setNotes(StringUtils.normalize(dto.getNotes()));
+        order.setImageUrl(StringUtils.normalize(dto.getImageUrl()));
+    }
+
+    private void resolveRelations(Order order, OrderDto dto) {
+        order.setCustomer(customerService.resolveForOrder(dto.getCustomerId(), dto.getCustomerName()));
         order.setCategory(productCategoryService.findByProductCategoryId(dto.getCategoryId()));
-        syncEmployees(order, employees);
+    }
+
+    private void applyWorkflow(Order order) {
         alignWorkflow(order);
     }
 
@@ -322,25 +335,24 @@ public class OrderService {
         return assignment;
     }
 
-    private Customer resolveCustomer(OrderDto dto) {
-        if (dto.getCustomerId() != null) {
-            return customerService.findEntityById(dto.getCustomerId());
-        }
-        return customerService.createForOrder(dto.getCustomerName().trim());
-    }
-
     private OrderDto toDto(Order order) {
         OrderDto dto = mapper.toDto(order);
         dto.setEmployees(mapEmployees(order));
+        populateProgress(order, dto);
+        return dto;
+    }
+
+    private void populateProgress(Order order, OrderDto dto) {
         dto.setProcessedCount(calculateCompletedCount(order));
         dto.setCurrentStepProcessedCount(calculateCurrentStepProcessedCount(order));
 
         OrderEmployee activeEmployee = findActiveEmployee(order);
-        if (activeEmployee != null) {
-            dto.setActiveEmployeeId(activeEmployee.getUser().getId());
-            dto.setActiveEmployeeName(buildFullName(activeEmployee.getUser()));
+        if (activeEmployee == null) {
+            return;
         }
-        return dto;
+
+        dto.setActiveEmployeeId(activeEmployee.getUser().getId());
+        dto.setActiveEmployeeName(buildFullName(activeEmployee.getUser()));
     }
 
     private List<EmployeeDto> mapEmployees(Order order) {
@@ -438,14 +450,6 @@ public class OrderService {
         String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
         String fullName = (firstName + " " + lastName).trim();
         return fullName.isEmpty() ? user.getUsername() : fullName;
-    }
-
-    private String normalize(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private void attachUpload(Order order, UUID uploadId) {

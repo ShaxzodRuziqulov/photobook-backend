@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
+import static com.example.photobook.util.StringUtils.normalize;
+
 @Service
 @RequiredArgsConstructor
 public class CustomerService {
@@ -29,6 +31,13 @@ public class CustomerService {
         Customer customer = new Customer();
         customer.setFullName(customerName);
         return repository.save(customer);
+    }
+
+    public Customer resolveForOrder(UUID customerId, String customerName) {
+        if (customerId != null) {
+            return findEntityById(customerId);
+        }
+        return createForOrder(normalize(customerName));
     }
 
     public CustomerDto update(UUID id, CustomerDto dto) {
