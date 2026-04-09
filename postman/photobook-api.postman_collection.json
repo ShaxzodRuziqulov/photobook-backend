@@ -465,6 +465,75 @@
                                                   }
                                   },
                                   {
+                                      "name":  "Get Product Categories By Kind ALBUM",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/product-categories?kind=ALBUM",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "product-categories"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "kind",
+                                                                                    "value":  "ALBUM"
+                                                                                }
+                                                                            ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Get Product Categories By Kind VIGNETTE",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/product-categories?kind=VIGNETTE",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "product-categories"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "kind",
+                                                                                    "value":  "VIGNETTE"
+                                                                                }
+                                                                            ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Get Product Categories By Kind PICTURE",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/product-categories?kind=PICTURE",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "product-categories"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "kind",
+                                                                                    "value":  "PICTURE"
+                                                                                }
+                                                                            ]
+                                                              }
+                                                  }
+                                  },
+                                  {
                                       "name":  "Product Categories Paging",
                                       "request":  {
                                                       "method":  "POST",
@@ -931,10 +1000,75 @@
                                                   }
                                   },
                                   {
-                                      "name":  "Orders By Status",
+                                      "name":  "Orders By Status ALBUM",
                                       "request":  {
                                                       "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/dashboard/orders-by-status"
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-status?type=ALBUM",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "dashboard",
+                                                                               "orders-by-status"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "type",
+                                                                                    "value":  "ALBUM"
+                                                                                }
+                                                                            ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Orders By Status VIGNETTE",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-status?type=VIGNETTE",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "dashboard",
+                                                                               "orders-by-status"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "type",
+                                                                                    "value":  "VIGNETTE"
+                                                                                }
+                                                                            ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Orders By Status PICTURE",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-status?type=PICTURE",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "dashboard",
+                                                                               "orders-by-status"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "type",
+                                                                                    "value":  "PICTURE"
+                                                                                }
+                                                                            ]
+                                                              }
                                                   }
                                   },
                                   {
@@ -942,6 +1076,78 @@
                                       "request":  {
                                                       "method":  "GET",
                                                       "url":  "{{baseUrl}}/api/v1/dashboard/orders-by-kind"
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Orders By Category ALBUM",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-category?type=ALBUM",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "dashboard",
+                                                                               "orders-by-category"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "type",
+                                                                                    "value":  "ALBUM"
+                                                                                }
+                                                                            ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Orders By Category VIGNETTE",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-category?type=VIGNETTE",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "dashboard",
+                                                                               "orders-by-category"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "type",
+                                                                                    "value":  "VIGNETTE"
+                                                                                }
+                                                                            ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Orders By Category PICTURE",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-category?type=PICTURE",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "v1",
+                                                                               "dashboard",
+                                                                               "orders-by-category"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "type",
+                                                                                    "value":  "PICTURE"
+                                                                                }
+                                                                            ]
+                                                              }
                                                   }
                                   },
                                   {
@@ -997,10 +1203,10 @@
                                                                          "value":  "application/json"
                                                                      }
                                                                  ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"processedCount\": 50,\n  \"notes\": \"Ish tugadi\",\n  \"workStatus\": \"COMPLETED\"\n}"
-                                                               },
+                                                          "body":  {
+                                                                       "mode":  "raw",
+                                                                       "raw":  "{\n  \"processedCount\": 5,\n  \"notes\": \"Yangi 5 tasi bajarildi\"\n}"
+                                                                   },
                                                       "url":  "{{baseUrl}}/api/v1/user-tasks/me/{{orderId}}"
                                                   }
                                   }

@@ -67,6 +67,24 @@
 ## 5. Product Categories
 
 ### GET /product-categories
+Optional query:
+
+- `kind=ALBUM|VIGNETTE|PICTURE`
+
+Response:
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Premium Album",
+    "kind": "ALBUM",
+    "defaultPages": "20",
+    "size": "30x40"
+  }
+]
+```
+
 ### POST /product-categories
 ### GET /product-categories/{id}
 ### PUT /product-categories/{id}
@@ -156,6 +174,7 @@
       "employeeName": "Vali",
       "processedCount": 10,
       "stepOrder": 1,
+      "notes": "Muqova tayyorlandi",
       "workStatus": "STARTED"
     },
     {
@@ -163,6 +182,7 @@
       "employeeName": "Sardor",
       "processedCount": 0,
       "stepOrder": 2,
+      "notes": null,
       "workStatus": "PENDING"
     }
   ],
@@ -203,11 +223,22 @@
 
 ```json
 {
-  "processedCount": 20,
+  "processedCount": 5,
   "notes": "20 ta tayyorlandi",
   "workStatus": "COMPLETED"
 }
 ```
+
+Note:
+
+- `processedCount` bu jami emas, aynan shu submitda yangi bajarilgan son
+- backend uni oldingi progressga qo'shib saqlaydi
+- agar jami progress `amount` ga yetsa, step avtomatik `COMPLETED` bo'ladi va keyingi worker `STARTED` bo'ladi
+- `availableToProcess` oldingi bosqich nechta tayyorlab berganini bildiradi
+- `remainingAvailable` worker hozir yana nechta qila olishini bildiradi
+- `remainingTotal` workerning umumiy tugatishi uchun qolgan sonni bildiradi
+- `notes` workerning aynan shu bosqichdagi izohi
+- `orderNotes` buyurtmaning umumiy izohi
 
 ### UserTask response
 
@@ -226,6 +257,9 @@
   "amount": 50,
   "processedCount": 20,
   "orderProcessedCount": 0,
+  "availableToProcess": 35,
+  "remainingAvailable": 15,
+  "remainingTotal": 30,
   "stepOrder": 1,
   "workStatus": "STARTED",
   "canWork": true,
@@ -233,7 +267,8 @@
   "deadline": "2026-03-20",
   "status": "IN_PROGRESS",
   "imageUrl": "/uploads-storage/file.png",
-  "notes": "text"
+  "notes": "Shu worker bosqichi uchun izoh",
+  "orderNotes": "Buyurtma bo'yicha umumiy izoh"
 }
 ```
 
@@ -268,10 +303,93 @@
 ## 11. Dashboard
 
 ### GET /dashboard/summary
-### GET /dashboard/orders-by-status
+Optional query:
+
+- `from=2026-03-01`
+- `to=2026-03-31`
+
+Response:
+
+```json
+{
+  "ordersTotal": 24,
+  "ordersDone": 10,
+  "ordersInProgress": 8,
+  "revenueTotal": 1500000,
+  "expensesTotal": 400000,
+  "profit": 1100000
+}
+```
+
+### GET /dashboard/orders-by-status?type=ALBUM|VIGNETTE|PICTURE
+Note:
+
+- `type` majburiy
+- response har doim barcha statuslarni qaytaradi: `PENDING`, `IN_PROGRESS`, `PAUSED`, `COMPLETED`
+
+Response:
+
+```json
+[
+  { "key": "PENDING", "count": 0 },
+  { "key": "IN_PROGRESS", "count": 4 },
+  { "key": "PAUSED", "count": 0 },
+  { "key": "COMPLETED", "count": 6 }
+]
+```
+
 ### GET /dashboard/orders-by-kind
+Note:
+
+- response har doim barcha kindlarni qaytaradi: `ALBUM`, `VIGNETTE`, `PICTURE`
+
+Response:
+
+```json
+[
+  { "key": "ALBUM", "count": 10 },
+  { "key": "VIGNETTE", "count": 20 },
+  { "key": "PICTURE", "count": 5 }
+]
+```
+
+### GET /dashboard/orders-by-category?type=ALBUM|VIGNETTE|PICTURE
+Note:
+
+- `type` majburiy
+- `key` bu `product_categories.name`
+- tanlangan `kind` ichidagi categorylarda order bo'lmasa ham `count: 0` bilan qaytadi
+
+Response:
+
+```json
+[
+  { "key": "Premium Album", "count": 7 },
+  { "key": "Mini Album", "count": 3 }
+]
+```
+
 ### GET /dashboard/revenue-trend
+Response:
+
+```json
+[
+  { "period": "2026-01", "amount": 500000 },
+  { "period": "2026-02", "amount": 750000 },
+  { "period": "2026-03", "amount": 250000 }
+]
+```
+
 ### GET /dashboard/expenses-trend
+Response:
+
+```json
+[
+  { "period": "2026-01", "amount": 100000 },
+  { "period": "2026-02", "amount": 150000 },
+  { "period": "2026-03", "amount": 50000 }
+]
+```
 
 ## 12. Upload
 

@@ -25,6 +25,9 @@ public class UserTaskDto {
     private Integer amount;
     private Integer processedCount;
     private Integer orderProcessedCount;
+    private Integer availableToProcess;
+    private Integer remainingAvailable;
+    private Integer remainingTotal;
     private Integer stepOrder;
     private EmployeeWorkStatus workStatus;
     private Boolean canWork;
@@ -33,4 +36,5 @@ public class UserTaskDto {
     private OrderStatus status;
     private String imageUrl;
     private String notes;
+    private String orderNotes;
 }

@@ -13,5 +13,6 @@ public class EmployeeDto {
     private String employeeName;
     private Integer processedCount;
     private Integer stepOrder;
+    private String notes;
     private EmployeeWorkStatus workStatus;
 }

@@ -34,6 +34,9 @@ public class OrderEmployee extends BaseEntity {
     @Column(name = "step_order", nullable = false)
     private Integer stepOrder;
 
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "work_status", nullable = false, length = 20)
     private EmployeeWorkStatus workStatus;

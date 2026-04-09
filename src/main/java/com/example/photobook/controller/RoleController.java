@@ -1,9 +1,10 @@
 package com.example.photobook.controller;
 
-import com.example.photobook.dto.request.PageResponse;
 import com.example.photobook.dto.RoleDto;
+import com.example.photobook.dto.request.PageResponse;
 import com.example.photobook.dto.request.RolePageRequest;
 import com.example.photobook.service.RoleService;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -19,11 +20,13 @@ import java.util.UUID;
 public class RoleController {
     private final RoleService service;
 
+    @Hidden
     @PostMapping
     public ResponseEntity<RoleDto> create(@RequestBody RoleDto dto) {
         return ResponseEntity.ok(service.create(dto));
     }
 
+    @Hidden
     @PutMapping("/{id}")
     public ResponseEntity<RoleDto> update(@PathVariable UUID id, @RequestBody RoleDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
@@ -46,6 +49,7 @@ public class RoleController {
         return ResponseEntity.ok(new PageResponse<>(service.findPage(request, pageable)));
     }
 
+    @Hidden
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);

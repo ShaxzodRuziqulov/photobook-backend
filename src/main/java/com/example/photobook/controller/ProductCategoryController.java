@@ -3,6 +3,7 @@ package com.example.photobook.controller;
 import com.example.photobook.dto.request.PageResponse;
 import com.example.photobook.dto.ProductCategoryDto;
 import com.example.photobook.dto.request.ProductCategoryPagingRequest;
+import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.service.ProductCategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -35,8 +36,8 @@ public class ProductCategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductCategoryDto>> findAll() {
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<List<ProductCategoryDto>> findAll(@RequestParam(required = false) OrderKind kind) {
+        return ResponseEntity.ok(service.findAll(kind));
     }
 
     @PostMapping("/paging")

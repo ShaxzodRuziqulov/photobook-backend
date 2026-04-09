@@ -3,6 +3,7 @@ package com.example.photobook.service;
 import com.example.photobook.dto.ProductCategoryDto;
 import com.example.photobook.dto.request.ProductCategoryPagingRequest;
 import com.example.photobook.entity.ProductCategory;
+import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.mapper.ProductCategoryMapper;
 import com.example.photobook.repository.ProductCategoryRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -44,8 +45,12 @@ public class ProductCategoryService {
         return mapper.toDto(productCategory);
     }
 
-    public List<ProductCategoryDto> findAll() {
-        return mapper.toDto(repository.findAll());
+    public List<ProductCategoryDto> findAll(OrderKind kind) {
+        if (kind == null) {
+            return mapper.toDto(repository.findAll());
+        }
+
+        return mapper.toDto(repository.findByKindOrderByNameAsc(kind));
     }
 
     public Page<ProductCategoryDto> findPage(ProductCategoryPagingRequest request, Pageable pageable) {

@@ -168,7 +168,9 @@ public class OrderService {
         order.setDeadline(dto.getDeadline());
         order.setStatus(dto.getStatus());
         order.setNotes(StringUtils.normalize(dto.getNotes()));
-        order.setImageUrl(StringUtils.normalize(dto.getImageUrl()));
+        if (dto.getImageUrl() != null) {
+            order.setImageUrl(StringUtils.normalize(dto.getImageUrl()));
+        }
     }
 
     private void resolveRelations(Order order, OrderDto dto) {
@@ -368,6 +370,7 @@ public class OrderService {
         dto.setEmployeeName(buildFullName(assignment.getUser()));
         dto.setProcessedCount(assignment.getProcessedCount());
         dto.setStepOrder(assignment.getStepOrder());
+        dto.setNotes(assignment.getNotes());
         dto.setWorkStatus(assignment.getWorkStatus());
         return dto;
     }

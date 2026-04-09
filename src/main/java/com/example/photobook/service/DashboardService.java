@@ -5,17 +5,21 @@ import com.example.photobook.dto.DashboardCountDto;
 import com.example.photobook.dto.DashboardSummaryDto;
 import com.example.photobook.entity.Expense;
 import com.example.photobook.entity.Order;
+import com.example.photobook.entity.ProductCategory;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.repository.ExpenseRepository;
 import com.example.photobook.repository.OrderRepository;
+import com.example.photobook.repository.ProductCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,6 +29,7 @@ import java.util.stream.Collectors;
 public class DashboardService {
     private final OrderRepository orderRepository;
     private final ExpenseRepository expenseRepository;
+    private final ProductCategoryRepository productCategoryRepository;
 
     public DashboardSummaryDto getSummary(LocalDate from, LocalDate to) {
         List<Order> orders = filterOrders(orderRepository.findAll(), from, to);
@@ -48,23 +53,34 @@ public class DashboardService {
         return dto;
     }
 
-    public List<DashboardCountDto> getOrdersByStatus() {
-        return orderRepository.findAll().stream()
-                .collect(Collectors.groupingBy(order -> order.getStatus().name(), Collectors.counting()))
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> new DashboardCountDto(entry.getKey(), entry.getValue()))
+    public List<DashboardCountDto> getOrdersByStatus(OrderKind type) {
+        Map<OrderStatus, Long> countsByStatus = orderRepository.findAll().stream()
+                .filter(order -> order.getKind() == type)
+                .collect(Collectors.groupingBy(Order::getStatus, () -> new EnumMap<>(OrderStatus.class), Collectors.counting()));
+
+        return Arrays.stream(OrderStatus.values())
+                .map(status -> new DashboardCountDto(status.name(), countsByStatus.getOrDefault(status, 0L)))
                 .toList();
     }
 
     public List<DashboardCountDto> getOrdersByKind() {
-        return orderRepository.findAll().stream()
-                .collect(Collectors.groupingBy(order -> order.getKind().name(), Collectors.counting()))
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> new DashboardCountDto(entry.getKey(), entry.getValue()))
+        Map<OrderKind, Long> countsByKind = orderRepository.findAll().stream()
+                .collect(Collectors.groupingBy(Order::getKind, () -> new EnumMap<>(OrderKind.class), Collectors.counting()));
+
+        return Arrays.stream(OrderKind.values())
+                .map(kind -> new DashboardCountDto(kind.name(), countsByKind.getOrDefault(kind, 0L)))
+                .toList();
+    }
+
+    public List<DashboardCountDto> getOrdersByCategory(OrderKind type) {
+        Map<String, Long> countsByCategory = orderRepository.findAllWithDetails().stream()
+                .filter(order -> order.getKind() == type)
+                .filter(order -> order.getCategory() != null)
+                .collect(Collectors.groupingBy(order -> order.getCategory().getName(), Collectors.counting()));
+
+        return productCategoryRepository.findByKindOrderByNameAsc(type).stream()
+                .map(ProductCategory::getName)
+                .map(categoryName -> new DashboardCountDto(categoryName, countsByCategory.getOrDefault(categoryName, 0L)))
                 .toList();
     }
 
