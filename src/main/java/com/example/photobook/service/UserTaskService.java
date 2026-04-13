@@ -25,6 +25,7 @@ import java.util.UUID;
 public class UserTaskService {
     private final OrderRepository orderRepository;
     private final CurrentUserService currentUserService;
+    private final SocketIoService socketIoService;
 
     public UserTaskDto getUserTaskById(UUID id) {
         UUID currentUserId = currentUserService.getCurrentUserId();
@@ -54,6 +55,7 @@ public class UserTaskService {
         UUID currentUserId = currentUserService.getCurrentUserId();
         Order order = findOwnedTask(id, currentUserId);
         OrderEmployee assignment = findAssignment(order, currentUserId);
+        UUID previousActiveEmployeeId = getActiveEmployeeId(order);
         int targetProgress = getTargetProgress(order);
         refreshPipelineWorkflow(order, targetProgress);
         validateActionableTask(order, assignment);
@@ -89,6 +91,7 @@ public class UserTaskService {
 
         refreshPipelineWorkflow(order, targetProgress);
         Order saved = orderRepository.save(order);
+        notifyNextEmployeeIfChanged(saved, previousActiveEmployeeId);
         return toDto(saved, findAssignment(saved, currentUserId));
     }
 
@@ -203,6 +206,28 @@ public class UserTaskService {
 
     private int safeProcessedCount(OrderEmployee assignment) {
         return assignment.getProcessedCount() == null ? 0 : assignment.getProcessedCount();
+    }
+
+    private UUID getActiveEmployeeId(Order order) {
+        return order.getEmployees().stream()
+                .filter(employee -> employee.getWorkStatus() == EmployeeWorkStatus.STARTED)
+                .map(employee -> employee.getUser().getId())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void notifyNextEmployeeIfChanged(Order order, UUID previousActiveEmployeeId) {
+        OrderEmployee activeAssignment = socketIoService.findActiveAssignment(order);
+        if (activeAssignment == null) {
+            return;
+        }
+
+        UUID currentActiveEmployeeId = activeAssignment.getUser().getId();
+        if (currentActiveEmployeeId.equals(previousActiveEmployeeId)) {
+            return;
+        }
+
+        socketIoService.notifyTaskActivated(order, activeAssignment);
     }
 
     private void refreshPipelineWorkflow(Order order, int targetProgress) {

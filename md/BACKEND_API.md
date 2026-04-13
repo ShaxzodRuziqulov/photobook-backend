@@ -3,7 +3,7 @@
 **Base URL:** `/api/v1`
 
 **Auth:**
-`Authorization: Bearer <access_token>` login, refresh va swagger'dan tashqari endpointlar uchun yuboriladi.
+`Authorization: Bearer <access_token>` login, refresh, swagger, `/uploads-storage/**` va `/socket.io/**` dan tashqari endpointlar uchun yuboriladi.
 
 ## 1. Auth
 
@@ -103,6 +103,7 @@ Response:
   "orderName": "Nikoh Albomi",
   "itemType": "Premium",
   "customerId": "uuid",
+  "customerName": "Ali Valiyev",
   "receiverName": "Ali",
   "employees": [
     {
@@ -123,6 +124,12 @@ Response:
   "uploadId": "uuid"
 }
 ```
+
+Note:
+
+- `customerId` yoki `customerName` yuboriladi
+- `employees[].stepOrder` 1 dan boshlab ketma-ket bo'lishi kerak
+- `employees[].employeeId` order ichida unique bo'lishi kerak
 
 ### GET /orders/{id}
 ### PUT /orders/{id}
@@ -198,7 +205,17 @@ Response:
   "imageUrl": "/uploads-storage/file.png",
   "notes": "text",
   "uploadId": "uuid",
-  "statusHistory": []
+  "statusHistory": [
+    {
+      "id": "uuid",
+      "orderId": "uuid",
+      "fromStatus": "PENDING",
+      "toStatus": "IN_PROGRESS",
+      "changedById": "uuid",
+      "changedByName": "Admin",
+      "changedAt": "2026-04-13T11:00:00"
+    }
+  ]
 }
 ```
 
@@ -224,21 +241,16 @@ Response:
 ```json
 {
   "processedCount": 5,
-  "notes": "20 ta tayyorlandi",
+  "notes": "5 ta tayyorlandi",
   "workStatus": "COMPLETED"
 }
 ```
 
 Note:
 
-- `processedCount` bu jami emas, aynan shu submitda yangi bajarilgan son
-- backend uni oldingi progressga qo'shib saqlaydi
-- agar jami progress `amount` ga yetsa, step avtomatik `COMPLETED` bo'ladi va keyingi worker `STARTED` bo'ladi
-- `availableToProcess` oldingi bosqich nechta tayyorlab berganini bildiradi
-- `remainingAvailable` worker hozir yana nechta qila olishini bildiradi
-- `remainingTotal` workerning umumiy tugatishi uchun qolgan sonni bildiradi
-- `notes` workerning aynan shu bosqichdagi izohi
-- `orderNotes` buyurtmaning umumiy izohi
+- `processedCount` increment sifatida ishlaydi, jami qiymat emas
+- backend uni current `processedCount` ga qo'shib saqlaydi
+- `workStatus` faqat `STARTED -> COMPLETED` transitionini qabul qiladi
 
 ### UserTask response
 
@@ -300,7 +312,42 @@ Note:
 ### DELETE /expenses/{id}
 ### POST /expenses/paging
 
-## 11. Dashboard
+## 11. Notifications
+
+### GET /notifications/me
+
+Response:
+
+```json
+[
+  {
+    "id": "uuid",
+    "type": "TASK_ACTIVATED",
+    "title": "Yangi ish navbati",
+    "message": "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
+    "orderId": "uuid",
+    "orderName": "Nikoh Albomi",
+    "employeeId": "uuid",
+    "employeeName": "Ali Valiyev",
+    "stepOrder": 2,
+    "workStatus": "STARTED",
+    "actionRequired": true,
+    "isRead": false,
+    "readAt": null,
+    "createdAt": "2026-04-13T11:00:00"
+  }
+]
+```
+
+### PUT /notifications/{id}/read
+
+### PUT /notifications/read-all
+
+Response:
+
+- `204 No Content`
+
+## 12. Dashboard
 
 ### GET /dashboard/summary
 Optional query:
@@ -308,97 +355,36 @@ Optional query:
 - `from=2026-03-01`
 - `to=2026-03-31`
 
-Response:
-
-```json
-{
-  "ordersTotal": 24,
-  "ordersDone": 10,
-  "ordersInProgress": 8,
-  "revenueTotal": 1500000,
-  "expensesTotal": 400000,
-  "profit": 1100000
-}
-```
-
 ### GET /dashboard/orders-by-status?type=ALBUM|VIGNETTE|PICTURE
-Note:
-
-- `type` majburiy
-- response har doim barcha statuslarni qaytaradi: `PENDING`, `IN_PROGRESS`, `PAUSED`, `COMPLETED`
-
-Response:
-
-```json
-[
-  { "key": "PENDING", "count": 0 },
-  { "key": "IN_PROGRESS", "count": 4 },
-  { "key": "PAUSED", "count": 0 },
-  { "key": "COMPLETED", "count": 6 }
-]
-```
 
 ### GET /dashboard/orders-by-kind
-Note:
-
-- response har doim barcha kindlarni qaytaradi: `ALBUM`, `VIGNETTE`, `PICTURE`
-
-Response:
-
-```json
-[
-  { "key": "ALBUM", "count": 10 },
-  { "key": "VIGNETTE", "count": 20 },
-  { "key": "PICTURE", "count": 5 }
-]
-```
 
 ### GET /dashboard/orders-by-category?type=ALBUM|VIGNETTE|PICTURE
-Note:
-
-- `type` majburiy
-- `key` bu `product_categories.name`
-- tanlangan `kind` ichidagi categorylarda order bo'lmasa ham `count: 0` bilan qaytadi
-
-Response:
-
-```json
-[
-  { "key": "Premium Album", "count": 7 },
-  { "key": "Mini Album", "count": 3 }
-]
-```
 
 ### GET /dashboard/revenue-trend
-Response:
-
-```json
-[
-  { "period": "2026-01", "amount": 500000 },
-  { "period": "2026-02", "amount": 750000 },
-  { "period": "2026-03", "amount": 250000 }
-]
-```
 
 ### GET /dashboard/expenses-trend
-Response:
 
-```json
-[
-  { "period": "2026-01", "amount": 100000 },
-  { "period": "2026-02", "amount": 150000 },
-  { "period": "2026-03", "amount": 50000 }
-]
-```
-
-## 12. Upload
+## 13. Upload
 
 ### POST /uploads
 Body: `multipart/form-data`
 
+Response:
+
+```json
+{
+  "id": "uuid",
+  "key": "file.png",
+  "url": "/uploads-storage/file.png",
+  "mimeType": "image/png",
+  "size": 12345
+}
+```
+
 ### DELETE /uploads/{key}
 
-## 13. Order Status Histories
+## 14. Order Status Histories
 
 ### GET /order-status-histories
 ### POST /order-status-histories
@@ -406,11 +392,60 @@ Body: `multipart/form-data`
 ### PUT /order-status-histories/{id}
 ### DELETE /order-status-histories/{id}
 
-## 14. Migration note
+## 15. Socket.IO
 
-Front quyidagicha yangilanishi kerak:
+### Handshake path
+
+- `GET /socket.io`
+- `POST /socket.io`
+- `GET /socket.io/`
+- `POST /socket.io/`
+
+### Client events
+
+- `authenticate`
+
+Payload:
+
+```json
+{
+  "token": "access_token"
+}
+```
+
+`"Bearer <token>"` format ham qabul qilinadi.
+
+### Server events
+
+- `authenticated`
+- `auth_error`
+- `notification`
+
+`notification` payload:
+
+```json
+{
+  "id": "uuid",
+  "type": "TASK_ACTIVATED",
+  "title": "Yangi ish navbati",
+  "message": "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
+  "orderId": "uuid",
+  "orderName": "Nikoh Albomi",
+  "employeeId": "uuid",
+  "employeeName": "Ali Valiyev",
+  "stepOrder": 2,
+  "workStatus": "STARTED",
+  "actionRequired": true,
+  "isRead": false,
+  "createdAt": "2026-04-13T11:00:00",
+  "orderStatus": "IN_PROGRESS"
+}
+```
+
+## 16. Migration note
 
 - order create/update requestida `employees[].stepOrder` yuborish
 - `employees[].role` yubormaslik
 - worker update requestida `status` o'rniga `workStatus` yuborish
-- order response ichidagi `activeEmployeeId`, `activeEmployeeName`, `currentStepProcessedCount` maydonlarini ishlatish mumkin
+- notification page uchun `GET /api/v1/notifications/me` ishlatish
+- socket notification payloadida `id`, `isRead`, `orderStatus`, `createdAt` maydonlari borligini hisobga olish

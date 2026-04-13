@@ -1,6 +1,6 @@
 # BACKEND LOGIC
 
-Bu fayl hozirgi backendning amaldagi logikasini tushuntiradi. Asosiy maqsad front bilan integratsiya uchun real contractni ko'rsatish.
+Bu fayl backendning amaldagi logikasini tushuntiradi. Asosiy maqsad front bilan integratsiya uchun real contract va workflowni bir joyda ko'rsatish.
 
 ## 1. Asosiy ma'lumot
 
@@ -9,6 +9,7 @@ Bu fayl hozirgi backendning amaldagi logikasini tushuntiradi. Asosiy maqsad fron
 - Public yo'llar:
   - `/api/v1/auth/**`
   - `/uploads-storage/**`
+  - `/socket.io/**`
   - swagger yo'llari
 - Static upload URL: `/uploads-storage/{key}`
 
@@ -53,29 +54,10 @@ Paging endpointlar `POST /resource/paging` ko'rinishida.
 - `GET /api/v1/auth/me`
 - `POST /api/v1/auth/logout`
 
-### Login response
-
-```json
-{
-  "access_token": "jwt",
-  "refresh_token": "jwt",
-  "user": {
-    "id": "uuid",
-    "name": "Ali Valiyev",
-    "email": null,
-    "roles": ["ROLE_ADMIN"],
-    "avatar_url": "/uploads-storage/file.png",
-    "phone": "+998901234567",
-    "bio": "text"
-  }
-}
-```
-
 ## 4. Permission logikasi
 
 ### `ROLE_ADMIN`
 
-Ruxsat:
 - users
 - roles
 - customers
@@ -85,12 +67,12 @@ Ruxsat:
 - product categories
 - orders
 - user tasks
+- notifications
 - uploads
 - dashboard
 
 ### `ROLE_MANAGER`
 
-Ruxsat:
 - customers
 - materials
 - expense categories
@@ -98,17 +80,20 @@ Ruxsat:
 - product categories
 - orders
 - user tasks
+- notifications
 - uploads
 - dashboard
 
 ### `ROLE_OPERATOR`
 
-Ruxsat:
 - `GET /api/v1/orders/**`
 - `PUT /api/v1/orders/{id}/status`
 - `GET /api/v1/user-tasks/me/{id}`
 - `POST /api/v1/user-tasks/me/paging`
 - `PUT /api/v1/user-tasks/me/{id}`
+- `GET /api/v1/notifications/me`
+- `PUT /api/v1/notifications/{id}/read`
+- `PUT /api/v1/notifications/read-all`
 - `/api/v1/uploads/**`
 - `GET /api/v1/users/me`
 - `PUT /api/v1/users/me`
@@ -128,132 +113,43 @@ Bu backendning asosiy workflow moduli.
 - `PUT /api/v1/orders/{id}/status`
 - `GET /api/v1/orders/{id}/status-history`
 
-### OrderDto
+### Order contract
 
-```json
-{
-  "id": "uuid",
-  "kind": "ALBUM",
-  "categoryId": "uuid",
-  "categoryName": "Premium Album",
-  "orderName": "Nikoh albomi",
-  "itemType": "Premium",
-  "customerId": "uuid",
-  "customerName": "Ali Valiyev",
-  "receiverName": "Ali",
-  "employees": [
-    {
-      "employeeId": "uuid",
-      "employeeName": "Vali",
-      "processedCount": 0,
-      "stepOrder": 1,
-      "workStatus": "STARTED"
-    },
-    {
-      "employeeId": "uuid",
-      "employeeName": "Sardor",
-      "processedCount": 0,
-      "stepOrder": 2,
-      "workStatus": "PENDING"
-    }
-  ],
-  "processedCount": 0,
-  "currentStepProcessedCount": 0,
-  "activeEmployeeId": "uuid",
-  "activeEmployeeName": "Vali",
-  "pageCount": 20,
-  "amount": 50,
-  "acceptedDate": "2026-03-16",
-  "deadline": "2026-03-20",
-  "status": "IN_PROGRESS",
-  "imageUrl": "/uploads-storage/file.png",
-  "notes": "text",
-  "uploadId": "uuid",
-  "statusHistory": []
-}
-```
-
-### Create va update request contract
-
-Frontend `employees` ni worker navbati bilan yuboradi:
-
-```json
-{
-  "kind": "ALBUM",
-  "categoryId": "uuid",
-  "orderName": "Nikoh albomi",
-  "itemType": "Premium",
-  "customerId": "uuid",
-  "receiverName": "Ali",
-  "employees": [
-    {
-      "employeeId": "uuid",
-      "stepOrder": 1
-    },
-    {
-      "employeeId": "uuid",
-      "stepOrder": 2
-    },
-    {
-      "employeeId": "uuid",
-      "stepOrder": 3
-    }
-  ],
-  "pageCount": 20,
-  "amount": 50,
-  "acceptedDate": "2026-03-16",
-  "deadline": "2026-03-20",
-  "status": "IN_PROGRESS",
-  "notes": "text",
-  "uploadId": "uuid"
-}
-```
+- `employees[].stepOrder` workflow navbatini bildiradi
+- `employees[].employeeId` unique bo'lishi kerak
+- `customerId` bo'lmasa `customerName` ishlatiladi
+- `uploadId` bo'lsa upload `ORDER` ga attach qilinadi
 
 ### Validation
 
+- `kind` majburiy
 - `orderName` majburiy
 - `categoryId` majburiy
 - `customerId` yoki `customerName` majburiy
-- `employees` majburiy va bo'sh bo'lmasligi kerak
-- `employees` ichida `null` bo'lmasligi kerak
-- har bir `employees[].employeeId` majburiy
-- har bir `employees[].stepOrder` majburiy
-- `stepOrder` unique bo'lishi kerak
-- `stepOrder` 1 dan ketma-ket bo'lishi kerak
+- `receiverName` majburiy
+- `pageCount >= 0`
 - `amount > 0`
 - `acceptedDate` majburiy
-- `deadline` majburiy
 - `deadline >= acceptedDate`
+- `status` majburiy
+- `employees` bo'sh bo'lmasligi kerak
+- `employees[].employeeId` majburiy
+- `employees[].stepOrder` majburiy
+- `stepOrder` unique va 1 dan ketma-ket bo'lishi kerak
 
 ### Workflow business logic
 
-- `categoryId` bo'yicha category topiladi
-- `customerId` bo'lsa mavjud customer ishlatiladi
-- `customerId` bo'lmasa `customerName` dan yangi customer yaratiladi
-- `employees[].employeeId` dagi userlar resolve qilinadi
-- `uploadId` bo'lsa upload `ORDER` ga attach qilinadi
-- attachdan keyin `imageUrl` avtomatik set qilinadi
-- order `IN_PROGRESS` bo'lsa birinchi `stepOrder` dagi employee `STARTED`, qolganlari `PENDING`
-- order `PAUSED` yoki `PENDING` bo'lsa incompletelar `PENDING`
-- hamma employee `COMPLETED` bo'lsa order `COMPLETED`
+- order `IN_PROGRESS` bo'lsa birinchi incompleted employee `STARTED`
+- order `PENDING` yoki `PAUSED` bo'lsa incompleted employee lar `PENDING`
+- order `COMPLETED` bo'lsa barcha employee `COMPLETED`
+- `processedCount` final step progressidan olinadi
+- `currentStepProcessedCount` active worker progressidan olinadi
+- `activeEmployeeId` va `activeEmployeeName` faqat active step bo'lsa qaytadi
 
-### Progress maydonlari
-
-- `processedCount`: oxirgi step employee'ning processed counti, ya'ni tayyor bo'lgan yakuniy son
-- `currentStepProcessedCount`: hozir ishlayotgan employee progressi
-- `activeEmployeeId`, `activeEmployeeName`: ayni paytda ishlayotgan worker
-
-### Status o'zgarishi
-
-Request:
-
-```json
-{
-  "toStatus": "PAUSED"
-}
-```
+### Status transitionlar
 
 Ruxsat etilgan transitionlar:
+
 - `PENDING -> IN_PROGRESS`
 - `PENDING -> PAUSED`
 - `IN_PROGRESS -> PAUSED`
@@ -262,34 +158,15 @@ Ruxsat etilgan transitionlar:
 - `PAUSED -> COMPLETED`
 
 Cheklov:
-- `COMPLETED`ga o'tkazishdan oldin barcha employee lar `COMPLETED` bo'lishi kerak
+
+- `COMPLETED` ga o'tkazishdan oldin barcha employee lar `COMPLETED` bo'lishi kerak
 
 Status o'zgarsa:
-- order status update qilinadi
+
 - workflow qayta align qilinadi
 - `order_status_history` yozuvi yaratiladi
-- `changedBy` current user dan olinadi
-
-### Paging filter
-
-```json
-{
-  "search": "nikoh",
-  "kind": "ALBUM",
-  "status": "IN_PROGRESS",
-  "customerId": "uuid",
-  "employeeId": "uuid",
-  "categoryId": "uuid",
-  "from": "2026-03-01",
-  "to": "2026-03-31",
-  "deadlineFrom": "2026-03-10",
-  "deadlineTo": "2026-03-20"
-}
-```
-
-### Delete
-
-- order o'chirilganda ownerga tegishli upload ham tozalanadi
+- employee larga `ORDER_STATUS_CHANGED` notification yuboriladi
+- active assignment bo'lsa `TASK_ACTIVATED` ham yuboriladi
 
 ## 6. User Tasks
 
@@ -301,68 +178,40 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 - `POST /api/v1/user-tasks/me/paging`
 - `PUT /api/v1/user-tasks/me/{id}`
 
-### UserTaskDto
+### UserTask logikasi
 
-```json
-{
-  "orderId": "uuid",
-  "kind": "ALBUM",
-  "categoryId": "uuid",
-  "categoryName": "Premium Album",
-  "orderName": "Nikoh albomi",
-  "itemType": "Premium",
-  "customerId": "uuid",
-  "customerName": "Ali Valiyev",
-  "receiverName": "Ali",
-  "pageCount": 20,
-  "amount": 50,
-  "processedCount": 15,
-  "orderProcessedCount": 0,
-  "stepOrder": 1,
-  "workStatus": "STARTED",
-  "canWork": true,
-  "acceptedDate": "2026-03-16",
-  "deadline": "2026-03-20",
-  "status": "IN_PROGRESS",
-  "imageUrl": "/uploads-storage/file.png",
-  "notes": "text"
-}
-```
+- worker faqat o'ziga tegishli order taskini ko'radi
+- `canWork = true` bo'lishi uchun order `IN_PROGRESS` va assignment `STARTED` bo'lishi kerak
+- `processedCount` requestda increment sifatida ishlaydi
+- yangi progress `order.amount` dan oshmasligi kerak
+- oldingi step progressidan ham oshmasligi kerak
+- `notes` trim qilinadi, bo'sh bo'lsa `null`
+- `workStatus` faqat `STARTED -> COMPLETED`
+- workflow har update dan oldin va keyin qayta hisoblanadi
+- next active worker o'zgarsa unga `TASK_ACTIVATED` yuboriladi
+- barcha step targetga yetsa order avtomatik `COMPLETED`
 
-### Worker update request
-
-```json
-{
-  "processedCount": 20,
-  "notes": "20 ta tayyorlandi",
-  "workStatus": "COMPLETED"
-}
-```
-
-### Worker update qoidalari
-
-- faqat `order.status = IN_PROGRESS` bo'lsa update qilish mumkin
-- faqat `workStatus = STARTED` bo'lgan employee o'z taskini update qila oladi
-- `processedCount` kamaytirilmaydi
-- `processedCount <= order.amount`
-- agar oldingi step bo'lsa, current step `processedCount` oldingi step progressidan oshmasligi kerak
-- `STARTED -> COMPLETED` transition ruxsat
-- `PENDING -> *` worker endpoint orqali ruxsat emas
-- step `COMPLETED` bo'lishi uchun `processedCount == order.amount`
-- current step `COMPLETED` bo'lsa keyingi `stepOrder` employee avtomatik `STARTED`
-- oxirgi employee `COMPLETED` bo'lsa order avtomatik `COMPLETED`
-
-## 7. Order Status History
+## 7. Notifications
 
 ### Endpointlar
 
-- `GET /api/v1/orders/{id}/status-history`
-- qo'shimcha CRUD endpoint ham bor:
-  - `POST /api/v1/order-status-histories`
-  - `PUT /api/v1/order-status-histories/{id}`
-  - `GET /api/v1/order-status-histories/{id}`
-  - `GET /api/v1/order-status-histories`
-  - `DELETE /api/v1/order-status-histories/{id}`
+- `GET /api/v1/notifications/me`
+- `PUT /api/v1/notifications/{id}/read`
+- `PUT /api/v1/notifications/read-all`
+
+### Ishlash mantig'i
+
+- notification yaratilganda DB ga saqlanadi
+- `GET /notifications/me` current user notificationlarini `createdAt desc` bo'yicha qaytaradi
+- `PUT /notifications/{id}/read` faqat current userning notificationi uchun ishlaydi
+- `PUT /notifications/read-all` current userning barcha unread notificationlarini mark qiladi
+
+### Turlar
+
+- `ORDER_ASSIGNED`
+- `TASK_ACTIVATED`
+- `ORDER_UPDATED`
+- `ORDER_STATUS_CHANGED`
 
 ## 8. Uploads
 
@@ -372,12 +221,12 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 - `DELETE /api/v1/uploads/{key}`
 - `GET /uploads-storage/{key}`
 
-### Frontend uchun to'g'ri flow
+### Flow
 
-1. Rasmni `POST /api/v1/uploads` orqali yuklang.
-2. Response dan `id`, `url`, `key` ni oling.
-3. Create/update requestga `uploadId` yuboring.
-4. UI preview uchun `url` ni ishlating.
+1. Front rasmni upload qiladi.
+2. Response dan `uploadId` oladi.
+3. Order yoki expense requestida shu `uploadId` yuboriladi.
+4. Backend attach qilgach owner va URL ni set qiladi.
 
 ## 9. Dashboard
 
@@ -386,49 +235,139 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 - `GET /api/v1/dashboard/summary`
 - `GET /api/v1/dashboard/orders-by-status`
 - `GET /api/v1/dashboard/orders-by-kind`
+- `GET /api/v1/dashboard/orders-by-category`
 - `GET /api/v1/dashboard/revenue-trend`
 - `GET /api/v1/dashboard/expenses-trend`
 
-## 10. Frontend uchun tavsiya qilingan oqimlar
+## 10. Socket Notification
+
+Bu backend realtime notification uchun `socket.io` server ishlatadi.
+
+### Socket endpoint
+
+- handshake path: `/socket.io/`
+- HTTP handshake `GET` va `POST` bilan ishlaydi
+- namespace: default `/`
+- auth: socket ulanganidan keyin `authenticate` event orqali token yuboriladi
+- client tavsiya: `socket.io-client`
+- transport: hozirgi implementatsiyada `polling`
+
+### Frontend ulanish oqimi
+
+1. Frontend `socket.io-client` bilan backend URL ga ulanadi.
+2. Ulangandan keyin `authenticate` event bilan token yuboradi.
+3. Token plain yoki `Bearer ...` formatda bo'lishi mumkin.
+4. Backend tokenni tekshiradi.
+5. Token to'g'ri bo'lsa socket `user:{userId}` room ga qo'shiladi.
+6. Server `authenticated` event yuboradi.
+7. O'qilmagan notificationlar replay qilinadi.
+
+### Auth eventlar
+
+- client -> server: `authenticate`
+- server -> client: `authenticated`
+- server -> client: `auth_error`
+
+`authenticated` payload misoli:
+
+```json
+{
+  "userId": "uuid",
+  "connectedAt": "2026-04-13T11:00:00"
+}
+```
+
+`auth_error` payload misoli:
+
+```json
+{
+  "message": "Access token is invalid"
+}
+```
+
+### Notification event
+
+Server clientga `notification` event yuboradi.
+
+Payload misoli:
+
+```json
+{
+  "id": "uuid",
+  "type": "TASK_ACTIVATED",
+  "title": "Yangi ish navbati",
+  "message": "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
+  "orderId": "uuid",
+  "orderName": "Nikoh albomi",
+  "employeeId": "uuid",
+  "employeeName": "Ali Valiyev",
+  "stepOrder": 2,
+  "workStatus": "STARTED",
+  "actionRequired": true,
+  "isRead": false,
+  "createdAt": "2026-04-13T11:00:00",
+  "orderStatus": "IN_PROGRESS"
+}
+```
+
+Izoh:
+
+- `readAt` faqat o'qilgan notificationda bo'ladi
+- online userga yuborilgan notification ham oldin DB ga yoziladi
+- unread notificationlar socket authenticate qilinganda qayta yuboriladi
+
+### Notification triggerlar
+
+- `POST /api/v1/orders`: active workerga `TASK_ACTIVATED`, qolganlarga `ORDER_ASSIGNED`
+- `PUT /api/v1/orders/{id}`: biriktirilgan employee larga `ORDER_UPDATED`
+- `PUT /api/v1/orders/{id}/status`: biriktirilgan employee larga `ORDER_STATUS_CHANGED`
+- `PUT /api/v1/user-tasks/me/{id}`: active worker almashsa yangi workerga `TASK_ACTIVATED`
+
+## 11. Frontend uchun tavsiya qilingan oqimlar
 
 ### Order yaratish
 
 1. Category, customer, employee listni oling.
 2. Employee larni navbat bo'yicha `stepOrder` bilan yuboring.
-3. Agar rasm bo'lsa upload qiling.
+3. Agar rasm bo'lsa avval upload qiling.
 4. `POST /api/v1/orders` da `uploadId` yuboring.
-5. Agar order darhol ishga tushsin desangiz `status = IN_PROGRESS` yuboring.
-6. Agar navbatga qo'ymoqchi bo'lsangiz `status = PENDING` yoki `PAUSED` yuboring.
+5. Darhol ishga tushsin desangiz `status = IN_PROGRESS`.
+6. Kutishga qo'ymoqchi bo'lsangiz `status = PENDING` yoki `PAUSED`.
+7. Biriktirilgan employee larda realtime notification chiqishini kuting.
 
 ### Worker flow
 
 1. `POST /api/v1/user-tasks/me/paging` bilan o'z tasklarini oling.
 2. `canWork = true` bo'lgan taskni ishlang.
-3. Jarayonda `processedCount` ni update qiling.
-4. Ish to'liq tugasa `workStatus = COMPLETED` yuboring.
-5. Backend keyingi workerga taskni avtomatik beradi.
+3. `processedCount` ni increment qilib yuboring.
+4. Step to'liq tugasa `workStatus = COMPLETED` yuboring.
+5. Backend workflowni qayta hisoblaydi.
+6. Keyingi worker active bo'lsa unga realtime `TASK_ACTIVATED` boradi.
 
-## 11. Hozir muhim real qoidalar
+### Notification flow
+
+1. User login bo'lgach `GET /api/v1/notifications/me` bilan tarixni oling.
+2. Parallel ravishda socket ulang.
+3. `authenticated` kelgach realtime va replay notificationlarni qabul qiling.
+4. UI da ko'rsatilgan notificationni `PUT /notifications/{id}/read` bilan mark qiling.
+5. Hammasini birdan o'qilgan qilish kerak bo'lsa `PUT /notifications/read-all` ishlating.
+
+## 12. Hozir muhim real qoidalar
 
 - order workflow `stepOrder` bo'yicha yuradi
 - `role` yo'q, navbat `stepOrder` bilan ifodalanadi
-- admin `PAUSED` va `IN_PROGRESS` orqali ustuvor ishlarni boshqaradi
 - worker faqat o'zining `STARTED` taskini update qila oladi
-- final progress `processedCount` sifatida order response ichida qaytadi
+- worker update dagi `processedCount` increment bo'lib ishlaydi
+- final progress oxirgi worker processed countidan olinadi
+- notification DB ga saqlanadi va keyin socket orqali yuboriladi
+- user online bo'lsa socket orqali darhol boradi
+- user offline bo'lsa keyin socket authenticate qilganda unread notificationlar qayta yuboriladi
 
-## 12. Migration note
-
-Backend va front uchun quyidagi contract o'zgargan:
+## 13. Migration note
 
 - `employees[].role` olib tashlangan
 - `employees[].stepOrder` majburiy bo'lgan
 - `employees[].workStatus` response ichida qaytadi
-- `orders.status` endi `PAUSED` qiymatini ham qabul qiladi
+- `orders.status` `PAUSED` ni ham qabul qiladi
 - worker update endpointida `status` o'rniga `workStatus` ishlatiladi
-
-DB tarafda kerak bo'ladigan o'zgarishlar:
-
-- `order_employees.role` ustunini olib tashlash
-- `order_employees.step_order` ustuni null bo'lmasligi kerak
-- `order_employees.work_status` ustuni saqlanishi kerak
-- `orders.status` enumiga `PAUSED` qo'shish kerak
+- notificationlar uchun REST endpoint va socket replay oqimi qo'shilgan

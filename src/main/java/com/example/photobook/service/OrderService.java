@@ -35,6 +35,8 @@ public class OrderService {
     private final UserService userService;
     private final OrderStatusHistoryService historyService;
     private final UploadService uploadService;
+    private final NotificationService notificationService;
+    private final SocketIoService socketIoService;
 
     public OrderDto create(OrderDto dto) {
         List<EmployeeDto> employees = dto.getEmployees();
@@ -45,6 +47,7 @@ public class OrderService {
 
         Order saved = repository.save(order);
         attachUpload(saved, dto.getUploadId());
+        socketIoService.notifyOrderAssigned(saved);
 
         return toDto(saved);
     }
@@ -54,10 +57,12 @@ public class OrderService {
         validateOrder(dto, employees);
 
         Order order = findByOrderId(id);
-        fillOrderFields(order, dto, employees);
+        Set<UUID> removedUserIds = fillOrderFields(order, dto, employees);
 
         Order saved = repository.save(order);
         attachUpload(saved, dto.getUploadId());
+        notificationService.deleteByOrderIdAndUserIds(saved.getId(), removedUserIds);
+        socketIoService.notifyOrderUpdated(saved);
 
         return toDto(saved);
     }
@@ -97,6 +102,7 @@ public class OrderService {
                 null
         );
 
+        notificationService.deleteByOrderId(order.getId());
         repository.delete(order);
     }
 
@@ -137,6 +143,8 @@ public class OrderService {
         historyDto.setChangedById(changedById);
         historyDto.setChangedAt(LocalDateTime.now());
         historyService.create(historyDto);
+        socketIoService.notifyOrderStatusChanged(saved, from, to);
+        socketIoService.notifyTaskActivated(saved, socketIoService.findActiveAssignment(saved));
 
         return toDto(saved);
     }
@@ -150,11 +158,12 @@ public class OrderService {
                 .orElseThrow(() -> new IllegalArgumentException("order not found"));
     }
 
-    private void fillOrderFields(Order order, OrderDto dto, List<EmployeeDto> employees) {
+    private Set<UUID> fillOrderFields(Order order, OrderDto dto, List<EmployeeDto> employees) {
         fillBasicFields(order, dto);
         resolveRelations(order, dto);
-        syncEmployees(order, employees);
+        Set<UUID> removedUserIds = syncEmployees(order, employees);
         applyWorkflow(order);
+        return removedUserIds;
     }
 
     private void fillBasicFields(Order order, OrderDto dto) {
@@ -296,7 +305,7 @@ public class OrderService {
                 .toList();
     }
 
-    private void syncEmployees(Order order, List<EmployeeDto> employees) {
+    private Set<UUID> syncEmployees(Order order, List<EmployeeDto> employees) {
         List<OrderEmployee> resolvedEmployees = resolveEmployees(employees);
         Map<UUID, OrderEmployee> existingByUserId = order.getEmployees().stream()
                 .collect(Collectors.toMap(
@@ -310,6 +319,11 @@ public class OrderService {
                 .map(assignment -> assignment.getUser().getId())
                 .collect(Collectors.toSet());
 
+        Set<UUID> removedUserIds = order.getEmployees().stream()
+                .map(existing -> existing.getUser().getId())
+                .filter(existingUserId -> !incomingUserIds.contains(existingUserId))
+                .collect(Collectors.toSet());
+
         order.getEmployees().removeIf(existing -> !incomingUserIds.contains(existing.getUser().getId()));
 
         for (OrderEmployee resolvedEmployee : resolvedEmployees) {
@@ -321,6 +335,8 @@ public class OrderService {
             }
             order.addEmployee(resolvedEmployee);
         }
+
+        return removedUserIds;
     }
 
     private OrderEmployee toOrderEmployee(EmployeeDto employeeDto, Map<UUID, User> usersById) {
@@ -470,4 +486,3 @@ public class OrderService {
         order.setImageUrl(uploadService.buildFileUrl(upload));
     }
 }
-

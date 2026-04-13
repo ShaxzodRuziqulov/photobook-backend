@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="04-13042026-create-notifications-table" author="openai">
+        <createTable tableName="notifications">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_notifications_user" references="users(id)"/>
+            </column>
+            <column name="type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_id" type="UUID"/>
+            <column name="order_name" type="VARCHAR(200)"/>
+            <column name="employee_id" type="UUID"/>
+            <column name="employee_name" type="VARCHAR(255)"/>
+            <column name="step_order" type="INT"/>
+            <column name="work_status" type="VARCHAR(30)"/>
+            <column name="action_required" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="read_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="notifications" indexName="idx_notifications_user_id">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex tableName="notifications" indexName="idx_notifications_read_at">
+            <column name="read_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

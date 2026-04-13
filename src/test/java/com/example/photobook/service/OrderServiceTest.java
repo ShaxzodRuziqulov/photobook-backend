@@ -36,6 +36,8 @@ class OrderServiceTest {
     private final UserService userService = mock(UserService.class);
     private final OrderStatusHistoryService historyService = mock(OrderStatusHistoryService.class);
     private final UploadService uploadService = mock(UploadService.class);
+    private final NotificationService notificationService = mock(NotificationService.class);
+    private final SocketIoService socketIoService = mock(SocketIoService.class);
 
     @Test
     void updateAssignsEmployeesByStepOrder() {
@@ -46,7 +48,9 @@ class OrderServiceTest {
                 customerService,
                 userService,
                 historyService,
-                uploadService
+                uploadService,
+                notificationService,
+                socketIoService
         );
 
         UUID orderId = UUID.randomUUID();
@@ -95,7 +99,7 @@ class OrderServiceTest {
         when(repository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(mapper.toDto(any(Order.class))).thenReturn(new OrderDto());
         when(productCategoryService.findByProductCategoryId(categoryId)).thenReturn(category);
-        when(customerService.findEntityById(customerId)).thenReturn(customer);
+        when(customerService.resolveForOrder(customerId, null)).thenReturn(customer);
         when(userService.findAllByIds(List.of(firstEmployeeId, secondEmployeeId)))
                 .thenReturn(List.of(firstUser, secondUser));
 
@@ -109,5 +113,7 @@ class OrderServiceTest {
         assertEquals(2, order.getEmployees().get(1).getStepOrder());
         assertEquals(EmployeeWorkStatus.PENDING, order.getEmployees().get(1).getWorkStatus());
         verify(repository).save(order);
+        verify(notificationService).deleteByOrderIdAndUserIds(orderId, java.util.Set.of());
+        verify(socketIoService).notifyOrderUpdated(order);
     }
 }

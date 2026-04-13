@@ -8,5 +8,6 @@
     <include file="changelog/create/01-18032026-init-tables.xml" relativeToChangelogFile="true"/>
     <include file="changelog/insert/02-18032026-default-roles.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create/03-09042026-order-employee-notes.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create/04-13042026-notifications.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

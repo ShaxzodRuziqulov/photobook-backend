@@ -45,6 +45,7 @@ public class SecurityConfiguration {
 
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/socket.io/**").permitAll()
                         .requestMatchers("/uploads-storage/**").permitAll()
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
 
@@ -69,6 +70,9 @@ public class SecurityConfiguration {
                         .hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR")
 
                         .requestMatchers("/api/v1/user-tasks/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR")
+
+                        .requestMatchers("/api/v1/notifications/**")
                         .hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR")
 
                         .requestMatchers(HttpMethod.PUT, "/api/v1/orders/*/status")

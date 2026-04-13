@@ -44,6 +44,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.socket</groupId>
+            <artifactId>socket.io-server</artifactId>
+            <version>4.1.2</version>
+        </dependency>
 
         <!-- PostgreSQL -->
         <dependency>

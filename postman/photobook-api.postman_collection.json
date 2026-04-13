@@ -1,1245 +1,516 @@
 {
-    "info":  {
-                 "_postman_id":  "db96b2d0-16b9-4f2d-933a-fc3e04f3840e",
-                 "name":  "Photobook API",
-                 "description":  "Photobook backend API collection. Set collection variables before use. Run Auth/Login first to populate accessToken and refreshToken automatically.",
-                 "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-             },
-    "auth":  {
-                 "type":  "bearer",
-                 "bearer":  [
-                                {
-                                    "key":  "token",
-                                    "value":  "{{accessToken}}",
-                                    "type":  "string"
-                                }
-                            ]
-             },
-    "variable":  [
-                     {
-                         "key":  "baseUrl",
-                         "value":  "http://localhost:8091"
-                     },
-                     {
-                         "key":  "accessToken",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "refreshToken",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "userId",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "roleId",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "customerId",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "categoryId",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "orderId",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "materialId",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "expenseCategoryId",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "expenseId",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "uploadKey",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "orderStatusHistoryId",
-                         "value":  ""
-                     }
-                 ],
-    "item":  [
-                 {
-                     "name":  "Auth",
-                     "item":  [
-                                  {
-                                      "name":  "Login",
-                                      "event":  [
-                                                    {
-                                                        "listen":  "test",
-                                                        "script":  {
-                                                                       "type":  "text/javascript",
-                                                                       "exec":  [
-                                                                                    "const data = pm.response.json();",
-                                                                                    "if (data.accessToken) { pm.collectionVariables.set(\u0027accessToken\u0027, data.accessToken); }",
-                                                                                    "if (data.refreshToken) { pm.collectionVariables.set(\u0027refreshToken\u0027, data.refreshToken); }"
-                                                                                ]
-                                                                   }
-                                                    }
-                                                ],
-                                      "request":  {
-                                                      "auth":  {
-                                                                   "type":  "noauth"
-                                                               },
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/auth/login"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Refresh Token",
-                                      "event":  [
-                                                    {
-                                                        "listen":  "test",
-                                                        "script":  {
-                                                                       "type":  "text/javascript",
-                                                                       "exec":  [
-                                                                                    "const data = pm.response.json();",
-                                                                                    "if (data.accessToken) { pm.collectionVariables.set(\u0027accessToken\u0027, data.accessToken); }",
-                                                                                    "if (data.refreshToken) { pm.collectionVariables.set(\u0027refreshToken\u0027, data.refreshToken); }"
-                                                                                ]
-                                                                   }
-                                                    }
-                                                ],
-                                      "request":  {
-                                                      "auth":  {
-                                                                   "type":  "noauth"
-                                                               },
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/auth/refresh"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Me",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/auth/me"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Logout",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/auth/logout"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Users",
-                     "item":  [
-                                  {
-                                      "name":  "Create User",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"firstName\": \"Ali\",\n  \"lastName\": \"Valiyev\",\n  \"middleName\": \"Karim o\u0027g\u0027li\",\n  \"profession\": \"Designer\",\n  \"username\": \"ali.valiyev\",\n  \"email\": \"ali@example.com\",\n  \"password\": \"123456\",\n  \"phone\": \"+998901234567\",\n  \"bio\": \"Operator user\",\n  \"isActive\": true\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/users"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update User",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"firstName\": \"Ali\",\n  \"lastName\": \"Valiyev\",\n  \"middleName\": \"Karim o\u0027g\u0027li\",\n  \"profession\": \"Senior Designer\",\n  \"username\": \"ali.valiyev\",\n  \"email\": \"ali@example.com\",\n  \"phone\": \"+998901234567\",\n  \"bio\": \"Updated profile\",\n  \"isActive\": true\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/users/{{userId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get User By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/users/{{userId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Users",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/users"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Users Paging",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"search\": \"ali\",\n  \"isActive\": true,\n  \"role\": \"ROLE_OPERATOR\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"updatedAt\",\n  \"direction\": \"DESC\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/users/paging"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update User Roles",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"roleIds\": [\"{{roleId}}\"]\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/users/{{userId}}/roles"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete User",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/users/{{userId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Roles",
-                     "item":  [
-                                  {
-                                      "name":  "Create Role",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"ROLE_MANAGER\",\n  \"description\": \"Manager role\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/roles"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update Role",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"ROLE_MANAGER\",\n  \"description\": \"Updated manager role\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/roles/{{roleId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Role By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/roles/{{roleId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Roles",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/roles"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Roles Paging",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"search\": \"ROLE\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"updatedAt\",\n  \"direction\": \"DESC\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/roles/paging"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete Role",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/roles/{{roleId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Customers",
-                     "item":  [
-                                  {
-                                      "name":  "Create Customer",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"fullName\": \"Mijoz Test\",\n  \"phone\": \"+998901111111\",\n  \"notes\": \"VIP\",\n  \"isActive\": true\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/customers"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update Customer",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"fullName\": \"Mijoz Test Update\",\n  \"phone\": \"+998901111111\",\n  \"notes\": \"Updated\",\n  \"isActive\": true\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/customers/{{customerId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Customer By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/customers/{{customerId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Customers",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/customers"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Customers Paging",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"search\": \"test\",\n  \"isActive\": true,\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"updatedAt\",\n  \"direction\": \"DESC\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/customers/paging"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete Customer",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/customers/{{customerId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Product Categories",
-                     "item":  [
-                                  {
-                                      "name":  "Create Product Category",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"Wedding Album Standard\",\n  \"kind\": \"ALBUM\",\n  \"size\": \"30x40\",\n  \"defaultPages\": \"20\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/product-categories"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update Product Category",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"Wedding Album Premium\",\n  \"kind\": \"ALBUM\",\n  \"size\": \"35x45\",\n  \"defaultPages\": \"24\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/product-categories/{{categoryId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Product Category By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/product-categories/{{categoryId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Product Categories",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/product-categories"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Product Categories By Kind ALBUM",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/product-categories?kind=ALBUM",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "product-categories"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "kind",
-                                                                                    "value":  "ALBUM"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Product Categories By Kind VIGNETTE",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/product-categories?kind=VIGNETTE",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "product-categories"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "kind",
-                                                                                    "value":  "VIGNETTE"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Product Categories By Kind PICTURE",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/product-categories?kind=PICTURE",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "product-categories"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "kind",
-                                                                                    "value":  "PICTURE"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Product Categories Paging",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"search\": \"album\",\n  \"kind\": \"ALBUM\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"updatedAt\",\n  \"direction\": \"DESC\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/product-categories/paging"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete Product Category",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/product-categories/{{categoryId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Orders",
-                     "item":  [
-                                  {
-                                      "name":  "Create Order",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi\",\n  \"itemType\": \"Premium\",\n  \"customerName\": \"Yangi Mijoz\",\n  \"receiverName\": \"Yangi Mijoz\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"pageCount\": 20,\n  \"amount\": 50,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-20\",\n  \"status\": \"IN_PROGRESS\",\n  \"notes\": \"Test order\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/orders"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update Order",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi Update\",\n  \"itemType\": \"Premium\",\n  \"customerId\": \"{{customerId}}\",\n  \"receiverName\": \"Mijoz Test\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"pageCount\": 24,\n  \"amount\": 50,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-22\",\n  \"status\": \"IN_PROGRESS\",\n  \"notes\": \"Updated order\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/orders/{{orderId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Order By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/orders/{{orderId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Orders",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/orders"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Orders Paging",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"search\": \"album\",\n  \"kind\": \"ALBUM\",\n  \"status\": \"IN_PROGRESS\",\n  \"customerId\": \"{{customerId}}\",\n  \"employeeId\": \"{{userId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"from\": \"2026-03-01\",\n  \"to\": \"2026-03-31\",\n  \"deadlineFrom\": \"2026-03-01\",\n  \"deadlineTo\": \"2026-03-31\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"updatedAt\",\n  \"direction\": \"DESC\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/orders/paging"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Change Order Status",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"toStatus\": \"PAUSED\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/orders/{{orderId}}/status"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Order Status History",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/orders/{{orderId}}/status-history"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete Order",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/orders/{{orderId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Order Status Histories",
-                     "item":  [
-                                  {
-                                      "name":  "Create Order Status History",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"orderId\": \"{{orderId}}\",\n  \"fromStatus\": \"PENDING\",\n  \"toStatus\": \"IN_PROGRESS\",\n  \"changedById\": \"{{userId}}\",\n  \"changedAt\": \"2026-03-12T10:00:00\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/order-status-histories"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update Order Status History",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"orderId\": \"{{orderId}}\",\n  \"fromStatus\": \"IN_PROGRESS\",\n  \"toStatus\": \"COMPLETED\",\n  \"changedById\": \"{{userId}}\",\n  \"changedAt\": \"2026-03-12T12:00:00\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/order-status-histories/{{orderStatusHistoryId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Order Status History By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/order-status-histories/{{orderStatusHistoryId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Order Status Histories",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/order-status-histories"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete Order Status History",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/order-status-histories/{{orderStatusHistoryId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Materials",
-                     "item":  [
-                                  {
-                                      "name":  "Create Material",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"itemName\": \"Photo Paper\",\n  \"itemType\": \"Consumable\",\n  \"unitName\": \"sheet\",\n  \"quantity\": 100\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/materials"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update Material",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"itemName\": \"Photo Paper A4\",\n  \"itemType\": \"Consumable\",\n  \"unitName\": \"sheet\",\n  \"quantity\": 120\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/materials/{{materialId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Material By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/materials/{{materialId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Materials",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/materials"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Materials Paging",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"search\": \"paper\",\n  \"itemType\": \"Consumable\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"updatedAt\",\n  \"direction\": \"DESC\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/materials/paging"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Adjust Material",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"delta\": -5,\n  \"reason\": \"Used in production\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/materials/{{materialId}}/adjust"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete Material",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/materials/{{materialId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Expense Categories",
-                     "item":  [
-                                  {
-                                      "name":  "Create Expense Category",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"Transport\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/expense-categories"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update Expense Category",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"Transport Updated\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/expense-categories/{{expenseCategoryId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Expense Category By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/expense-categories/{{expenseCategoryId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Expense Categories",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/expense-categories"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Expense Categories Paging",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"search\": \"transport\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"updatedAt\",\n  \"direction\": \"DESC\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/expense-categories/paging"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete Expense Category",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/expense-categories/{{expenseCategoryId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Expenses",
-                     "item":  [
-                                  {
-                                      "name":  "Create Expense",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"materialId\": \"{{materialId}}\",\n  \"name\": \"Paper Purchase\",\n  \"price\": 150000,\n  \"description\": \"Monthly supply\",\n  \"paymentMethod\": \"CASH\",\n  \"expenseDate\": \"2026-03-12\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/expenses"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update Expense",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"materialId\": \"{{materialId}}\",\n  \"name\": \"Paper Purchase Updated\",\n  \"price\": 175000,\n  \"description\": \"Updated expense\",\n  \"paymentMethod\": \"CARD\",\n  \"expenseDate\": \"2026-03-12\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/expenses/{{expenseId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Expense By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/expenses/{{expenseId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Get Expenses",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/expenses"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Expenses Paging",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"search\": \"paper\",\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"materialId\": \"{{materialId}}\",\n  \"paymentMethod\": \"CASH\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"updatedAt\",\n  \"direction\": \"DESC\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/expenses/paging"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete Expense",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/expenses/{{expenseId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Dashboard",
-                     "item":  [
-                                  {
-                                      "name":  "Summary",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/summary?from=2026-03-01\u0026to=2026-03-31",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "dashboard",
-                                                                               "summary"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "from",
-                                                                                    "value":  "2026-03-01"
-                                                                                },
-                                                                                {
-                                                                                    "key":  "to",
-                                                                                    "value":  "2026-03-31"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Orders By Status ALBUM",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-status?type=ALBUM",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "dashboard",
-                                                                               "orders-by-status"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "type",
-                                                                                    "value":  "ALBUM"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Orders By Status VIGNETTE",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-status?type=VIGNETTE",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "dashboard",
-                                                                               "orders-by-status"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "type",
-                                                                                    "value":  "VIGNETTE"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Orders By Status PICTURE",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-status?type=PICTURE",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "dashboard",
-                                                                               "orders-by-status"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "type",
-                                                                                    "value":  "PICTURE"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Orders By Kind",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/dashboard/orders-by-kind"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Orders By Category ALBUM",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-category?type=ALBUM",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "dashboard",
-                                                                               "orders-by-category"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "type",
-                                                                                    "value":  "ALBUM"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Orders By Category VIGNETTE",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-category?type=VIGNETTE",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "dashboard",
-                                                                               "orders-by-category"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "type",
-                                                                                    "value":  "VIGNETTE"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Orders By Category PICTURE",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/v1/dashboard/orders-by-category?type=PICTURE",
-                                                                  "host":  [
-                                                                               "{{baseUrl}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "api",
-                                                                               "v1",
-                                                                               "dashboard",
-                                                                               "orders-by-category"
-                                                                           ],
-                                                                  "query":  [
-                                                                                {
-                                                                                    "key":  "type",
-                                                                                    "value":  "PICTURE"
-                                                                                }
-                                                                            ]
-                                                              }
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Revenue Trend",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/dashboard/revenue-trend"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Expenses Trend",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/dashboard/expenses-trend"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "User Tasks",
-                     "item":  [
-                                  {
-                                      "name":  "My Task By Id",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "url":  "{{baseUrl}}/api/v1/user-tasks/me/{{orderId}}"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "My Tasks Paging",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                      "body":  {
-                                                                   "mode":  "raw",
-                                                                   "raw":  "{\n  \"search\": \"album\",\n  \"statuses\": [\"IN_PROGRESS\"],\n  \"from\": \"2026-03-01\",\n  \"to\": \"2026-03-31\",\n  \"deadlineFrom\": \"2026-03-01\",\n  \"deadlineTo\": \"2026-03-31\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"updatedAt\",\n  \"direction\": \"DESC\"\n}"
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/user-tasks/me/paging"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Update My Task",
-                                      "request":  {
-                                                      "method":  "PUT",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "Content-Type",
-                                                                         "value":  "application/json"
-                                                                     }
-                                                                 ],
-                                                          "body":  {
-                                                                       "mode":  "raw",
-                                                                       "raw":  "{\n  \"processedCount\": 5,\n  \"notes\": \"Yangi 5 tasi bajarildi\"\n}"
-                                                                   },
-                                                      "url":  "{{baseUrl}}/api/v1/user-tasks/me/{{orderId}}"
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Uploads",
-                     "item":  [
-                                  {
-                                      "name":  "Upload File",
-                                      "request":  {
-                                                      "method":  "POST",
-                                                      "body":  {
-                                                                   "mode":  "formdata",
-                                                                   "formdata":  [
-                                                                                    {
-                                                                                        "key":  "file",
-                                                                                        "type":  "file",
-                                                                                        "src":  ""
-                                                                                    }
-                                                                                ]
-                                                               },
-                                                      "url":  "{{baseUrl}}/api/v1/uploads"
-                                                  }
-                                  },
-                                  {
-                                      "name":  "Delete File",
-                                      "request":  {
-                                                      "method":  "DELETE",
-                                                      "url":  "{{baseUrl}}/api/v1/uploads/{{uploadKey}}"
-                                                  }
-                                  }
-                              ]
-                 }
-             ]
+  "info": {
+    "_postman_id": "d6d87f2e-fbdb-4d90-99e2-3a2c7958b7f1",
+    "name": "Photobook API",
+    "description": "Simplified Postman collection aligned with the current backend controllers and DTOs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8091" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "roleId", "value": "" },
+    { "key": "customerId", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "orderId", "value": "" },
+    { "key": "materialId", "value": "" },
+    { "key": "expenseCategoryId", "value": "" },
+    { "key": "expenseId", "value": "" },
+    { "key": "uploadId", "value": "" },
+    { "key": "uploadKey", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.access_token) pm.collectionVariables.set('accessToken', data.access_token);",
+                  "if (data.refresh_token) pm.collectionVariables.set('refreshToken', data.refresh_token);",
+                  "if (data.user && data.user.id) pm.collectionVariables.set('userId', data.user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          }
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/refresh"
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('userId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Ali\",\n  \"lastName\": \"Valiyev\",\n  \"profession\": \"Designer\",\n  \"username\": \"ali.valiyev\",\n  \"password\": \"123456\",\n  \"phone\": \"+998901234567\",\n  \"bio\": \"Operator user\",\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users"
+          }
+        },
+        {
+          "name": "Users Paging",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"ali\",\n  \"isActive\": true,\n  \"role\": \"ROLE_OPERATOR\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users/paging?page=0&size=10&sort=updatedAt,desc"
+          }
+        },
+        {
+          "name": "Update User Roles",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleIds\": [\"{{roleId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users/{{userId}}/roles"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Create Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('roleId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ROLE_MANAGER\",\n  \"description\": \"Manager role\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/roles"
+          }
+        },
+        {
+          "name": "Get Roles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/roles"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Create Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('customerId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Yangi Mijoz\",\n  \"phone\": \"+998901234567\",\n  \"notes\": \"Test customer\",\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/customers"
+          }
+        },
+        {
+          "name": "Get Customers",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/customers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product Categories",
+      "item": [
+        {
+          "name": "Create Product Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('categoryId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Premium Album\",\n  \"kind\": \"ALBUM\",\n  \"defaultPages\": \"20\",\n  \"size\": \"30x40\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/product-categories"
+          }
+        },
+        {
+          "name": "Get Product Categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/product-categories"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('orderId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh albomi\",\n  \"itemType\": \"Premium\",\n  \"customerId\": \"{{customerId}}\",\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"pageCount\": 20,\n  \"amount\": 50,\n  \"acceptedDate\": \"2026-04-13\",\n  \"deadline\": \"2026-04-20\",\n  \"status\": \"IN_PROGRESS\",\n  \"notes\": \"Test order\",\n  \"uploadId\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders"
+          }
+        },
+        {
+          "name": "Orders Paging",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"nikoh\",\n  \"kind\": \"ALBUM\",\n  \"status\": \"IN_PROGRESS\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/paging?page=0&size=10&sort=updatedAt,desc"
+          }
+        },
+        {
+          "name": "Change Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"toStatus\": \"PAUSED\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Tasks",
+      "item": [
+        {
+          "name": "My Tasks Paging",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"albom\",\n  \"statuses\": [\"IN_PROGRESS\"],\n  \"from\": \"2026-04-01\",\n  \"to\": \"2026-04-30\",\n  \"deadlineFrom\": \"2026-04-01\",\n  \"deadlineTo\": \"2026-04-30\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/user-tasks/me/paging?page=0&size=10&sort=updatedAt,desc"
+          }
+        },
+        {
+          "name": "Update My Task",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"processedCount\": 5,\n  \"notes\": \"Yangi 5 tasi bajarildi\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/user-tasks/me/{{orderId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "My Notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/notifications/me"
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read"
+          }
+        },
+        {
+          "name": "Mark All Read",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/v1/notifications/read-all"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Materials",
+      "item": [
+        {
+          "name": "Create Material",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('materialId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemName\": \"Karton\",\n  \"itemType\": \"RAW\",\n  \"unitName\": \"dona\",\n  \"quantity\": 100\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/materials"
+          }
+        },
+        {
+          "name": "Adjust Material",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": 10,\n  \"reason\": \"Yangi kirim\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/materials/{{materialId}}/adjust"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Expense Categories",
+      "item": [
+        {
+          "name": "Create Expense Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('expenseCategoryId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Transport\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/expense-categories"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "Create Expense",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('expenseId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"materialId\": \"{{materialId}}\",\n  \"name\": \"Yoqilg'i\",\n  \"price\": 125000,\n  \"description\": \"Test expense\",\n  \"paymentMethod\": \"CASH\",\n  \"expenseDate\": \"2026-04-13\",\n  \"uploadId\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/expenses"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "Upload File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('uploadId', data.id);",
+                  "if (data.key) pm.collectionVariables.set('uploadKey', data.key);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/uploads"
+          }
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/uploads/{{uploadKey}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/dashboard/summary?from=2026-04-01&to=2026-04-30"
+          }
+        },
+        {
+          "name": "Orders By Status",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/dashboard/orders-by-status?type=ALBUM"
+          }
+        }
+      ]
+    }
+  ]
 }
