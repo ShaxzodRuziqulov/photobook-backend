@@ -41,35 +41,138 @@ class DashboardServiceTest {
         List<DashboardCountDto> result = dashboardService.getOrdersByCategory(OrderKind.ALBUM);
 
         assertEquals(2, result.size());
-        assertEquals("A3 albom", result.get(0).getKey());
-        assertEquals(300L, result.get(0).getCount());
-        assertEquals("Kichik albom", result.get(1).getKey());
-        assertEquals(50L, result.get(1).getCount());
+        assertEquals(300L, countForCategory("A3 albom", result));
+        assertEquals(50L, countForCategory("Kichik albom", result));
+        assertEquals("ALBUM", kindForCategory("A3 albom", result));
+        assertEquals(null, statusForCategory("A3 albom", result));
     }
 
     @Test
     void shouldSumOrderAmountsByStatusAndKind() {
+        ProductCategory albumA3 = category("A3 albom", OrderKind.ALBUM);
+        ProductCategory albumMini = category("Kichik albom", OrderKind.ALBUM);
+        ProductCategory vignetteWhite = category("Bitiruvchi oq", OrderKind.VIGNETTE);
+
         when(orderRepository.findAll()).thenReturn(List.of(
+                order(OrderKind.ALBUM, OrderStatus.COMPLETED, albumA3, 200),
+                order(OrderKind.ALBUM, OrderStatus.IN_PROGRESS, albumA3, 50),
+                order(OrderKind.ALBUM, OrderStatus.COMPLETED, albumMini, 30),
+                order(OrderKind.VIGNETTE, OrderStatus.COMPLETED, vignetteWhite, 40)
+        ));
+        when(orderRepository.findAllWithDetails()).thenReturn(List.of(
                 order(OrderKind.ALBUM, OrderStatus.COMPLETED, category("A3 albom", OrderKind.ALBUM), 200),
-                order(OrderKind.ALBUM, OrderStatus.IN_PROGRESS, category("A3 albom", OrderKind.ALBUM), 100),
+                order(OrderKind.ALBUM, OrderStatus.IN_PROGRESS, category("A3 albom", OrderKind.ALBUM), 50),
+                order(OrderKind.ALBUM, OrderStatus.COMPLETED, category("Kichik albom", OrderKind.ALBUM), 30),
                 order(OrderKind.VIGNETTE, OrderStatus.COMPLETED, category("Bitiruvchi oq", OrderKind.VIGNETTE), 40)
         ));
 
         List<DashboardCountDto> byStatus = dashboardService.getOrdersByStatus(OrderKind.ALBUM);
         List<DashboardCountDto> byKind = dashboardService.getOrdersByKind();
 
-        assertEquals(100L, countFor("IN_PROGRESS", byStatus));
-        assertEquals(200L, countFor("COMPLETED", byStatus));
-        assertEquals(300L, countFor("ALBUM", byKind));
-        assertEquals(40L, countFor("VIGNETTE", byKind));
+        assertEquals(3, byStatus.size());
+        assertEquals(200L, countForStatus("COMPLETED", "A3 albom", byStatus));
+        assertEquals(50L, countForStatus("IN_PROGRESS", "A3 albom", byStatus));
+        assertEquals(30L, countForStatus("COMPLETED", "Kichik albom", byStatus));
+        assertEquals(280L, countForKind("ALBUM", byKind));
+        assertEquals(40L, countForKind("VIGNETTE", byKind));
+        assertEquals("ALBUM", kindForStatus("IN_PROGRESS", "A3 albom", byStatus));
+        assertEquals("IN_PROGRESS", statusForStatus("IN_PROGRESS", "A3 albom", byStatus));
+        assertEquals("A3 albom", categoryForStatus("IN_PROGRESS", "A3 albom", byStatus));
+        assertEquals("ALBUM", kindForKind("ALBUM", byKind));
+        assertEquals(null, statusForKind("ALBUM", byKind));
+        assertEquals(null, categoryForKind("ALBUM", byKind));
     }
 
-    private static long countFor(String key, List<DashboardCountDto> items) {
+    private static long countForKind(String kind, List<DashboardCountDto> items) {
         return items.stream()
-                .filter(item -> item.getKey().equals(key))
+                .filter(item -> java.util.Objects.equals(item.getKind(), kind))
                 .findFirst()
                 .orElseThrow()
                 .getCount();
+    }
+
+    private static long countForStatus(String status, String category, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getStatus(), status))
+                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .findFirst()
+                .orElseThrow()
+                .getCount();
+    }
+
+    private static long countForCategory(String category, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .findFirst()
+                .orElseThrow()
+                .getCount();
+    }
+
+    private static String categoryForStatus(String status, String category, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getStatus(), status))
+                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .findFirst()
+                .orElseThrow()
+                .getCategory();
+    }
+
+    private static String categoryForKind(String kind, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getKind(), kind))
+                .findFirst()
+                .orElseThrow()
+                .getCategory();
+    }
+
+    private static String kindForStatus(String status, String category, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getStatus(), status))
+                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .findFirst()
+                .orElseThrow()
+                .getKind();
+    }
+
+    private static String kindForKind(String kind, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getKind(), kind))
+                .findFirst()
+                .orElseThrow()
+                .getKind();
+    }
+
+    private static String kindForCategory(String category, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .findFirst()
+                .orElseThrow()
+                .getKind();
+    }
+
+    private static String statusForStatus(String status, String category, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getStatus(), status))
+                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .findFirst()
+                .orElseThrow()
+                .getStatus();
+    }
+
+    private static String statusForKind(String kind, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getKind(), kind))
+                .findFirst()
+                .orElseThrow()
+                .getStatus();
+    }
+
+    private static String statusForCategory(String category, List<DashboardCountDto> items) {
+        return items.stream()
+                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .findFirst()
+                .orElseThrow()
+                .getStatus();
     }
 
     private static Order order(OrderKind kind, OrderStatus status, ProductCategory category, Integer amount) {

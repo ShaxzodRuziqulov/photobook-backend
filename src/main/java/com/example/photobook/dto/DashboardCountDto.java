@@ -6,6 +6,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class DashboardCountDto {
-    private String key;
     private long count;
+    private String kind;
+    private String status;
+    private String category;
 }

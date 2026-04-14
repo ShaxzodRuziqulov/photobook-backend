@@ -17,126 +17,259 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
+
     private final OrderRepository orderRepository;
     private final ExpenseRepository expenseRepository;
     private final ProductCategoryRepository productCategoryRepository;
 
     public DashboardSummaryDto getSummary(LocalDate from, LocalDate to) {
-        List<Order> orders = filterOrders(orderRepository.findAll(), from, to);
-        List<Expense> expenses = filterExpenses(expenseRepository.findAll(), from, to);
+        List<Order> orders = getFilteredOrders(from, to);
+        List<Expense> expenses = getFilteredExpenses(from, to);
 
-        BigDecimal revenueTotal = orders.stream()
-                .map(order -> BigDecimal.valueOf(order.getAmount() == null ? 0 : order.getAmount()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal revenueTotal = BigDecimal.ZERO;
+        for (Order order : orders) {
+            revenueTotal = revenueTotal.add(getOrderAmountBigDecimal(order));
+        }
 
-        BigDecimal expensesTotal = expenses.stream()
-                .map(expense -> expense.getPrice() == null ? BigDecimal.ZERO : expense.getPrice())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal expensesTotal = BigDecimal.ZERO;
+        for (Expense expense : expenses) {
+            expensesTotal = expensesTotal.add(getExpenseAmount(expense));
+        }
+
+        long ordersTotal = 0;
+        long ordersDone = 0;
+        long ordersInProgress = 0;
+
+        for (Order order : orders) {
+            long amount = getOrderAmount(order);
+            ordersTotal += amount;
+
+            if (order.getStatus() == OrderStatus.COMPLETED) {
+                ordersDone += amount;
+            }
+
+            if (order.getStatus() == OrderStatus.IN_PROGRESS) {
+                ordersInProgress += amount;
+            }
+        }
 
         DashboardSummaryDto dto = new DashboardSummaryDto();
-        dto.setOrdersTotal(orders.stream().mapToLong(this::getOrderAmount).sum());
-        dto.setOrdersDone(orders.stream()
-                .filter(order -> order.getStatus() == OrderStatus.COMPLETED)
-                .mapToLong(this::getOrderAmount)
-                .sum());
-        dto.setOrdersInProgress(orders.stream()
-                .filter(order -> order.getStatus() == OrderStatus.IN_PROGRESS)
-                .mapToLong(this::getOrderAmount)
-                .sum());
+        dto.setOrdersTotal(ordersTotal);
+        dto.setOrdersDone(ordersDone);
+        dto.setOrdersInProgress(ordersInProgress);
         dto.setRevenueTotal(revenueTotal);
         dto.setExpensesTotal(expensesTotal);
         dto.setProfit(revenueTotal.subtract(expensesTotal));
+
         return dto;
     }
 
-    public List<DashboardCountDto> getOrdersByStatus(OrderKind type) {
-        Map<OrderStatus, Long> countsByStatus = orderRepository.findAll().stream()
-                .filter(order -> order.getKind() == type)
-                .collect(Collectors.groupingBy(Order::getStatus,
-                        () -> new EnumMap<>(OrderStatus.class),
-                        Collectors.summingLong(this::getOrderAmount)));
+    public List<DashboardCountDto> getOrdersByStatus(OrderKind kind) {
+        List<Order> orders = orderRepository.findAllWithDetails();
+        Map<String, Long> result = new HashMap<>();
 
-        return Arrays.stream(OrderStatus.values())
-                .map(status -> new DashboardCountDto(status.name(), countsByStatus.getOrDefault(status, 0L)))
-                .toList();
+        for (Order order : orders) {
+            if (order.getKind() != kind) {
+                continue;
+            }
+            if (order.getCategory() == null || order.getStatus() == null) {
+                continue;
+            }
+
+            String key = order.getCategory().getName() + "|" + order.getStatus().name();
+            result.put(key, result.getOrDefault(key, 0L) + getOrderAmount(order));
+        }
+
+        List<DashboardCountDto> list = new ArrayList<>();
+        for (Map.Entry<String, Long> entry : result.entrySet()) {
+            String[] parts = entry.getKey().split("\\|");
+            String categoryName = parts[0];
+            String statusName = parts[1];
+
+            list.add(new DashboardCountDto(
+                    entry.getValue(),
+                    kind.name(),
+                    statusName,
+                    categoryName
+            ));
+        }
+
+        list.sort(Comparator
+                .comparing(DashboardCountDto::getCategory, Comparator.nullsLast(String::compareTo))
+                .thenComparing(DashboardCountDto::getStatus, Comparator.nullsLast(String::compareTo)));
+
+        return list;
     }
 
     public List<DashboardCountDto> getOrdersByKind() {
-        Map<OrderKind, Long> countsByKind = orderRepository.findAll().stream()
-                .collect(Collectors.groupingBy(Order::getKind,
-                        () -> new EnumMap<>(OrderKind.class),
-                        Collectors.summingLong(this::getOrderAmount)));
+        Map<OrderKind, Long> counts = new EnumMap<>(OrderKind.class);
 
-        return Arrays.stream(OrderKind.values())
-                .map(kind -> new DashboardCountDto(kind.name(), countsByKind.getOrDefault(kind, 0L)))
-                .toList();
+        for (Order order : orderRepository.findAll()) {
+            OrderKind kind = order.getKind();
+            if (kind == null) {
+                continue;
+            }
+
+            counts.put(kind, counts.getOrDefault(kind, 0L) + getOrderAmount(order));
+        }
+
+        List<DashboardCountDto> list = new ArrayList<>();
+        for (OrderKind kind : OrderKind.values()) {
+            list.add(new DashboardCountDto(
+                    counts.getOrDefault(kind, 0L),
+                    kind.name(),
+                    null,
+                    null
+            ));
+        }
+
+        return list;
     }
 
-    public List<DashboardCountDto> getOrdersByCategory(OrderKind type) {
-        Map<String, Long> countsByCategory = orderRepository.findAllWithDetails().stream()
-                .filter(order -> order.getKind() == type)
-                .filter(order -> order.getCategory() != null)
-                .collect(Collectors.groupingBy(order -> order.getCategory().getName(),
-                        Collectors.summingLong(this::getOrderAmount)));
+    public List<DashboardCountDto> getOrdersByCategory(OrderKind kind) {
+        Map<String, Long> counts = new HashMap<>();
 
-        return productCategoryRepository.findByKindOrderByNameAsc(type).stream()
-                .map(ProductCategory::getName)
-                .map(categoryName -> new DashboardCountDto(categoryName, countsByCategory.getOrDefault(categoryName, 0L)))
-                .toList();
+        for (Order order : orderRepository.findAllWithDetails()) {
+            if (order.getKind() != kind) {
+                continue;
+            }
+            if (order.getCategory() == null) {
+                continue;
+            }
+
+            String categoryName = order.getCategory().getName();
+            counts.put(categoryName, counts.getOrDefault(categoryName, 0L) + getOrderAmount(order));
+        }
+
+        List<DashboardCountDto> list = new ArrayList<>();
+        List<ProductCategory> categories = productCategoryRepository.findByKindOrderByNameAsc(kind);
+
+        for (ProductCategory category : categories) {
+            String categoryName = category.getName();
+            list.add(new DashboardCountDto(
+                    counts.getOrDefault(categoryName, 0L),
+                    kind.name(),
+                    null,
+                    categoryName
+            ));
+        }
+
+        return list;
     }
 
     public List<DashboardAmountTrendDto> getRevenueTrend() {
-        return orderRepository.findAll().stream()
-                .filter(order -> order.getAcceptedDate() != null)
-                .collect(Collectors.groupingBy(order -> YearMonth.from(order.getAcceptedDate()),
-                        Collectors.mapping(order -> BigDecimal.valueOf(order.getAmount() == null ? 0 : order.getAmount()),
-                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))))
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> new DashboardAmountTrendDto(entry.getKey().toString(), entry.getValue()))
-                .toList();
+        Map<YearMonth, BigDecimal> trend = new TreeMap<>();
+
+        for (Order order : orderRepository.findAll()) {
+            if (order.getAcceptedDate() == null) {
+                continue;
+            }
+
+            YearMonth month = YearMonth.from(order.getAcceptedDate());
+            BigDecimal amount = getOrderAmountBigDecimal(order);
+
+            trend.put(month, trend.getOrDefault(month, BigDecimal.ZERO).add(amount));
+        }
+
+        List<DashboardAmountTrendDto> list = new ArrayList<>();
+        for (Map.Entry<YearMonth, BigDecimal> entry : trend.entrySet()) {
+            list.add(new DashboardAmountTrendDto(
+                    entry.getKey().toString(),
+                    entry.getValue()
+            ));
+        }
+
+        return list;
     }
 
     public List<DashboardAmountTrendDto> getExpensesTrend() {
-        return expenseRepository.findAll().stream()
-                .filter(expense -> expense.getExpenseDate() != null)
-                .collect(Collectors.groupingBy(expense -> YearMonth.from(expense.getExpenseDate()),
-                        Collectors.mapping(expense -> expense.getPrice() == null ? BigDecimal.ZERO : expense.getPrice(),
-                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))))
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> new DashboardAmountTrendDto(entry.getKey().toString(), entry.getValue()))
-                .toList();
+        Map<YearMonth, BigDecimal> trend = new TreeMap<>();
+
+        for (Expense expense : expenseRepository.findAll()) {
+            if (expense.getExpenseDate() == null) {
+                continue;
+            }
+
+            YearMonth month = YearMonth.from(expense.getExpenseDate());
+            BigDecimal amount = getExpenseAmount(expense);
+
+            trend.put(month, trend.getOrDefault(month, BigDecimal.ZERO).add(amount));
+        }
+
+        List<DashboardAmountTrendDto> list = new ArrayList<>();
+        for (Map.Entry<YearMonth, BigDecimal> entry : trend.entrySet()) {
+            list.add(new DashboardAmountTrendDto(
+                    entry.getKey().toString(),
+                    entry.getValue()
+            ));
+        }
+
+        return list;
     }
 
-    private List<Order> filterOrders(List<Order> orders, LocalDate from, LocalDate to) {
-        return orders.stream()
-                .filter(order -> from == null || (order.getAcceptedDate() != null && !order.getAcceptedDate().isBefore(from)))
-                .filter(order -> to == null || (order.getAcceptedDate() != null && !order.getAcceptedDate().isAfter(to)))
-                .sorted(Comparator.comparing(Order::getAcceptedDate, Comparator.nullsLast(Comparator.naturalOrder())))
-                .toList();
+    private List<Order> getFilteredOrders(LocalDate from, LocalDate to) {
+        List<Order> result = new ArrayList<>();
+
+        for (Order order : orderRepository.findAll()) {
+            LocalDate date = order.getAcceptedDate();
+            if (date == null) {
+                continue;
+            }
+            if (from != null && date.isBefore(from)) {
+                continue;
+            }
+            if (to != null && date.isAfter(to)) {
+                continue;
+            }
+
+            result.add(order);
+        }
+
+        return result;
     }
 
-    private List<Expense> filterExpenses(List<Expense> expenses, LocalDate from, LocalDate to) {
-        return expenses.stream()
-                .filter(expense -> from == null || (expense.getExpenseDate() != null && !expense.getExpenseDate().isBefore(from)))
-                .filter(expense -> to == null || (expense.getExpenseDate() != null && !expense.getExpenseDate().isAfter(to)))
-                .toList();
+    private List<Expense> getFilteredExpenses(LocalDate from, LocalDate to) {
+        List<Expense> result = new ArrayList<>();
+
+        for (Expense expense : expenseRepository.findAll()) {
+            LocalDate date = expense.getExpenseDate();
+            if (date == null) {
+                continue;
+            }
+            if (from != null && date.isBefore(from)) {
+                continue;
+            }
+            if (to != null && date.isAfter(to)) {
+                continue;
+            }
+
+            result.add(expense);
+        }
+
+        return result;
     }
 
     private long getOrderAmount(Order order) {
         return order.getAmount() == null ? 0L : order.getAmount().longValue();
+    }
+
+    private BigDecimal getOrderAmountBigDecimal(Order order) {
+        return order.getAmount() == null
+                ? BigDecimal.ZERO
+                : BigDecimal.valueOf(order.getAmount());
+    }
+
+    private BigDecimal getExpenseAmount(Expense expense) {
+        return expense.getPrice() == null ? BigDecimal.ZERO : expense.getPrice();
     }
 }
