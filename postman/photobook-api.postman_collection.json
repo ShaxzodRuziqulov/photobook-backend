@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d6d87f2e-fbdb-4d90-99e2-3a2c7958b7f1",
     "name": "Photobook API",
-    "description": "Simplified Postman collection aligned with the current backend controllers and DTOs.",
+    "description": "Full Postman collection aligned with the current backend controllers, DTOs, and API documentation.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -28,7 +28,9 @@
     { "key": "expenseCategoryId", "value": "" },
     { "key": "expenseId", "value": "" },
     { "key": "uploadId", "value": "" },
-    { "key": "uploadKey", "value": "" }
+    { "key": "uploadKey", "value": "" },
+    { "key": "notificationId", "value": "" },
+    { "key": "historyId", "value": "" }
   ],
   "item": [
     {
@@ -63,6 +65,19 @@
         },
         {
           "name": "Refresh",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.access_token) pm.collectionVariables.set('accessToken', data.access_token);",
+                  "if (data.refresh_token) pm.collectionVariables.set('refreshToken', data.refresh_token);"
+                ]
+              }
+            }
+          ],
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
@@ -79,6 +94,18 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/auth/me"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/logout"
           }
         }
       ]
@@ -105,8 +132,53 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Ali\",\n  \"lastName\": \"Valiyev\",\n  \"profession\": \"Designer\",\n  \"username\": \"ali.valiyev\",\n  \"password\": \"123456\",\n  \"phone\": \"+998901234567\",\n  \"bio\": \"Operator user\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"firstName\": \"Ali\",\n  \"lastName\": \"Valiyev\",\n  \"profession\": \"Designer\",\n  \"username\": \"ali.valiyev\",\n  \"password\": \"123456\",\n  \"avatarUrl\": null,\n  \"phone\": \"+998901234567\",\n  \"bio\": \"Operator user\",\n  \"isActive\": true,\n  \"uploadId\": null,\n  \"roles\": []\n}"
             },
+            "url": "{{baseUrl}}/api/v1/users"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Ali\",\n  \"lastName\": \"Valiyev Updated\",\n  \"profession\": \"Senior Designer\",\n  \"username\": \"ali.valiyev\",\n  \"password\": \"123456\",\n  \"avatarUrl\": null,\n  \"phone\": \"+998901234567\",\n  \"bio\": \"Updated bio\",\n  \"isActive\": true,\n  \"uploadId\": null,\n  \"roles\": []\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/users/me"
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Ali\",\n  \"lastName\": \"Valiyev\",\n  \"profession\": \"Designer\",\n  \"email\": \"ali@example.com\",\n  \"avatarUrl\": null,\n  \"phone\": \"+998901234567\",\n  \"bio\": \"Profile update\",\n  \"uploadId\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users/me"
+          }
+        },
+        {
+          "name": "Get User By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
             "url": "{{baseUrl}}/api/v1/users"
           }
         },
@@ -132,6 +204,13 @@
               "raw": "{\n  \"roleIds\": [\"{{roleId}}\"]\n}"
             },
             "url": "{{baseUrl}}/api/v1/users/{{userId}}/roles"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/users/{{userId}}"
           }
         }
       ]
@@ -164,10 +243,48 @@
           }
         },
         {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ROLE_MANAGER\",\n  \"description\": \"Updated manager role\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/roles/{{roleId}}"
+          }
+        },
+        {
+          "name": "Get Role By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/roles/{{roleId}}"
+          }
+        },
+        {
           "name": "Get Roles",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/roles"
+          }
+        },
+        {
+          "name": "Roles Paging",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"MANAGER\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/roles/paging?page=0&size=10&sort=name,asc"
+          }
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/roles/{{roleId}}"
           }
         }
       ]
@@ -200,10 +317,48 @@
           }
         },
         {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Yangi Mijoz Updated\",\n  \"phone\": \"+998901234567\",\n  \"notes\": \"Updated note\",\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/customers/{{customerId}}"
+          }
+        },
+        {
+          "name": "Get Customer By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/customers/{{customerId}}"
+          }
+        },
+        {
           "name": "Get Customers",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/customers"
+          }
+        },
+        {
+          "name": "Customers Paging",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"mijoz\",\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/customers/paging?page=0&size=10&sort=fullName,asc"
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/customers/{{customerId}}"
           }
         }
       ]
@@ -236,10 +391,55 @@
           }
         },
         {
+          "name": "Update Product Category",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Premium Album Updated\",\n  \"kind\": \"ALBUM\",\n  \"defaultPages\": \"24\",\n  \"size\": \"30x40\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/product-categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Get Product Category By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/product-categories/{{categoryId}}"
+          }
+        },
+        {
           "name": "Get Product Categories",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/product-categories"
+          }
+        },
+        {
+          "name": "Get Product Categories By Kind",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/product-categories?kind=ALBUM"
+          }
+        },
+        {
+          "name": "Product Categories Paging",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"search\": \"Premium\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/product-categories/paging?page=0&size=10&sort=name,asc"
+          }
+        },
+        {
+          "name": "Delete Product Category",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/product-categories/{{categoryId}}"
           }
         }
       ]
@@ -266,8 +466,34 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh albomi\",\n  \"itemType\": \"Premium\",\n  \"customerId\": \"{{customerId}}\",\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"pageCount\": 20,\n  \"amount\": 50,\n  \"acceptedDate\": \"2026-04-13\",\n  \"deadline\": \"2026-04-20\",\n  \"status\": \"IN_PROGRESS\",\n  \"notes\": \"Test order\",\n  \"uploadId\": null\n}"
+              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi\",\n  \"itemType\": \"Premium\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"processedCount\": 0,\n  \"currentStepProcessedCount\": 0,\n  \"activeEmployeeId\": null,\n  \"activeEmployeeName\": null,\n  \"pageCount\": 20,\n  \"amount\": 50,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-20\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Test order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
             },
+            "url": "{{baseUrl}}/api/v1/orders"
+          }
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi Updated\",\n  \"itemType\": \"Premium\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"pageCount\": 24,\n  \"amount\": 60,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-22\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Updated order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
+          }
+        },
+        {
+          "name": "Get Order By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
+          }
+        },
+        {
+          "name": "Get Orders",
+          "request": {
+            "method": "GET",
             "url": "{{baseUrl}}/api/v1/orders"
           }
         },
@@ -278,9 +504,9 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"search\": \"nikoh\",\n  \"kind\": \"ALBUM\",\n  \"status\": \"IN_PROGRESS\"\n}"
+              "raw": "{\n  \"search\": \"album\",\n  \"kind\": \"ALBUM\",\n  \"status\": \"IN_PROGRESS\",\n  \"customerId\": \"{{customerId}}\",\n  \"employeeId\": \"{{userId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"from\": \"2026-03-01\",\n  \"to\": \"2026-03-31\",\n  \"deadlineFrom\": \"2026-03-01\",\n  \"deadlineTo\": \"2026-03-31\"\n}"
             },
-            "url": "{{baseUrl}}/api/v1/orders/paging?page=0&size=10&sort=updatedAt,desc"
+            "url": "{{baseUrl}}/api/v1/orders/paging?page=0&size=10&sort=acceptedDate,desc"
           }
         },
         {
@@ -294,6 +520,20 @@
             },
             "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/status"
           }
+        },
+        {
+          "name": "Get Order Status History",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/status-history"
+          }
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
+          }
         }
       ]
     },
@@ -301,15 +541,22 @@
       "name": "User Tasks",
       "item": [
         {
+          "name": "Get My Task By Order Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/user-tasks/me/{{orderId}}"
+          }
+        },
+        {
           "name": "My Tasks Paging",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"search\": \"albom\",\n  \"statuses\": [\"IN_PROGRESS\"],\n  \"from\": \"2026-04-01\",\n  \"to\": \"2026-04-30\",\n  \"deadlineFrom\": \"2026-04-01\",\n  \"deadlineTo\": \"2026-04-30\"\n}"
+              "raw": "{\n  \"search\": \"album\",\n  \"statuses\": [\"IN_PROGRESS\"],\n  \"from\": \"2026-03-01\",\n  \"to\": \"2026-03-31\",\n  \"deadlineFrom\": \"2026-03-01\",\n  \"deadlineTo\": \"2026-03-31\"\n}"
             },
-            "url": "{{baseUrl}}/api/v1/user-tasks/me/paging?page=0&size=10&sort=updatedAt,desc"
+            "url": "{{baseUrl}}/api/v1/user-tasks/me/paging?page=0&size=10&sort=deadline,asc"
           }
         },
         {
@@ -319,35 +566,9 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"processedCount\": 5,\n  \"notes\": \"Yangi 5 tasi bajarildi\"\n}"
+              "raw": "{\n  \"processedCount\": 5,\n  \"notes\": \"5 ta tayyorlandi\",\n  \"workStatus\": \"COMPLETED\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/user-tasks/me/{{orderId}}"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Notifications",
-      "item": [
-        {
-          "name": "My Notifications",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/notifications/me"
-          }
-        },
-        {
-          "name": "Mark Notification Read",
-          "request": {
-            "method": "PUT",
-            "url": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read"
-          }
-        },
-        {
-          "name": "Mark All Read",
-          "request": {
-            "method": "PUT",
-            "url": "{{baseUrl}}/api/v1/notifications/read-all"
           }
         }
       ]
@@ -374,9 +595,47 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"itemName\": \"Karton\",\n  \"itemType\": \"RAW\",\n  \"unitName\": \"dona\",\n  \"quantity\": 100\n}"
+              "raw": "{\n  \"itemName\": \"Photo Paper\",\n  \"itemType\": \"RAW_MATERIAL\",\n  \"unitName\": \"sheet\",\n  \"quantity\": 100\n}"
             },
             "url": "{{baseUrl}}/api/v1/materials"
+          }
+        },
+        {
+          "name": "Update Material",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemName\": \"Photo Paper A4\",\n  \"itemType\": \"RAW_MATERIAL\",\n  \"unitName\": \"sheet\",\n  \"quantity\": 120\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/materials/{{materialId}}"
+          }
+        },
+        {
+          "name": "Get Material By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/materials/{{materialId}}"
+          }
+        },
+        {
+          "name": "Get Materials",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/materials"
+          }
+        },
+        {
+          "name": "Materials Paging",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"paper\",\n  \"itemType\": \"RAW_MATERIAL\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/materials/paging?page=0&size=10&sort=updatedAt,desc"
           }
         },
         {
@@ -386,9 +645,16 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"delta\": 10,\n  \"reason\": \"Yangi kirim\"\n}"
+              "raw": "{\n  \"delta\": -5,\n  \"reason\": \"Order production\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/materials/{{materialId}}/adjust"
+          }
+        },
+        {
+          "name": "Delete Material",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/materials/{{materialId}}"
           }
         }
       ]
@@ -419,6 +685,51 @@
             },
             "url": "{{baseUrl}}/api/v1/expense-categories"
           }
+        },
+        {
+          "name": "Update Expense Category",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Transport Updated\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/expense-categories/{{expenseCategoryId}}"
+          }
+        },
+        {
+          "name": "Get Expense Category By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/expense-categories/{{expenseCategoryId}}"
+          }
+        },
+        {
+          "name": "Get Expense Categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/expense-categories"
+          }
+        },
+        {
+          "name": "Expense Categories Paging",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"Transport\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/expense-categories/paging?page=0&size=10&sort=name,asc"
+          }
+        },
+        {
+          "name": "Delete Expense Category",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/expense-categories/{{expenseCategoryId}}"
+          }
         }
       ]
     },
@@ -444,9 +755,139 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"materialId\": \"{{materialId}}\",\n  \"name\": \"Yoqilg'i\",\n  \"price\": 125000,\n  \"description\": \"Test expense\",\n  \"paymentMethod\": \"CASH\",\n  \"expenseDate\": \"2026-04-13\",\n  \"uploadId\": null\n}"
+              "raw": "{\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"materialId\": \"{{materialId}}\",\n  \"name\": \"Paper purchase\",\n  \"price\": 125000,\n  \"description\": \"Monthly stock refill\",\n  \"paymentMethod\": \"CASH\",\n  \"receiptImageUrl\": null,\n  \"expenseDate\": \"2026-03-15\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/expenses"
+          }
+        },
+        {
+          "name": "Update Expense",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"materialId\": \"{{materialId}}\",\n  \"name\": \"Paper purchase updated\",\n  \"price\": 130000,\n  \"description\": \"Updated monthly stock refill\",\n  \"paymentMethod\": \"CARD\",\n  \"receiptImageUrl\": null,\n  \"expenseDate\": \"2026-03-15\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/expenses/{{expenseId}}"
+          }
+        },
+        {
+          "name": "Get Expense By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/expenses/{{expenseId}}"
+          }
+        },
+        {
+          "name": "Get Expenses",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/expenses"
+          }
+        },
+        {
+          "name": "Expenses Paging",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"paper\",\n  \"categoryId\": \"{{expenseCategoryId}}\",\n  \"materialId\": \"{{materialId}}\",\n  \"paymentMethod\": \"CASH\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/expenses/paging?page=0&size=10&sort=expenseDate,desc"
+          }
+        },
+        {
+          "name": "Delete Expense",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/expenses/{{expenseId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (Array.isArray(data) && data.length && data[0].id) pm.collectionVariables.set('notificationId', data[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/notifications/me"
+          }
+        },
+        {
+          "name": "Read Notification",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read"
+          }
+        },
+        {
+          "name": "Read All Notifications",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/v1/notifications/read-all"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/dashboard/summary?from=2026-03-01&to=2026-03-31"
+          }
+        },
+        {
+          "name": "Orders By Status",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/dashboard/orders-by-status?type=ALBUM"
+          }
+        },
+        {
+          "name": "Orders By Kind",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/dashboard/orders-by-kind"
+          }
+        },
+        {
+          "name": "Orders By Category",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/dashboard/orders-by-category?type=ALBUM"
+          }
+        },
+        {
+          "name": "Revenue Trend",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/dashboard/revenue-trend"
+          }
+        },
+        {
+          "name": "Expenses Trend",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/dashboard/expenses-trend"
           }
         }
       ]
@@ -470,22 +911,21 @@
             }
           ],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
             "body": {
               "mode": "formdata",
               "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": ""
-                }
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "ownerType", "value": "ORDER", "type": "text" },
+                { "key": "ownerId", "value": "{{orderId}}", "type": "text" }
               ]
             },
             "url": "{{baseUrl}}/api/v1/uploads"
           }
         },
         {
-          "name": "Delete File",
+          "name": "Delete Upload",
           "request": {
             "method": "DELETE",
             "url": "{{baseUrl}}/api/v1/uploads/{{uploadKey}}"
@@ -494,20 +934,85 @@
       ]
     },
     {
-      "name": "Dashboard",
+      "name": "Order Status Histories",
       "item": [
         {
-          "name": "Summary",
+          "name": "Create Order Status History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('historyId', data.id);"
+                ]
+              }
+            }
+          ],
           "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/dashboard/summary?from=2026-04-01&to=2026-04-30"
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"fromStatus\": \"PENDING\",\n  \"toStatus\": \"IN_PROGRESS\",\n  \"changedById\": \"{{userId}}\",\n  \"changedAt\": \"2026-04-13T11:00:00\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/order-status-histories"
           }
         },
         {
-          "name": "Orders By Status",
+          "name": "Update Order Status History",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"fromStatus\": \"IN_PROGRESS\",\n  \"toStatus\": \"PAUSED\",\n  \"changedById\": \"{{userId}}\",\n  \"changedAt\": \"2026-04-14T09:00:00\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/order-status-histories/{{historyId}}"
+          }
+        },
+        {
+          "name": "Get Order Status History By Id",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/v1/dashboard/orders-by-status?type=ALBUM"
+            "url": "{{baseUrl}}/api/v1/order-status-histories/{{historyId}}"
+          }
+        },
+        {
+          "name": "Get Order Status Histories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/order-status-histories"
+          }
+        },
+        {
+          "name": "Delete Order Status History",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/order-status-histories/{{historyId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Socket.IO",
+      "description": "HTTP handshake endpoints plus event notes. Client event: authenticate { token }. Server events: authenticated, auth_error, notification.",
+      "item": [
+        {
+          "name": "Socket Handshake GET",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/socket.io/?EIO=4&transport=polling"
+          }
+        },
+        {
+          "name": "Socket Handshake POST",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "url": "{{baseUrl}}/socket.io/?EIO=4&transport=polling"
           }
         }
       ]

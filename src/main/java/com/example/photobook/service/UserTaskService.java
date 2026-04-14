@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -232,7 +233,7 @@ public class UserTaskService {
 
     private void refreshPipelineWorkflow(Order order, int targetProgress) {
         List<OrderEmployee> assignments = order.getEmployees().stream()
-                .sorted(java.util.Comparator.comparing(OrderEmployee::getStepOrder))
+                .sorted(Comparator.comparing(OrderEmployee::getStepOrder))
                 .toList();
 
         if (assignments.isEmpty()) {

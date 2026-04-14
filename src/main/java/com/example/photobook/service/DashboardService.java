@@ -44,9 +44,15 @@ public class DashboardService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         DashboardSummaryDto dto = new DashboardSummaryDto();
-        dto.setOrdersTotal(orders.size());
-        dto.setOrdersDone(orders.stream().filter(order -> order.getStatus() == OrderStatus.COMPLETED).count());
-        dto.setOrdersInProgress(orders.stream().filter(order -> order.getStatus() == OrderStatus.IN_PROGRESS).count());
+        dto.setOrdersTotal(orders.stream().mapToLong(this::getOrderAmount).sum());
+        dto.setOrdersDone(orders.stream()
+                .filter(order -> order.getStatus() == OrderStatus.COMPLETED)
+                .mapToLong(this::getOrderAmount)
+                .sum());
+        dto.setOrdersInProgress(orders.stream()
+                .filter(order -> order.getStatus() == OrderStatus.IN_PROGRESS)
+                .mapToLong(this::getOrderAmount)
+                .sum());
         dto.setRevenueTotal(revenueTotal);
         dto.setExpensesTotal(expensesTotal);
         dto.setProfit(revenueTotal.subtract(expensesTotal));
@@ -56,7 +62,9 @@ public class DashboardService {
     public List<DashboardCountDto> getOrdersByStatus(OrderKind type) {
         Map<OrderStatus, Long> countsByStatus = orderRepository.findAll().stream()
                 .filter(order -> order.getKind() == type)
-                .collect(Collectors.groupingBy(Order::getStatus, () -> new EnumMap<>(OrderStatus.class), Collectors.counting()));
+                .collect(Collectors.groupingBy(Order::getStatus,
+                        () -> new EnumMap<>(OrderStatus.class),
+                        Collectors.summingLong(this::getOrderAmount)));
 
         return Arrays.stream(OrderStatus.values())
                 .map(status -> new DashboardCountDto(status.name(), countsByStatus.getOrDefault(status, 0L)))
@@ -65,7 +73,9 @@ public class DashboardService {
 
     public List<DashboardCountDto> getOrdersByKind() {
         Map<OrderKind, Long> countsByKind = orderRepository.findAll().stream()
-                .collect(Collectors.groupingBy(Order::getKind, () -> new EnumMap<>(OrderKind.class), Collectors.counting()));
+                .collect(Collectors.groupingBy(Order::getKind,
+                        () -> new EnumMap<>(OrderKind.class),
+                        Collectors.summingLong(this::getOrderAmount)));
 
         return Arrays.stream(OrderKind.values())
                 .map(kind -> new DashboardCountDto(kind.name(), countsByKind.getOrDefault(kind, 0L)))
@@ -76,7 +86,8 @@ public class DashboardService {
         Map<String, Long> countsByCategory = orderRepository.findAllWithDetails().stream()
                 .filter(order -> order.getKind() == type)
                 .filter(order -> order.getCategory() != null)
-                .collect(Collectors.groupingBy(order -> order.getCategory().getName(), Collectors.counting()));
+                .collect(Collectors.groupingBy(order -> order.getCategory().getName(),
+                        Collectors.summingLong(this::getOrderAmount)));
 
         return productCategoryRepository.findByKindOrderByNameAsc(type).stream()
                 .map(ProductCategory::getName)
@@ -123,5 +134,9 @@ public class DashboardService {
                 .filter(expense -> from == null || (expense.getExpenseDate() != null && !expense.getExpenseDate().isBefore(from)))
                 .filter(expense -> to == null || (expense.getExpenseDate() != null && !expense.getExpenseDate().isAfter(to)))
                 .toList();
+    }
+
+    private long getOrderAmount(Order order) {
+        return order.getAmount() == null ? 0L : order.getAmount().longValue();
     }
 }
