@@ -193,10 +193,10 @@ public class OrderService {
 
     private boolean isValidTransition(OrderStatus from, OrderStatus to) {
         Map<OrderStatus, Set<OrderStatus>> transitions = Map.of(
-                OrderStatus.PENDING, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.PAUSED),
-                OrderStatus.IN_PROGRESS, Set.of(OrderStatus.PAUSED, OrderStatus.COMPLETED),
-                OrderStatus.PAUSED, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED),
-                OrderStatus.COMPLETED, Set.of()
+                OrderStatus.PENDING, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.PAUSED, OrderStatus.COMPLETED),
+                OrderStatus.IN_PROGRESS, Set.of(OrderStatus.PAUSED, OrderStatus.COMPLETED, OrderStatus.PENDING),
+                OrderStatus.PAUSED, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED, OrderStatus.PENDING),
+                OrderStatus.COMPLETED, Set.of(OrderStatus.PENDING, OrderStatus.IN_PROGRESS, OrderStatus.PAUSED)
         );
 
         return transitions
@@ -408,8 +408,17 @@ public class OrderService {
                 .orElse(null);
 
         if (currentEmployee == null) {
-            order.setStatus(OrderStatus.COMPLETED);
-            sortedEmployees.forEach(employee -> employee.setWorkStatus(EmployeeWorkStatus.COMPLETED));
+            if (order.getStatus() == OrderStatus.COMPLETED) {
+                sortedEmployees.forEach(employee -> employee.setWorkStatus(EmployeeWorkStatus.COMPLETED));
+                return;
+            }
+
+            currentEmployee = sortedEmployees.get(0);
+            sortedEmployees.forEach(employee -> employee.setWorkStatus(EmployeeWorkStatus.PENDING));
+
+            if (order.getStatus() == OrderStatus.IN_PROGRESS) {
+                currentEmployee.setWorkStatus(EmployeeWorkStatus.STARTED);
+            }
             return;
         }
 

@@ -2,8 +2,10 @@ package com.example.photobook.service;
 
 import com.example.photobook.dto.EmployeeDto;
 import com.example.photobook.dto.OrderDto;
+import com.example.photobook.dto.OrderStatusTransitionDto;
 import com.example.photobook.entity.Customer;
 import com.example.photobook.entity.Order;
+import com.example.photobook.entity.OrderEmployee;
 import com.example.photobook.entity.ProductCategory;
 import com.example.photobook.entity.User;
 import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
@@ -18,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -115,5 +118,58 @@ class OrderServiceTest {
         verify(repository).save(order);
         verify(notificationService).deleteByOrderIdAndUserIds(orderId, java.util.Set.of());
         verify(socketIoService).notifyOrderUpdated(order);
+    }
+
+    @Test
+    void changeStatusAllowsReopenFromCompleted() {
+        OrderService service = new OrderService(
+                repository,
+                mapper,
+                productCategoryService,
+                customerService,
+                userService,
+                historyService,
+                uploadService,
+                notificationService,
+                socketIoService
+        );
+
+        UUID orderId = UUID.randomUUID();
+        UUID changedById = UUID.randomUUID();
+
+        Order order = new Order();
+        order.setId(orderId);
+        order.setStatus(OrderStatus.COMPLETED);
+
+        OrderEmployee first = new OrderEmployee();
+        first.setUser(new User());
+        first.getUser().setId(UUID.randomUUID());
+        first.setStepOrder(1);
+        first.setProcessedCount(10);
+        first.setWorkStatus(EmployeeWorkStatus.COMPLETED);
+
+        OrderEmployee second = new OrderEmployee();
+        second.setUser(new User());
+        second.getUser().setId(UUID.randomUUID());
+        second.setStepOrder(2);
+        second.setProcessedCount(10);
+        second.setWorkStatus(EmployeeWorkStatus.COMPLETED);
+
+        order.setEmployees(List.of(first, second));
+
+        OrderStatusTransitionDto dto = new OrderStatusTransitionDto();
+        dto.setToStatus(OrderStatus.IN_PROGRESS);
+
+        when(repository.findById(orderId)).thenReturn(Optional.of(order));
+        when(repository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(mapper.toDto(any(Order.class))).thenReturn(new OrderDto());
+
+        service.changeStatus(orderId, dto, changedById);
+
+        assertEquals(OrderStatus.IN_PROGRESS, order.getStatus());
+        assertEquals(EmployeeWorkStatus.STARTED, first.getWorkStatus());
+        assertEquals(EmployeeWorkStatus.PENDING, second.getWorkStatus());
+        verify(historyService).create(any());
+        verify(socketIoService).notifyOrderStatusChanged(order, OrderStatus.COMPLETED, OrderStatus.IN_PROGRESS);
     }
 }
