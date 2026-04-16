@@ -7,9 +7,9 @@ services:
     autoDeploy: true
     envVars:
       - key: PORT
-        value: 10000
+        value: "10000"
       - key: JPA_DDL_AUTO
-        value: update
+        value: "update"
       - key: JPA_SHOW_SQL
         value: "false"
       - key: SECRET_KEY

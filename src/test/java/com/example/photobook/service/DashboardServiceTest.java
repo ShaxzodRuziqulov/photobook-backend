@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,8 +44,8 @@ class DashboardServiceTest {
         assertEquals(2, result.size());
         assertEquals(300L, countForCategory("A3 albom", result));
         assertEquals(50L, countForCategory("Kichik albom", result));
-        assertEquals("ALBUM", kindForCategory("A3 albom", result));
-        assertEquals(null, statusForCategory("A3 albom", result));
+        assertEquals("ALBUM", kindForCategory(result));
+        assertNull(statusForCategory(result));
     }
 
     @Test
@@ -75,12 +76,12 @@ class DashboardServiceTest {
         assertEquals(30L, countForStatus("COMPLETED", "Kichik albom", byStatus));
         assertEquals(280L, countForKind("ALBUM", byKind));
         assertEquals(40L, countForKind("VIGNETTE", byKind));
-        assertEquals("ALBUM", kindForStatus("IN_PROGRESS", "A3 albom", byStatus));
-        assertEquals("IN_PROGRESS", statusForStatus("IN_PROGRESS", "A3 albom", byStatus));
-        assertEquals("A3 albom", categoryForStatus("IN_PROGRESS", "A3 albom", byStatus));
-        assertEquals("ALBUM", kindForKind("ALBUM", byKind));
-        assertEquals(null, statusForKind("ALBUM", byKind));
-        assertEquals(null, categoryForKind("ALBUM", byKind));
+        assertEquals("ALBUM", kindForStatus(byStatus));
+        assertEquals("IN_PROGRESS", statusForStatus(byStatus));
+        assertEquals("A3 albom", categoryForStatus(byStatus));
+        assertEquals("ALBUM", kindForKind(byKind));
+        assertNull(statusForKind(byKind));
+        assertNull(categoryForKind(byKind));
     }
 
     private static long countForKind(String kind, List<DashboardCountDto> items) {
@@ -108,68 +109,68 @@ class DashboardServiceTest {
                 .getCount();
     }
 
-    private static String categoryForStatus(String status, String category, List<DashboardCountDto> items) {
+    private static String categoryForStatus(List<DashboardCountDto> items) {
         return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getStatus(), status))
-                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .filter(item -> java.util.Objects.equals(item.getStatus(), "IN_PROGRESS"))
+                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
                 .findFirst()
                 .orElseThrow()
                 .getCategory();
     }
 
-    private static String categoryForKind(String kind, List<DashboardCountDto> items) {
+    private static String categoryForKind(List<DashboardCountDto> items) {
         return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getKind(), kind))
+                .filter(item -> java.util.Objects.equals(item.getKind(), "ALBUM"))
                 .findFirst()
                 .orElseThrow()
                 .getCategory();
     }
 
-    private static String kindForStatus(String status, String category, List<DashboardCountDto> items) {
+    private static String kindForStatus(List<DashboardCountDto> items) {
         return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getStatus(), status))
-                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .filter(item -> java.util.Objects.equals(item.getStatus(), "IN_PROGRESS"))
+                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
                 .findFirst()
                 .orElseThrow()
                 .getKind();
     }
 
-    private static String kindForKind(String kind, List<DashboardCountDto> items) {
+    private static String kindForKind(List<DashboardCountDto> items) {
         return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getKind(), kind))
+                .filter(item -> java.util.Objects.equals(item.getKind(), "ALBUM"))
                 .findFirst()
                 .orElseThrow()
                 .getKind();
     }
 
-    private static String kindForCategory(String category, List<DashboardCountDto> items) {
+    private static String kindForCategory(List<DashboardCountDto> items) {
         return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
                 .findFirst()
                 .orElseThrow()
                 .getKind();
     }
 
-    private static String statusForStatus(String status, String category, List<DashboardCountDto> items) {
+    private static String statusForStatus(List<DashboardCountDto> items) {
         return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getStatus(), status))
-                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .filter(item -> java.util.Objects.equals(item.getStatus(), "IN_PROGRESS"))
+                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
                 .findFirst()
                 .orElseThrow()
                 .getStatus();
     }
 
-    private static String statusForKind(String kind, List<DashboardCountDto> items) {
+    private static String statusForKind(List<DashboardCountDto> items) {
         return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getKind(), kind))
+                .filter(item -> java.util.Objects.equals(item.getKind(), "ALBUM"))
                 .findFirst()
                 .orElseThrow()
                 .getStatus();
     }
 
-    private static String statusForCategory(String category, List<DashboardCountDto> items) {
+    private static String statusForCategory(List<DashboardCountDto> items) {
         return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
+                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
                 .findFirst()
                 .orElseThrow()
                 .getStatus();
