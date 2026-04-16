@@ -17,7 +17,7 @@ DB_PASSWORD=<password>
 JPA_DDL_AUTO=update
 JPA_SHOW_SQL=false
 SECRET_KEY=<uzun-random-secret>
-APP_CORS_ALLOWED_ORIGINS=https://frontend-domain.up.railway.app,https://sizning-domainingiz.uz
+APP_CORS_ALLOWED_ORIGINS=https://photobookvue-production.up.railway.app,https://sizning-domainingiz.uz
 APP_UPLOAD_DIR=/app/uploads-storage
 ```
 
