@@ -246,11 +246,11 @@ Bu backend realtime notification uchun `socket.io` server ishlatadi.
 ### Socket endpoint
 
 - handshake path: `/socket.io/`
-- HTTP handshake `GET` va `POST` bilan ishlaydi
+- WebSocket transport ishlaydi, polling fallback uchun HTTP `GET` va `POST` ham qolgan
 - namespace: default `/`
 - auth: socket ulanganidan keyin `authenticate` event orqali token yuboriladi
 - client tavsiya: `socket.io-client`
-- transport: hozirgi implementatsiyada `polling`
+- transport: tavsiya etiladi `websocket`
 
 ### Frontend ulanish oqimi
 
@@ -261,6 +261,16 @@ Bu backend realtime notification uchun `socket.io` server ishlatadi.
 5. Token to'g'ri bo'lsa socket `user:{userId}` room ga qo'shiladi.
 6. Server `authenticated` event yuboradi.
 7. O'qilmagan notificationlar replay qilinadi.
+
+WebSocket-only frontend ulanish namunasi:
+
+```js
+const socket = io(API_BASE_URL, {
+  path: "/socket.io/",
+  transports: ["websocket"],
+  withCredentials: true,
+});
+```
 
 ### Auth eventlar
 
