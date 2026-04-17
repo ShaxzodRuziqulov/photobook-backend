@@ -82,7 +82,7 @@ Loyiha ichida hozir ishlatilayotgan asosiy jadvallar:
 - `amount` (int, required, default 0)
 - `accepted_date` (date, required)
 - `deadline` (date, required)
-- `status` (enum: `PENDING`, `IN_PROGRESS`, `PAUSED`, `COMPLETED`)
+- `status` (enum: `PENDING`, `IN_PROGRESS`, `PAUSED`, `COMPLETED`, `CANCELLED`)
 - `image_url` (string, null)
 - `notes` (text, null)
 - `created_at`, `updated_at`
@@ -193,5 +193,5 @@ Indexlar:
 - eski `order_employees.role` ustuni ishlatilmaydi
 - `order_employees.step_order` null bo'lmasligi kerak
 - `order_employees.work_status` saqlanishi kerak
-- `orders.status` enumida `PAUSED` bo'lishi kerak
+- `orders.status` enumida `PAUSED` va `CANCELLED` bo'lishi kerak
 - `notifications` jadvali realtime/offline notification oqimi uchun kerak

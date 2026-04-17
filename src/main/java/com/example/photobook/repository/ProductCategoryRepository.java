@@ -2,6 +2,7 @@ package com.example.photobook.repository;
 
 import com.example.photobook.entity.ProductCategory;
 import com.example.photobook.entity.enumirated.OrderKind;
+import com.example.photobook.projection.OrderCategoryCountProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Repository for product category persistence and category dashboard aggregations.
+ */
 @Repository
 public interface ProductCategoryRepository extends JpaRepository<ProductCategory, UUID> {
     boolean existsByNameIgnoreCase(String name);
@@ -19,6 +23,18 @@ public interface ProductCategoryRepository extends JpaRepository<ProductCategory
     boolean existsByNameIgnoreCaseAndIdNot(String name, UUID id);
 
     List<ProductCategory> findByKindOrderByNameAsc(OrderKind kind);
+
+    @Query("""
+            SELECT c.id AS categoryId,
+                   c.name AS categoryName,
+                   COUNT(o.id) AS count
+            FROM ProductCategory c
+            LEFT JOIN Order o ON o.category = c
+            WHERE c.kind = :kind
+            GROUP BY c.id, c.name
+            ORDER BY c.name ASC
+            """)
+    List<OrderCategoryCountProjection> countOrdersByCategory(@Param("kind") OrderKind kind);
 
     @Query("""
             SELECT p

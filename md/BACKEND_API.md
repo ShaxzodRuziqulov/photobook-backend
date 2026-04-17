@@ -349,21 +349,91 @@ Response:
 
 ## 12. Dashboard
 
-### GET /dashboard/summary
-Optional query:
-
-- `from=2026-03-01`
-- `to=2026-03-31`
-
-### GET /dashboard/orders-by-status?type=ALBUM|VIGNETTE|PICTURE
+Dashboard endpointlari SQL/JPQL aggregation bilan ishlaydi. Paging yoki `findAll()` ishlatilmaydi.
 
 ### GET /dashboard/orders-by-kind
 
+Response:
+
+```json
+[
+  {
+    "key": "ALBUM",
+    "count": 56
+  },
+  {
+    "key": "VIGNETTE",
+    "count": 10
+  },
+  {
+    "key": "PICTURE",
+    "count": 7
+  }
+]
+```
+
+Izoh:
+
+- Barcha `OrderKind` enum qiymatlari qaytadi.
+- Bazada order yo'q kindlar `count: 0` bilan qaytadi.
+- `count` orderlar soni, `orders.amount` yig'indisi emas.
+
+### GET /dashboard/orders-by-status?type=ALBUM|VIGNETTE|PICTURE
+
+Response:
+
+```json
+[
+  {
+    "key": "PENDING",
+    "count": 3
+  },
+  {
+    "key": "IN_PROGRESS",
+    "count": 40
+  },
+  {
+    "key": "PAUSED",
+    "count": 1
+  },
+  {
+    "key": "COMPLETED",
+    "count": 12
+  },
+  {
+    "key": "CANCELLED",
+    "count": 0
+  }
+]
+```
+
+Izoh:
+
+- `type` required query param.
+- Barcha `OrderStatus` enum qiymatlari qaytadi.
+- Tanlangan type uchun order yo'q statuslar `count: 0` bilan qaytadi.
+- `count` orderlar soni.
+
 ### GET /dashboard/orders-by-category?type=ALBUM|VIGNETTE|PICTURE
 
-### GET /dashboard/revenue-trend
+Response:
 
-### GET /dashboard/expenses-trend
+```json
+[
+  {
+    "categoryId": "uuid",
+    "categoryName": "A3 albom",
+    "count": 2
+  }
+]
+```
+
+Izoh:
+
+- `type` required query param.
+- Rasmda ko'ringan `Mahsulot turi bo'yicha hisobot` bloki uchun mos.
+- Backend tanlangan `type` dagi barcha product categorylarni qaytaradi.
+- Order yo'q categorylar ham `count: 0` bilan keladi.
 
 ## 13. Upload
 

@@ -849,13 +849,6 @@
       "name": "Dashboard",
       "item": [
         {
-          "name": "Summary",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/dashboard/summary?from=2026-03-01&to=2026-03-31"
-          }
-        },
-        {
           "name": "Orders By Status",
           "request": {
             "method": "GET",
@@ -874,20 +867,6 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/v1/dashboard/orders-by-category?type=ALBUM"
-          }
-        },
-        {
-          "name": "Revenue Trend",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/dashboard/revenue-trend"
-          }
-        },
-        {
-          "name": "Expenses Trend",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/dashboard/expenses-trend"
           }
         }
       ]

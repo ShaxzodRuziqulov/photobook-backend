@@ -1,194 +1,132 @@
 package com.example.photobook.service;
 
-import com.example.photobook.dto.DashboardCountDto;
-import com.example.photobook.entity.Order;
-import com.example.photobook.entity.ProductCategory;
+import com.example.photobook.dto.DashboardCategoryCountDto;
+import com.example.photobook.dto.DashboardKeyCountDto;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
-import com.example.photobook.repository.ExpenseRepository;
+import com.example.photobook.projection.OrderCategoryCountProjection;
+import com.example.photobook.projection.OrderKindCountProjection;
+import com.example.photobook.projection.OrderStatusCountProjection;
 import com.example.photobook.repository.OrderRepository;
 import com.example.photobook.repository.ProductCategoryRepository;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class DashboardServiceTest {
 
     private final OrderRepository orderRepository = mock(OrderRepository.class);
-    private final ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
     private final ProductCategoryRepository productCategoryRepository = mock(ProductCategoryRepository.class);
 
     private final DashboardService dashboardService =
-            new DashboardService(orderRepository, expenseRepository, productCategoryRepository);
+            new DashboardService(orderRepository, productCategoryRepository);
 
     @Test
-    void shouldSumOrderAmountsByCategory() {
-        ProductCategory albumA3 = category("A3 albom", OrderKind.ALBUM);
-        ProductCategory albumMini = category("Kichik albom", OrderKind.ALBUM);
-
-        when(orderRepository.findAllWithDetails()).thenReturn(List.of(
-                order(OrderKind.ALBUM, OrderStatus.COMPLETED, albumA3, 200),
-                order(OrderKind.ALBUM, OrderStatus.IN_PROGRESS, albumA3, 100),
-                order(OrderKind.ALBUM, OrderStatus.COMPLETED, albumMini, 50)
+    void shouldReturnAllKindsWithZeroCountsForMissingValues() {
+        when(orderRepository.countOrdersByKind()).thenReturn(List.of(
+                kindCount(OrderKind.ALBUM, 56),
+                kindCount(OrderKind.PICTURE, 7)
         ));
-        when(productCategoryRepository.findByKindOrderByNameAsc(OrderKind.ALBUM))
-                .thenReturn(List.of(albumA3, albumMini));
 
-        List<DashboardCountDto> result = dashboardService.getOrdersByCategory(OrderKind.ALBUM);
+        List<DashboardKeyCountDto> result = dashboardService.getOrdersByKind();
 
-        assertEquals(2, result.size());
-        assertEquals(300L, countForCategory("A3 albom", result));
-        assertEquals(50L, countForCategory("Kichik albom", result));
-        assertEquals("ALBUM", kindForCategory(result));
-        assertNull(statusForCategory(result));
+        assertEquals(3, result.size());
+        assertEquals(56L, countForKey("ALBUM", result));
+        assertEquals(0L, countForKey("VIGNETTE", result));
+        assertEquals(7L, countForKey("PICTURE", result));
     }
 
     @Test
-    void shouldSumOrderAmountsByStatusAndKind() {
-        ProductCategory albumA3 = category("A3 albom", OrderKind.ALBUM);
-        ProductCategory albumMini = category("Kichik albom", OrderKind.ALBUM);
-        ProductCategory vignetteWhite = category("Bitiruvchi oq", OrderKind.VIGNETTE);
-
-        when(orderRepository.findAll()).thenReturn(List.of(
-                order(OrderKind.ALBUM, OrderStatus.COMPLETED, albumA3, 200),
-                order(OrderKind.ALBUM, OrderStatus.IN_PROGRESS, albumA3, 50),
-                order(OrderKind.ALBUM, OrderStatus.COMPLETED, albumMini, 30),
-                order(OrderKind.VIGNETTE, OrderStatus.COMPLETED, vignetteWhite, 40)
-        ));
-        when(orderRepository.findAllWithDetails()).thenReturn(List.of(
-                order(OrderKind.ALBUM, OrderStatus.COMPLETED, category("A3 albom", OrderKind.ALBUM), 200),
-                order(OrderKind.ALBUM, OrderStatus.IN_PROGRESS, category("A3 albom", OrderKind.ALBUM), 50),
-                order(OrderKind.ALBUM, OrderStatus.COMPLETED, category("Kichik albom", OrderKind.ALBUM), 30),
-                order(OrderKind.VIGNETTE, OrderStatus.COMPLETED, category("Bitiruvchi oq", OrderKind.VIGNETTE), 40)
+    void shouldReturnAllStatusesWithZeroCountsForMissingValues() {
+        when(orderRepository.countOrdersByStatus(OrderKind.ALBUM)).thenReturn(List.of(
+                statusCount(OrderStatus.PENDING, 3),
+                statusCount(OrderStatus.IN_PROGRESS, 40),
+                statusCount(OrderStatus.COMPLETED, 12)
         ));
 
-        List<DashboardCountDto> byStatus = dashboardService.getOrdersByStatus(OrderKind.ALBUM);
-        List<DashboardCountDto> byKind = dashboardService.getOrdersByKind();
+        List<DashboardKeyCountDto> result = dashboardService.getOrdersByStatus(OrderKind.ALBUM);
 
-        assertEquals(3, byStatus.size());
-        assertEquals(200L, countForStatus("COMPLETED", "A3 albom", byStatus));
-        assertEquals(50L, countForStatus("IN_PROGRESS", "A3 albom", byStatus));
-        assertEquals(30L, countForStatus("COMPLETED", "Kichik albom", byStatus));
-        assertEquals(280L, countForKind("ALBUM", byKind));
-        assertEquals(40L, countForKind("VIGNETTE", byKind));
-        assertEquals("ALBUM", kindForStatus(byStatus));
-        assertEquals("IN_PROGRESS", statusForStatus(byStatus));
-        assertEquals("A3 albom", categoryForStatus(byStatus));
-        assertEquals("ALBUM", kindForKind(byKind));
-        assertNull(statusForKind(byKind));
-        assertNull(categoryForKind(byKind));
+        assertEquals(OrderStatus.values().length, result.size());
+        assertEquals(3L, countForKey("PENDING", result));
+        assertEquals(40L, countForKey("IN_PROGRESS", result));
+        assertEquals(0L, countForKey("PAUSED", result));
+        assertEquals(12L, countForKey("COMPLETED", result));
+        assertEquals(0L, countForKey("CANCELLED", result));
     }
 
-    private static long countForKind(String kind, List<DashboardCountDto> items) {
+    @Test
+    void shouldMapCategoryAggregationRows() {
+        UUID categoryId = UUID.randomUUID();
+
+        when(productCategoryRepository.countOrdersByCategory(OrderKind.ALBUM)).thenReturn(List.of(
+                categoryCount(categoryId, "A3 albom", 2)
+        ));
+
+        List<DashboardCategoryCountDto> result = dashboardService.getOrdersByCategory(OrderKind.ALBUM);
+
+        assertEquals(1, result.size());
+        assertEquals(categoryId, result.get(0).categoryId());
+        assertEquals("A3 albom", result.get(0).categoryName());
+        assertEquals(2L, result.get(0).count());
+    }
+
+    private static long countForKey(String key, List<DashboardKeyCountDto> items) {
         return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getKind(), kind))
+                .filter(item -> key.equals(item.key()))
                 .findFirst()
                 .orElseThrow()
-                .getCount();
+                .count();
     }
 
-    private static long countForStatus(String status, String category, List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getStatus(), status))
-                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
-                .findFirst()
-                .orElseThrow()
-                .getCount();
+    private static OrderKindCountProjection kindCount(OrderKind kind, long count) {
+        return new OrderKindCountProjection() {
+            @Override
+            public OrderKind getKind() {
+                return kind;
+            }
+
+            @Override
+            public long getCount() {
+                return count;
+            }
+        };
     }
 
-    private static long countForCategory(String category, List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getCategory(), category))
-                .findFirst()
-                .orElseThrow()
-                .getCount();
+    private static OrderStatusCountProjection statusCount(OrderStatus status, long count) {
+        return new OrderStatusCountProjection() {
+            @Override
+            public OrderStatus getStatus() {
+                return status;
+            }
+
+            @Override
+            public long getCount() {
+                return count;
+            }
+        };
     }
 
-    private static String categoryForStatus(List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getStatus(), "IN_PROGRESS"))
-                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
-                .findFirst()
-                .orElseThrow()
-                .getCategory();
-    }
+    private static OrderCategoryCountProjection categoryCount(UUID categoryId, String categoryName, long count) {
+        return new OrderCategoryCountProjection() {
+            @Override
+            public UUID getCategoryId() {
+                return categoryId;
+            }
 
-    private static String categoryForKind(List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getKind(), "ALBUM"))
-                .findFirst()
-                .orElseThrow()
-                .getCategory();
-    }
+            @Override
+            public String getCategoryName() {
+                return categoryName;
+            }
 
-    private static String kindForStatus(List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getStatus(), "IN_PROGRESS"))
-                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
-                .findFirst()
-                .orElseThrow()
-                .getKind();
-    }
-
-    private static String kindForKind(List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getKind(), "ALBUM"))
-                .findFirst()
-                .orElseThrow()
-                .getKind();
-    }
-
-    private static String kindForCategory(List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
-                .findFirst()
-                .orElseThrow()
-                .getKind();
-    }
-
-    private static String statusForStatus(List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getStatus(), "IN_PROGRESS"))
-                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
-                .findFirst()
-                .orElseThrow()
-                .getStatus();
-    }
-
-    private static String statusForKind(List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getKind(), "ALBUM"))
-                .findFirst()
-                .orElseThrow()
-                .getStatus();
-    }
-
-    private static String statusForCategory(List<DashboardCountDto> items) {
-        return items.stream()
-                .filter(item -> java.util.Objects.equals(item.getCategory(), "A3 albom"))
-                .findFirst()
-                .orElseThrow()
-                .getStatus();
-    }
-
-    private static Order order(OrderKind kind, OrderStatus status, ProductCategory category, Integer amount) {
-        Order order = new Order();
-        order.setKind(kind);
-        order.setStatus(status);
-        order.setCategory(category);
-        order.setAmount(amount);
-        return order;
-    }
-
-    private static ProductCategory category(String name, OrderKind kind) {
-        ProductCategory category = new ProductCategory();
-        category.setName(name);
-        category.setKind(kind);
-        return category;
+            @Override
+            public long getCount() {
+                return count;
+            }
+        };
     }
 }

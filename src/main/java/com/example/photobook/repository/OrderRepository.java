@@ -3,6 +3,8 @@ package com.example.photobook.repository;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
+import com.example.photobook.projection.OrderKindCountProjection;
+import com.example.photobook.projection.OrderStatusCountProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -16,8 +18,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Repository for order persistence and optimized order dashboard aggregations.
+ */
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
+
+    @Query("""
+            SELECT o.kind AS kind, COUNT(o.id) AS count
+            FROM Order o
+            GROUP BY o.kind
+            """)
+    List<OrderKindCountProjection> countOrdersByKind();
+
+    @Query("""
+            SELECT o.status AS status, COUNT(o.id) AS count
+            FROM Order o
+            WHERE o.kind = :kind
+            GROUP BY o.status
+            """)
+    List<OrderStatusCountProjection> countOrdersByStatus(@Param("kind") OrderKind kind);
 
     @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
     @Query("""

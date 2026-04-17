@@ -140,7 +140,7 @@ Bu backendning asosiy workflow moduli.
 ### Workflow business logic
 
 - order `IN_PROGRESS` bo'lsa birinchi incompleted employee `STARTED`
-- order `PENDING` yoki `PAUSED` bo'lsa incompleted employee lar `PENDING`
+- order `PENDING`, `PAUSED` yoki `CANCELLED` bo'lsa incompleted employee lar `PENDING`
 - order `COMPLETED` bo'lsa barcha employee `COMPLETED`
 - `processedCount` final step progressidan olinadi
 - `currentStepProcessedCount` active worker progressidan olinadi
@@ -152,10 +152,18 @@ Ruxsat etilgan transitionlar:
 
 - `PENDING -> IN_PROGRESS`
 - `PENDING -> PAUSED`
+- `PENDING -> CANCELLED`
 - `IN_PROGRESS -> PAUSED`
 - `IN_PROGRESS -> COMPLETED`
+- `IN_PROGRESS -> CANCELLED`
 - `PAUSED -> IN_PROGRESS`
 - `PAUSED -> COMPLETED`
+- `PAUSED -> CANCELLED`
+- `COMPLETED -> PENDING`
+- `COMPLETED -> IN_PROGRESS`
+- `COMPLETED -> PAUSED`
+- `CANCELLED -> PENDING`
+- `CANCELLED -> IN_PROGRESS`
 
 Cheklov:
 
@@ -232,12 +240,38 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 
 ### Endpointlar
 
-- `GET /api/v1/dashboard/summary`
-- `GET /api/v1/dashboard/orders-by-status`
 - `GET /api/v1/dashboard/orders-by-kind`
+- `GET /api/v1/dashboard/orders-by-status?type=ALBUM|VIGNETTE|PICTURE`
 - `GET /api/v1/dashboard/orders-by-category`
-- `GET /api/v1/dashboard/revenue-trend`
-- `GET /api/v1/dashboard/expenses-trend`
+
+### Hisoblash logikasi
+
+- Dashboard count qiymatlari order soni hisoblanadi, `orders.amount` yig'indisi emas.
+- Service paging data yoki `findAll()` ishlatmaydi.
+- `orders-by-kind` `orders` jadvalida `GROUP BY kind` bilan hisoblaydi.
+- `orders-by-status?type=...` tanlangan `OrderKind` bo'yicha `GROUP BY status` bilan hisoblaydi.
+- `orders-by-category?type=...` `product_categories` dan boshlanib, `orders` ga `LEFT JOIN` qiladi va `GROUP BY category` bilan hisoblaydi.
+- `orders-by-kind` barcha `OrderKind` enum qiymatlarini qaytaradi. Bazada yo'q qiymatlar `0`.
+- `orders-by-status` barcha `OrderStatus` enum qiymatlarini qaytaradi. Bazada yo'q qiymatlar `0`.
+- `orders-by-category` tanlangan type dagi categorylarni qaytaradi. Order yo'q categorylar `0`.
+
+### Rasmda ko'rsatilgan dashboardga moslik
+
+Rasmda `Albom` tabida quyidagi qiymatlar bor:
+
+- yuqoridagi `Jami`
+- `Jarayonda`
+- `Bajarilgan`
+- `Bajarilish foizi`
+- `Mahsulot turi bo'yicha hisobot`
+
+Amaldagi APIlar bu UI ni yopadi:
+
+- `Jami`: `GET /api/v1/dashboard/orders-by-kind` dan `kind = ALBUM` item `count` qiymatini olish mumkin.
+- `Jarayonda`: `GET /api/v1/dashboard/orders-by-status?type=ALBUM` natijasida `status = IN_PROGRESS` itemlar `count` yig'indisi olinadi.
+- `Bajarilgan`: `GET /api/v1/dashboard/orders-by-status?type=ALBUM` natijasida `status = COMPLETED` itemlar `count` yig'indisi olinadi.
+- `Bajarilish foizi`: frontend `COMPLETED / total * 100` qilib hisoblaydi. `total` uchun `orders-by-kind` yoki `orders-by-status` yig'indisi ishlatiladi.
+- `Mahsulot turi bo'yicha hisobot`: `GET /api/v1/dashboard/orders-by-category?type=ALBUM` mos keladi.
 
 ## 10. Socket Notification
 
@@ -378,6 +412,6 @@ Izoh:
 - `employees[].role` olib tashlangan
 - `employees[].stepOrder` majburiy bo'lgan
 - `employees[].workStatus` response ichida qaytadi
-- `orders.status` `PAUSED` ni ham qabul qiladi
+- `orders.status` `PAUSED` va `CANCELLED` ni ham qabul qiladi
 - worker update endpointida `status` o'rniga `workStatus` ishlatiladi
 - notificationlar uchun REST endpoint va socket replay oqimi qo'shilgan

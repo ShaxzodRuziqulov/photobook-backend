@@ -193,10 +193,11 @@ public class OrderService {
 
     private boolean isValidTransition(OrderStatus from, OrderStatus to) {
         Map<OrderStatus, Set<OrderStatus>> transitions = Map.of(
-                OrderStatus.PENDING, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.PAUSED, OrderStatus.COMPLETED),
-                OrderStatus.IN_PROGRESS, Set.of(OrderStatus.PAUSED, OrderStatus.COMPLETED, OrderStatus.PENDING),
-                OrderStatus.PAUSED, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED, OrderStatus.PENDING),
-                OrderStatus.COMPLETED, Set.of(OrderStatus.PENDING, OrderStatus.IN_PROGRESS, OrderStatus.PAUSED)
+                OrderStatus.PENDING, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.PAUSED, OrderStatus.COMPLETED, OrderStatus.CANCELLED),
+                OrderStatus.IN_PROGRESS, Set.of(OrderStatus.PAUSED, OrderStatus.COMPLETED, OrderStatus.PENDING, OrderStatus.CANCELLED),
+                OrderStatus.PAUSED, Set.of(OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED, OrderStatus.PENDING, OrderStatus.CANCELLED),
+                OrderStatus.COMPLETED, Set.of(OrderStatus.PENDING, OrderStatus.IN_PROGRESS, OrderStatus.PAUSED),
+                OrderStatus.CANCELLED, Set.of(OrderStatus.PENDING, OrderStatus.IN_PROGRESS)
         );
 
         return transitions
@@ -422,7 +423,9 @@ public class OrderService {
             return;
         }
 
-        if (order.getStatus() == OrderStatus.PAUSED || order.getStatus() == OrderStatus.PENDING) {
+        if (order.getStatus() == OrderStatus.PAUSED
+                || order.getStatus() == OrderStatus.PENDING
+                || order.getStatus() == OrderStatus.CANCELLED) {
             sortedEmployees.stream()
                     .filter(employee -> employee.getWorkStatus() != EmployeeWorkStatus.COMPLETED)
                     .forEach(employee -> employee.setWorkStatus(EmployeeWorkStatus.PENDING));
