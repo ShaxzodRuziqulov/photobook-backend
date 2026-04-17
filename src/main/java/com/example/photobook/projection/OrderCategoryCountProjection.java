@@ -1,12 +1,14 @@
 package com.example.photobook.projection;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
+/**
+ * Projection used by grouped product-category aggregation queries.
+ */
 public interface OrderCategoryCountProjection {
     UUID getCategoryId();
 
     String getCategoryName();
 
-    BigDecimal getTotalAmount();
+    long getCount();
 }

@@ -27,9 +27,16 @@ public interface ProductCategoryRepository extends JpaRepository<ProductCategory
     @Query("""
             SELECT c.id AS categoryId,
                    c.name AS categoryName,
-                   COALESCE(SUM(o.amount),0) AS totalAmount
+                   COALESCE(SUM(finalAssignment.processedCount), 0) AS count
             FROM ProductCategory c
             LEFT JOIN Order o ON o.category = c
+            LEFT JOIN OrderEmployee finalAssignment
+                   ON finalAssignment.order = o
+                  AND finalAssignment.stepOrder = (
+                      SELECT MAX(assignment.stepOrder)
+                      FROM OrderEmployee assignment
+                      WHERE assignment.order = o
+                  )
             WHERE c.kind = :kind
             GROUP BY c.id, c.name
             ORDER BY c.name ASC

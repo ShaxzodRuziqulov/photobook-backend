@@ -1,12 +1,13 @@
 package com.example.photobook.dto;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
-
+/**
+ * Lightweight dashboard response for product-category order counts.
+ */
 public record DashboardCategoryCountDto(
         UUID categoryId,
         String categoryName,
-        BigDecimal count
+        long count
 ) {
 }
