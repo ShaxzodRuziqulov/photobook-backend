@@ -74,7 +74,7 @@ public class DashboardService {
         return new DashboardCategoryCountDto(
                 row.getCategoryId(),
                 row.getCategoryName(),
-                row.getCount()
+                row.getTotalAmount()
         );
     }
 }

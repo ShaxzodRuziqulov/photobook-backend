@@ -27,7 +27,7 @@ public interface ProductCategoryRepository extends JpaRepository<ProductCategory
     @Query("""
             SELECT c.id AS categoryId,
                    c.name AS categoryName,
-                   COUNT(o.id) AS count
+                   COALESCE(SUM(o.amount),0) AS totalAmount
             FROM ProductCategory c
             LEFT JOIN Order o ON o.category = c
             WHERE c.kind = :kind

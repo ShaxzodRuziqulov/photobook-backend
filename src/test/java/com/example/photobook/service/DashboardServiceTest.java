@@ -124,7 +124,7 @@ class DashboardServiceTest {
             }
 
             @Override
-            public long getCount() {
+            public Long getCount() {
                 return count;
             }
         };
