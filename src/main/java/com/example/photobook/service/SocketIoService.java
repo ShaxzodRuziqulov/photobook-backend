@@ -261,13 +261,6 @@ public class SocketIoService {
                 .put("orderStatus", order.getStatus().name());
     }
 
-    private String buildFullName(User user) {
-        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
-        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
-        String fullName = (firstName + " " + lastName).trim();
-        return fullName.isEmpty() ? user.getUsername() : fullName;
-    }
-
     private String userRoom(UUID userId) {
         return "user:" + userId;
     }

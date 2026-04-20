@@ -60,14 +60,6 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public List<NotificationDto> findMyNotifications() {
-        UUID currentUserId = currentUserService.getCurrentUserId();
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(currentUserId).stream()
-                .map(this::toDto)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
     public Page<NotificationDto> findMyNotificationsPage(NotificationPagingRequest request, Pageable pageable) {
         UUID currentUserId = currentUserService.getCurrentUserId();
         NotificationPagingRequest safeRequest = request == null ? new NotificationPagingRequest() : request;

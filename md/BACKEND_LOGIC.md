@@ -91,7 +91,6 @@ Paging endpointlar `POST /resource/paging` ko'rinishida.
 - `GET /api/v1/user-tasks/me/{id}`
 - `POST /api/v1/user-tasks/me/paging`
 - `PUT /api/v1/user-tasks/me/{id}`
-- `GET /api/v1/notifications/me`
 - `POST /api/v1/notifications/me/paging`
 - `PUT /api/v1/notifications/{id}/read`
 - `PUT /api/v1/notifications/read-all`
@@ -177,6 +176,52 @@ Status o'zgarsa:
 - employee larga `ORDER_STATUS_CHANGED` notification yuboriladi
 - active assignment bo'lsa `TASK_ACTIVATED` ham yuboriladi
 
+### Order paging
+
+Endpoint:
+
+- `POST /api/v1/orders/paging?page=0&size=10&sort=updatedAt,desc`
+
+Request body:
+
+```json
+{
+  "search": "album",
+  "status": "IN_PROGRESS",
+  "acceptedDate": "2026-03-01",
+  "deadline": "2026-03-31"
+}
+```
+
+Bo'sh filter uchun:
+
+```json
+{}
+```
+
+Filter qoidalari:
+
+- `search` bo'sh yoki `null` bo'lsa qidiruv o'chadi.
+- `search` quyidagi fieldlardan qidiradi: `orderName`, `receiverName`, `customer.fullName`, employee full name, employee username, category name.
+- `status` `OrderStatus` enum bo'yicha aniq filterlaydi.
+- `acceptedDate` `orders.acceptedDate` bilan teng sana bo'yicha filterlaydi.
+- `deadline` `orders.deadline` bilan teng sana bo'yicha filterlaydi.
+- `kind`, `customerId`, `employeeId`, `categoryId`, `from`, `to`, `deadlineFrom`, `deadlineTo` order paging requestida ishlatilmaydi.
+
+Query ishlashi:
+
+- Repository `category`, `customer`, `employees`, `employees.user` ni `EntityGraph` orqali yuklaydi.
+- Query `DISTINCT` ishlatadi, chunki employee join bir orderni bir necha qatorda qaytarishi mumkin.
+- Nullable `status`, `acceptedDate`, `deadline` filterlari PostgreSQL null-param type xatosini bermasligi uchun `COALESCE(:param, field)` orqali qo'llangan.
+- Default controller sort belgilanmagan; frontend query param bilan sort yuborishi kerak. Tavsiya: `sort=updatedAt,desc`.
+
+Frontend uchun muhim qoidalar:
+
+- Holat selectida `Hammasi` tanlansa `status` fieldini yubormang yoki `null` yuboring.
+- Bo'sh date inputni `""` qilib yubormang; fieldni olib tashlang yoki `null` yuboring.
+- Sana filterlari range emas. Range kerak bo'lsa backend contract alohida kengaytiriladi.
+- Response `PageResponse<OrderDto>` formatida qaytadi: `content`, `pageNumber`, `pageSize`, `totalElements`, `totalPages`, `last`.
+
 ## 6. User Tasks
 
 Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qilishi uchun ishlaydi.
@@ -204,7 +249,6 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 
 ### Endpointlar
 
-- `GET /api/v1/notifications/me`
 - `POST /api/v1/notifications/me/paging`
 - `GET /api/v1/notifications/me/unread-count`
 - `PUT /api/v1/notifications/{id}/read`
@@ -213,7 +257,6 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 ### Ishlash mantig'i
 
 - notification yaratilganda DB ga saqlanadi
-- `GET /notifications/me` current user notificationlarini `createdAt desc` bo'yicha qaytaradi
 - `POST /notifications/me/paging` current user notificationlarini page ko'rinishida qaytaradi
 - paging filterlari: `search`, `type`, `isRead`, `actionRequired`
 - notification payloadda route uchun `targetType`, `targetId`, `targetKind`, `route`, `orderKind` qaytadi
@@ -402,7 +445,7 @@ Izoh:
 
 ### Notification flow
 
-1. User login bo'lgach `GET /api/v1/notifications/me` bilan tarixni oling.
+1. User login bo'lgach `POST /api/v1/notifications/me/paging` bilan tarixni oling.
 2. Parallel ravishda socket ulang.
 3. `authenticated` kelgach realtime va replay notificationlarni qabul qiling.
 4. UI da ko'rsatilgan notificationni `PUT /notifications/{id}/read` bilan mark qiling.
@@ -426,4 +469,8 @@ Izoh:
 - `employees[].workStatus` response ichida qaytadi
 - `orders.status` `PAUSED` va `CANCELLED` ni ham qabul qiladi
 - worker update endpointida `status` o'rniga `workStatus` ishlatiladi
-- notificationlar uchun REST endpoint va socket replay oqimi qo'shilgan
+- order paging soddalashtirilgan: `search`, `status`, `acceptedDate`, `deadline`
+- notificationlar uchun unbounded `GET /notifications/me` o'rniga `POST /notifications/me/paging` ishlatiladi
+- notification badge uchun `GET /notifications/me/unread-count` ishlatiladi
+- notification payload route maydonlari bilan boyitilgan: `orderKind`, `targetType`, `targetId`, `targetKind`, `route`
+- socket notification payloadi ham REST notification DTO bilan moslashtirilgan

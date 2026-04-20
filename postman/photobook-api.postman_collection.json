@@ -811,25 +811,6 @@
       "name": "Notifications",
       "item": [
         {
-          "name": "Get My Notifications",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const data = pm.response.json();",
-                  "if (Array.isArray(data) && data.length && data[0].id) pm.collectionVariables.set('notificationId', data[0].id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/v1/notifications/me"
-          }
-        },
-        {
           "name": "My Notifications Paging",
           "event": [
             {

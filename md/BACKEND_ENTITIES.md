@@ -128,10 +128,15 @@ Constraint va indexlar:
 - `message` (text, required)
 - `order_id` (uuid, null)
 - `order_name` (string, null)
+- `order_kind` (string, null; masalan `ALBUM`, `VIGNETTE`, `PICTURE`)
 - `employee_id` (uuid, null)
 - `employee_name` (string, null)
 - `step_order` (int, null)
 - `work_status` (string, null)
+- `target_type` (string, null; hozir order notificationlarda `ORDER`)
+- `target_id` (uuid, null; hozir order notificationlarda `order_id`)
+- `target_kind` (string, null; hozir order notificationlarda order kind)
+- `route` (string, null; masalan `/album`, `/vignette`, `/picture`)
 - `action_required` (boolean, required, default false)
 - `read_at` (datetime, null)
 - `created_at`, `updated_at`
@@ -140,6 +145,13 @@ Indexlar:
 
 - `user_id`
 - `read_at`
+- `(target_type, target_id)`
+
+Izoh:
+
+- notification payload frontend route qilishi uchun `target_type`, `target_id`, `target_kind`, `route` maydonlarini saqlaydi
+- order notificationlarda `order_kind` va `target_kind` bir xil bo'ladi
+- eski notificationlar migration orqali `orders` jadvalidan backfill qilinadi
 
 ## 10) `materials`
 
@@ -187,6 +199,7 @@ Indexlar:
 - `orders.status` admin darajadagi workflow holatini ko'rsatadi
 - `order_employees.work_status` esa aynan qaysi worker navbatda ekanini bildiradi
 - `notifications` jadvali realtime va offline notificationlarni bir xil manbada saqlaydi
+- notification route payloadi frontendga qo'shimcha `GET /orders/{id}` qilmasdan to'g'ridan-to'g'ri route qilish imkonini beradi
 
 ## Migration note
 
@@ -195,3 +208,4 @@ Indexlar:
 - `order_employees.work_status` saqlanishi kerak
 - `orders.status` enumida `PAUSED` va `CANCELLED` bo'lishi kerak
 - `notifications` jadvali realtime/offline notification oqimi uchun kerak
+- notification route ustunlari: `order_kind`, `target_type`, `target_id`, `target_kind`, `route`

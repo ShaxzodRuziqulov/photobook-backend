@@ -147,12 +147,52 @@ Note:
 
 ### POST /orders/paging
 
+Query params:
+
+- `page=0`
+- `size=10`
+- `sort=updatedAt,desc` yoki boshqa `Order` field bo'yicha sort
+
+Request body:
+
 ```json
 {
   "search": "album",
   "status": "IN_PROGRESS",
   "acceptedDate": "2026-03-01",
   "deadline": "2026-03-31"
+}
+```
+
+Filterlar:
+
+- `search` optional. `orderName`, `receiverName`, `customer.fullName`, employee full name, employee username va category name ichidan qidiradi.
+- `status` optional. Qiymatlar: `PENDING`, `IN_PROGRESS`, `PAUSED`, `COMPLETED`, `CANCELLED`.
+- `acceptedDate` optional. Aniq qabul sanasi bo'yicha filterlaydi.
+- `deadline` optional. Aniq tugash sanasi bo'yicha filterlaydi.
+
+Bo'sh filter uchun `{}` yuboriladi:
+
+```json
+{}
+```
+
+Frontend eslatma:
+
+- `Hammasi` holati uchun `status` yuborilmaydi yoki `null` yuboriladi.
+- Sana inputi bo'sh bo'lsa `""` yuborilmaydi; field olib tashlanadi yoki `null` yuboriladi.
+- `acceptedDate` va `deadline` hozir range emas, aynan teng sana bo'yicha ishlaydi.
+
+Response:
+
+```json
+{
+  "content": [],
+  "pageNumber": 0,
+  "pageSize": 10,
+  "totalElements": 120,
+  "totalPages": 12,
+  "last": false
 }
 ```
 
@@ -308,36 +348,6 @@ Note:
 
 ## 11. Notifications
 
-### GET /notifications/me
-
-Response:
-
-```json
-[
-  {
-    "id": "uuid",
-    "type": "TASK_ACTIVATED",
-    "title": "Yangi ish navbati",
-    "message": "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
-    "orderId": "uuid",
-    "orderName": "Nikoh Albomi",
-    "orderKind": "ALBUM",
-    "employeeId": "uuid",
-    "employeeName": "Ali Valiyev",
-    "stepOrder": 2,
-    "workStatus": "STARTED",
-    "targetType": "ORDER",
-    "targetId": "uuid",
-    "targetKind": "ALBUM",
-    "route": "/album",
-    "actionRequired": true,
-    "isRead": false,
-    "readAt": null,
-    "createdAt": "2026-04-13T11:00:00"
-  }
-]
-```
-
 ### POST /notifications/me/paging
 
 ```json
@@ -355,6 +365,32 @@ Note:
 - `search` title, message, orderName va employeeName bo'yicha qidiradi.
 - `isRead: true` o'qilgan, `isRead: false` o'qilmagan notificationlarni qaytaradi.
 - Default sort: `createdAt,desc`.
+
+Response item:
+
+```json
+{
+  "id": "uuid",
+  "type": "TASK_ACTIVATED",
+  "title": "Yangi ish navbati",
+  "message": "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
+  "orderId": "uuid",
+  "orderName": "Nikoh Albomi",
+  "orderKind": "ALBUM",
+  "employeeId": "uuid",
+  "employeeName": "Ali Valiyev",
+  "stepOrder": 2,
+  "workStatus": "STARTED",
+  "targetType": "ORDER",
+  "targetId": "uuid",
+  "targetKind": "ALBUM",
+  "route": "/album",
+  "actionRequired": true,
+  "isRead": false,
+  "readAt": null,
+  "createdAt": "2026-04-13T11:00:00"
+}
+```
 
 ### GET /notifications/me/unread-count
 
@@ -549,6 +585,6 @@ Payload:
 - order create/update requestida `employees[].stepOrder` yuborish
 - `employees[].role` yubormaslik
 - worker update requestida `status` o'rniga `workStatus` yuborish
-- notification preview uchun `POST /api/v1/notifications/me/paging` yoki `GET /api/v1/notifications/me` ishlatish
+- notification preview uchun `POST /api/v1/notifications/me/paging` ishlatish
 - notification badge uchun `GET /api/v1/notifications/me/unread-count` ishlatish
 - socket notification payloadida `id`, `isRead`, `orderStatus`, `createdAt`, `targetType`, `targetId`, `targetKind`, `route`, `orderKind` maydonlari borligini hisobga olish

@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -27,11 +26,6 @@ import java.util.UUID;
 public class NotificationController {
 
     private final NotificationService notificationService;
-
-    @GetMapping("/me")
-    public ResponseEntity<List<NotificationDto>> findMyNotifications() {
-        return ResponseEntity.ok(notificationService.findMyNotifications());
-    }
 
     @PostMapping("/me/paging")
     public ResponseEntity<PageResponse<NotificationDto>> findMyNotificationsPage(
