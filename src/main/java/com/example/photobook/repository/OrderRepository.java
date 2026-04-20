@@ -55,27 +55,15 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                    )) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(employee.username, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.category.name, '')) LIKE LOWER(CONCAT('%', :search, '%')))
-              AND (:kind IS NULL OR o.kind = :kind)
-              AND (:status IS NULL OR o.status = :status)
-              AND (:customerId IS NULL OR o.customer.id = :customerId)
-              AND (:employeeId IS NULL OR employee.id = :employeeId)
-              AND (:categoryId IS NULL OR o.category.id = :categoryId)
-              AND (:from IS NULL OR o.acceptedDate >= :from)
-              AND (:to IS NULL OR o.acceptedDate <= :to)
-              AND (:deadlineFrom IS NULL OR o.deadline >= :deadlineFrom)
-              AND (:deadlineTo IS NULL OR o.deadline <= :deadlineTo)
+              AND o.status = COALESCE(:status, o.status)
+              AND o.acceptedDate = COALESCE(:acceptedDate, o.acceptedDate)
+              AND o.deadline = COALESCE(:deadline, o.deadline)
             ORDER BY o.updatedAt DESC
             """)
     Page<Order> findPage(@Param("search") String search,
-                         @Param("kind") OrderKind kind,
                          @Param("status") OrderStatus status,
-                         @Param("customerId") UUID customerId,
-                         @Param("employeeId") UUID employeeId,
-                         @Param("categoryId") UUID categoryId,
-                         @Param("from") LocalDate from,
-                         @Param("to") LocalDate to,
-                         @Param("deadlineFrom") LocalDate deadlineFrom,
-                         @Param("deadlineTo") LocalDate deadlineTo,
+                         @Param("acceptedDate") LocalDate acceptedDate,
+                         @Param("deadline") LocalDate deadline,
                          Pageable pageable);
 
     @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})

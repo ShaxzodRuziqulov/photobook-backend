@@ -504,7 +504,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"search\": \"album\",\n  \"kind\": \"ALBUM\",\n  \"status\": \"IN_PROGRESS\",\n  \"customerId\": \"{{customerId}}\",\n  \"employeeId\": \"{{userId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"from\": \"2026-03-01\",\n  \"to\": \"2026-03-31\",\n  \"deadlineFrom\": \"2026-03-01\",\n  \"deadlineTo\": \"2026-03-31\"\n}"
+              "raw": "{\n  \"search\": \"album\",\n  \"status\": \"IN_PROGRESS\",\n  \"acceptedDate\": \"2026-03-01\",\n  \"deadline\": \"2026-03-31\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/orders/paging?page=0&size=10&sort=acceptedDate,desc"
           }

@@ -80,15 +80,9 @@ public class OrderService {
     public Page<OrderDto> findPage(OrderPagingRequest request, Pageable pageable) {
         return repository.findPage(
                 request.getSearch(),
-                request.getKind(),
                 request.getStatus(),
-                request.getCustomerId(),
-                request.getEmployeeId(),
-                request.getCategoryId(),
-                request.getFrom(),
-                request.getTo(),
-                request.getDeadlineFrom(),
-                request.getDeadlineTo(),
+                request.getAcceptedDate(),
+                request.getDeadline(),
                 pageable
         ).map(this::toDto);
     }

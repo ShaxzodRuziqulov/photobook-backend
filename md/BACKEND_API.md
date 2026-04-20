@@ -150,15 +150,9 @@ Note:
 ```json
 {
   "search": "album",
-  "kind": "ALBUM",
   "status": "IN_PROGRESS",
-  "customerId": "uuid",
-  "employeeId": "uuid",
-  "categoryId": "uuid",
-  "from": "2026-03-01",
-  "to": "2026-03-31",
-  "deadlineFrom": "2026-03-01",
-  "deadlineTo": "2026-03-31"
+  "acceptedDate": "2026-03-01",
+  "deadline": "2026-03-31"
 }
 ```
 
