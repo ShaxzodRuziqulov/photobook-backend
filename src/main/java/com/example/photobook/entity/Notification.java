@@ -44,6 +44,9 @@ public class Notification extends BaseEntity {
     @Column(name = "order_name", length = 200)
     private String orderName;
 
+    @Column(name = "order_kind", length = 20)
+    private String orderKind;
+
     @Column(name = "employee_id")
     private UUID employeeId;
 
@@ -55,6 +58,18 @@ public class Notification extends BaseEntity {
 
     @Column(name = "work_status", length = 30)
     private String workStatus;
+
+    @Column(name = "target_type", length = 30)
+    private String targetType;
+
+    @Column(name = "target_id")
+    private UUID targetId;
+
+    @Column(name = "target_kind", length = 30)
+    private String targetKind;
+
+    @Column(length = 255)
+    private String route;
 
     @Column(name = "action_required", nullable = false)
     private Boolean actionRequired = false;

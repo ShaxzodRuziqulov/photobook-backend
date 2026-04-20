@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="06-20042026-backfill-notification-routing" author="codex">
+        <sql>
+            UPDATE notifications n
+            SET order_kind = o.kind,
+                target_type = 'ORDER',
+                target_id = n.order_id,
+                target_kind = o.kind,
+                route = CASE o.kind
+                    WHEN 'ALBUM' THEN '/album'
+                    WHEN 'VIGNETTE' THEN '/vignette'
+                    WHEN 'PICTURE' THEN '/picture'
+                    ELSE NULL
+                END
+            FROM orders o
+            WHERE n.order_id = o.id
+              AND n.target_id IS NULL;
+        </sql>
+    </changeSet>
+</databaseChangeLog>

@@ -321,16 +321,49 @@ Response:
     "message": "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
     "orderId": "uuid",
     "orderName": "Nikoh Albomi",
+    "orderKind": "ALBUM",
     "employeeId": "uuid",
     "employeeName": "Ali Valiyev",
     "stepOrder": 2,
     "workStatus": "STARTED",
+    "targetType": "ORDER",
+    "targetId": "uuid",
+    "targetKind": "ALBUM",
+    "route": "/album",
     "actionRequired": true,
     "isRead": false,
     "readAt": null,
     "createdAt": "2026-04-13T11:00:00"
   }
 ]
+```
+
+### POST /notifications/me/paging
+
+```json
+{
+  "search": "album",
+  "type": "TASK_ACTIVATED",
+  "isRead": false,
+  "actionRequired": true
+}
+```
+
+Note:
+
+- Barcha filterlar optional.
+- `search` title, message, orderName va employeeName bo'yicha qidiradi.
+- `isRead: true` o'qilgan, `isRead: false` o'qilmagan notificationlarni qaytaradi.
+- Default sort: `createdAt,desc`.
+
+### GET /notifications/me/unread-count
+
+Response:
+
+```json
+{
+  "count": 12
+}
 ```
 
 ### PUT /notifications/{id}/read
@@ -495,10 +528,15 @@ Payload:
   "message": "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
   "orderId": "uuid",
   "orderName": "Nikoh Albomi",
+  "orderKind": "ALBUM",
   "employeeId": "uuid",
   "employeeName": "Ali Valiyev",
   "stepOrder": 2,
   "workStatus": "STARTED",
+  "targetType": "ORDER",
+  "targetId": "uuid",
+  "targetKind": "ALBUM",
+  "route": "/album",
   "actionRequired": true,
   "isRead": false,
   "createdAt": "2026-04-13T11:00:00",
@@ -511,5 +549,6 @@ Payload:
 - order create/update requestida `employees[].stepOrder` yuborish
 - `employees[].role` yubormaslik
 - worker update requestida `status` o'rniga `workStatus` yuborish
-- notification page uchun `GET /api/v1/notifications/me` ishlatish
-- socket notification payloadida `id`, `isRead`, `orderStatus`, `createdAt` maydonlari borligini hisobga olish
+- notification preview uchun `POST /api/v1/notifications/me/paging` yoki `GET /api/v1/notifications/me` ishlatish
+- notification badge uchun `GET /api/v1/notifications/me/unread-count` ishlatish
+- socket notification payloadida `id`, `isRead`, `orderStatus`, `createdAt`, `targetType`, `targetId`, `targetKind`, `route`, `orderKind` maydonlari borligini hisobga olish

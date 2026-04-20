@@ -830,6 +830,37 @@
           }
         },
         {
+          "name": "My Notifications Paging",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.content && data.content.length && data.content[0].id) pm.collectionVariables.set('notificationId', data.content[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"album\",\n  \"type\": \"TASK_ACTIVATED\",\n  \"isRead\": false,\n  \"actionRequired\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/notifications/me/paging?page=0&size=10&sort=createdAt,desc"
+          }
+        },
+        {
+          "name": "My Notifications Unread Count",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/notifications/me/unread-count"
+          }
+        },
+        {
           "name": "Read Notification",
           "request": {
             "method": "PUT",

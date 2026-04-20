@@ -9,5 +9,7 @@
     <include file="changelog/insert/02-18032026-default-roles.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create/03-09042026-order-employee-notes.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create/04-13042026-notifications.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create/05-20042026-notification-routing.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create/06-20042026-backfill-notification-routing.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

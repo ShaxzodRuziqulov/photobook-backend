@@ -92,6 +92,7 @@ Paging endpointlar `POST /resource/paging` ko'rinishida.
 - `POST /api/v1/user-tasks/me/paging`
 - `PUT /api/v1/user-tasks/me/{id}`
 - `GET /api/v1/notifications/me`
+- `POST /api/v1/notifications/me/paging`
 - `PUT /api/v1/notifications/{id}/read`
 - `PUT /api/v1/notifications/read-all`
 - `/api/v1/uploads/**`
@@ -204,6 +205,8 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 ### Endpointlar
 
 - `GET /api/v1/notifications/me`
+- `POST /api/v1/notifications/me/paging`
+- `GET /api/v1/notifications/me/unread-count`
 - `PUT /api/v1/notifications/{id}/read`
 - `PUT /api/v1/notifications/read-all`
 
@@ -211,6 +214,10 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 
 - notification yaratilganda DB ga saqlanadi
 - `GET /notifications/me` current user notificationlarini `createdAt desc` bo'yicha qaytaradi
+- `POST /notifications/me/paging` current user notificationlarini page ko'rinishida qaytaradi
+- paging filterlari: `search`, `type`, `isRead`, `actionRequired`
+- notification payloadda route uchun `targetType`, `targetId`, `targetKind`, `route`, `orderKind` qaytadi
+- `GET /notifications/me/unread-count` current user uchun unread count qaytaradi
 - `PUT /notifications/{id}/read` faqat current userning notificationi uchun ishlaydi
 - `PUT /notifications/read-all` current userning barcha unread notificationlarini mark qiladi
 
@@ -343,10 +350,15 @@ Payload misoli:
   "message": "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
   "orderId": "uuid",
   "orderName": "Nikoh albomi",
+  "orderKind": "ALBUM",
   "employeeId": "uuid",
   "employeeName": "Ali Valiyev",
   "stepOrder": 2,
   "workStatus": "STARTED",
+  "targetType": "ORDER",
+  "targetId": "uuid",
+  "targetKind": "ALBUM",
+  "route": "/album",
   "actionRequired": true,
   "isRead": false,
   "createdAt": "2026-04-13T11:00:00",
