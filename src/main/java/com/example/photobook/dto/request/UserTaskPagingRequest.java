@@ -12,8 +12,6 @@ import java.util.List;
 public class UserTaskPagingRequest {
     private String search;
     private List<OrderStatus> statuses;
-    private LocalDate from;
-    private LocalDate to;
     private LocalDate deadlineFrom;
     private LocalDate deadlineTo;
 }

@@ -1,9 +1,18 @@
 # API Documentation
 
-**Base URL:** `/api/v1`
+Bu hujjat loyihadagi Spring Boot REST API bilan sinxron. Barcha REST endpointlar prefiks ostida: **`/api/v1`**.
 
-**Auth:**
-`Authorization: Bearer <access_token>` login, refresh, swagger, `/uploads-storage/**` va `/socket.io/**` dan tashqari endpointlar uchun yuboriladi.
+## 0. Ishga tushirish va vositalar
+
+| Parametr | Qiymat |
+|----------|--------|
+| Standart HTTP port | `9091` (`application.yml`: `server.port`, prod da odatda `PORT` muhit o‘zgaruvchisi) |
+| Swagger UI | [`/swagger-ui/index.html`](http://localhost:9091/swagger-ui/index.html) |
+| OpenAPI JSON | `/v3/api-docs` |
+
+**Autentifikatsiya:** muhim endpointlar uchun header: `Authorization: Bearer <access_token>`.
+
+**JWT shart emas:** `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`, Swagger/OpenAPI yo‘llari, statik fayllar `GET /uploads-storage/**`, Socket.IO `/socket.io/**` (handshake).
 
 ## 1. Auth
 
@@ -33,6 +42,27 @@
 ```
 
 ### GET /auth/me
+
+Joriy token bo‘yicha foydalanuvchi (xavfsizlik konteksti).
+
+### Login va refresh javabi (tana)
+
+Maydonlar **snake_case** (`access_token`, `refresh_token`). Login javobida qo‘shimcha ravishda `user` obyekti bor.
+
+```json
+{
+  "access_token": "eyJ...",
+  "refresh_token": "eyJ...",
+  "user": {
+    "id": "uuid",
+    "username": "admin",
+    "firstName": "Admin",
+    "lastName": "User"
+  }
+}
+```
+
+Logout va refresh tanada `refresh_token` yuboriladi (`RefreshTokenRequestDto`).
 
 ## 2. Users
 
@@ -255,20 +285,41 @@ Response:
 
 ## 7. User Tasks
 
+Operator/menejer/admin o‘ziga biriktirilgan buyurtma zanjiridagi bosqichni ko‘radi va yangilaydi. `{id}` bu yerda **buyurtma `orderId`** (UUID).
+
 ### GET /user-tasks/me/{id}
 
+Bitta vazifa (buyurtma + joriy foydalanuvchining `order_employees` qatori).
+
 ### POST /user-tasks/me/paging
+
+Query parametrlar (Spring `Pageable`):
+
+- `page` — sahifa, default `0`
+- `size` — element soni
+- `sort` — masalan `updatedAt,desc` yoki `deadline,asc`
+
+Agar `sort` yuborilmasa, backend default: **`updatedAt` bo‘yicha kamayish**.
+
+Request body (`UserTaskPagingRequest`) — barcha maydonlar ixtiyoriy:
 
 ```json
 {
   "search": "album",
   "statuses": ["IN_PROGRESS"],
-  "from": "2026-03-01",
-  "to": "2026-03-31",
   "deadlineFrom": "2026-03-01",
   "deadlineTo": "2026-03-31"
 }
 ```
+
+Filtrlar:
+
+- **`search`** — `orderName`, `receiverName`, mijoz `fullName`, mahsulot kategoriyasi `name` bo‘yicha `LIKE` (katta-kichik harf farqi yo‘q). **Ishchi ismi/username bo‘yicha qidiruv bu endpointda yo‘q** (admin `POST /orders/paging` da bor).
+- **`statuses`** — buyurtma `OrderStatus` ro‘yxati; bo‘sh yoki `null` bo‘lsa status bo‘yicha cheklov qo‘llanmaydi.
+- **`deadlineFrom` / `deadlineTo`** — `orders.deadline` oralig‘i (`>=` / `<=`).
+- Joriy foydalanuvchiga biriktirilgan buyurtmalar **subquery (`EXISTS`)** bilan saralanadi (sahifalash uchun ortiqcha `JOIN`/`DISTINCT` kamaytirilgan).
+
+Javob: boshqa paging kabi `PageResponse` (`content`, `pageNumber`, `pageSize`, `totalElements`, `totalPages`, `last`).
 
 ### PUT /user-tasks/me/{id}
 
@@ -580,11 +631,33 @@ Payload:
 }
 ```
 
-## 16. Migration note
+## 16. Eslatmalar (front / migratsiya)
 
-- order create/update requestida `employees[].stepOrder` yuborish
-- `employees[].role` yubormaslik
-- worker update requestida `status` o'rniga `workStatus` yuborish
-- notification preview uchun `POST /api/v1/notifications/me/paging` ishlatish
-- notification badge uchun `GET /api/v1/notifications/me/unread-count` ishlatish
-- socket notification payloadida `id`, `isRead`, `orderStatus`, `createdAt`, `targetType`, `targetId`, `targetKind`, `route`, `orderKind` maydonlari borligini hisobga olish
+- Buyurtma yaratish/yangilash: `employees[]` ichida `stepOrder` majburiy; `employees[].role` endi yo‘q.
+- Worker yangilash: holat o‘rniga `workStatus` (`STARTED` → `COMPLETED`).
+- Bildirishnomalar ro‘yxati: `POST /api/v1/notifications/me/paging`; badge: `GET /api/v1/notifications/me/unread-count`.
+- **User task paging:** `acceptedDate` oralig‘i (`from` / `to`) olib tashlangan; faqat `deadlineFrom` / `deadlineTo` va yuqoridagi filtrlar.
+- Socket `notification` eventida REST bilan mos maydonlar: `id`, `isRead`, `orderStatus`, `createdAt`, `targetType`, `targetId`, `targetKind`, `route`, `orderKind` va hokazo.
+
+## 17. REST modullar (qisqa ro‘yxat)
+
+Quyidagi barcha yo‘llar **`/api/v1`** dan keyin keladi (jadvalda prefiks yozilmagan).
+
+| Modul | Asosiy yo‘llar |
+|--------|----------------|
+| Auth | `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me` |
+| Users | CRUD `/users`, `/users/me`, `/users/paging`, `/users/{id}/roles` |
+| Roles | CRUD `/roles`, `/roles/paging` |
+| Customers | CRUD `/customers`, `/customers/paging` |
+| Product categories | `/product-categories`, `?kind=`, `/product-categories/paging` |
+| Orders | CRUD `/orders`, `/orders/paging`, `/orders/{id}/status`, `/orders/{id}/status-history` |
+| User tasks | `/user-tasks/me/{id}`, `/user-tasks/me/paging`, `PUT .../me/{id}` |
+| Materials | CRUD `/materials`, `/materials/{id}/adjust`, `/materials/paging` |
+| Expense categories | CRUD `/expense-categories`, `/expense-categories/paging` |
+| Expenses | CRUD `/expenses`, `/expenses/paging` |
+| Notifications | `/notifications/me/paging`, `/notifications/me/unread-count`, `/notifications/{id}/read`, `/notifications/read-all` |
+| Dashboard | `/dashboard/orders-by-kind`, `/dashboard/orders-by-status?type=`, `/dashboard/orders-by-category?type=` |
+| Uploads | `/uploads` (POST multipart), `/uploads/{key}` (DELETE) |
+| Order status histories | CRUD `/order-status-histories` |
+
+**Xatoliklar:** ko‘pincha `message` va ixtiyoriy `errors` obyekti (`ApiExceptionHandler`). Batafsil misollar: `md/BACKEND_LOGIC.md` → «Error format».

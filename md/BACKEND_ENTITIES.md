@@ -141,6 +141,8 @@ Constraint va indexlar:
 - `read_at` (datetime, null)
 - `created_at`, `updated_at`
 
+REST `NotificationDto` da qo‘shimcha ravishda `isRead` (boolean) qaytadi — odatda `read_at == null` bo‘lsa `false`.
+
 Indexlar:
 
 - `user_id`

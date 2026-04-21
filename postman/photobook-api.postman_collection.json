@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d6d87f2e-fbdb-4d90-99e2-3a2c7958b7f1",
     "name": "Photobook API",
-    "description": "Full Postman collection aligned with the current backend controllers, DTOs, and API documentation.",
+    "description": "Photobook backend REST API. Base URL odatda `http://localhost:9091` (Spring `server.port`). JWT: collection Bearer `{{accessToken}}`; login/refresh noauth. User task paging: `deadlineFrom`/`deadlineTo`, `from`/`to` (accepted date) yo'q.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -16,7 +16,7 @@
     ]
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8091" },
+    { "key": "baseUrl", "value": "http://localhost:9091" },
     { "key": "accessToken", "value": "" },
     { "key": "refreshToken", "value": "" },
     { "key": "userId", "value": "" },
@@ -554,7 +554,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"search\": \"album\",\n  \"statuses\": [\"IN_PROGRESS\"],\n  \"from\": \"2026-03-01\",\n  \"to\": \"2026-03-31\",\n  \"deadlineFrom\": \"2026-03-01\",\n  \"deadlineTo\": \"2026-03-31\"\n}"
+              "raw": "{\n  \"search\": \"album\",\n  \"statuses\": [\"IN_PROGRESS\"],\n  \"deadlineFrom\": \"2026-03-01\",\n  \"deadlineTo\": \"2026-03-31\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/user-tasks/me/paging?page=0&size=10&sort=deadline,asc"
           }

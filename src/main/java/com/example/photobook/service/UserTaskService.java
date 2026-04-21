@@ -15,6 +15,8 @@ import com.example.photobook.util.StringUtils;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,6 +45,7 @@ public class UserTaskService {
         return toDto(order, findAssignment(order, currentUserId));
     }
 
+    @Transactional(readOnly = true)
     public Page<UserTaskDto> findMyTasksPage(UserTaskPagingRequest request, Pageable pageable) {
         UUID currentUserId = currentUserService.getCurrentUserId();
 
@@ -122,19 +125,19 @@ public class UserTaskService {
             String search
     ) {
         return (root, query, criteriaBuilder) -> {
-            query.distinct(true);
             List<Predicate> predicates = new ArrayList<>();
-            Join<Order, OrderEmployee> assignment = root.join("employees", JoinType.INNER);
-            predicates.add(criteriaBuilder.equal(assignment.get("user").get("id"), currentUserId));
+
+            Subquery<Integer> assignedToMe = query.subquery(Integer.class);
+            Root<OrderEmployee> assignmentRoot = assignedToMe.from(OrderEmployee.class);
+            assignedToMe.select(criteriaBuilder.literal(1));
+            assignedToMe.where(
+                    criteriaBuilder.equal(assignmentRoot.get("order"), root),
+                    criteriaBuilder.equal(assignmentRoot.get("user").get("id"), currentUserId)
+            );
+            predicates.add(criteriaBuilder.exists(assignedToMe));
 
             if (statuses != null) {
                 predicates.add(root.get("status").in(statuses));
-            }
-            if (request.getFrom() != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("acceptedDate"), request.getFrom()));
-            }
-            if (request.getTo() != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("acceptedDate"), request.getTo()));
             }
             if (request.getDeadlineFrom() != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("deadline"), request.getDeadlineFrom()));
