@@ -8,8 +8,10 @@ import com.example.photobook.projection.OrderStatusCountProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -22,7 +24,7 @@ import java.util.UUID;
  * Repository for order persistence and optimized order dashboard aggregations.
  */
 @Repository
-public interface OrderRepository extends JpaRepository<Order, UUID> {
+public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecificationExecutor<Order> {
 
     @Query("""
             SELECT o.kind AS kind, COUNT(o.id) AS count
@@ -91,33 +93,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Optional<Order> findTaskByIdAndEmployeeId(@Param("orderId") UUID orderId,
                                               @Param("employeeId") UUID employeeId);
 
+    @Override
     @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
-    @Query("""
-            SELECT DISTINCT o
-            FROM Order o
-            JOIN o.employees assignment
-            JOIN assignment.user employee
-            WHERE employee.id = :employeeId
-              AND (:statuses IS NULL OR o.status IN :statuses)
-              AND (:from IS NULL OR o.acceptedDate >= :from)
-              AND (:to IS NULL OR o.acceptedDate <= :to)
-              AND (:deadlineFrom IS NULL OR o.deadline >= :deadlineFrom)
-              AND (:deadlineTo IS NULL OR o.deadline <= :deadlineTo)
-              AND (
-                         :search IS NULL OR
-                         LOWER(CAST(o.orderName AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR
-                         LOWER(CAST(COALESCE(o.receiverName,'') AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
-                       )
-            ORDER BY o.updatedAt DESC
-            """)
-    Page<Order> findTasksPageByEmployeeId(
-            @Param("employeeId") UUID employeeId,
-            @Param("statuses") List<OrderStatus> statuses,
-            @Param("from") LocalDate from,
-            @Param("to") LocalDate to,
-            @Param("deadlineFrom") LocalDate deadlineFrom,
-            @Param("deadlineTo") LocalDate deadlineTo,
-            @Param("search") String search,
-            Pageable pageable
-    );
+    Page<Order> findAll(Specification<Order> specification, Pageable pageable);
 }

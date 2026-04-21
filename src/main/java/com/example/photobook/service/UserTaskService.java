@@ -3,19 +3,28 @@ package com.example.photobook.service;
 import com.example.photobook.dto.UserTaskDto;
 import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
+import com.example.photobook.entity.Customer;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.OrderEmployee;
+import com.example.photobook.entity.ProductCategory;
 import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.repository.OrderRepository;
 import com.example.photobook.service.security.CurrentUserService;
 import com.example.photobook.util.StringUtils;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -39,16 +48,11 @@ public class UserTaskService {
 
         String search = normalizeSearch(request.getSearch());
         List<OrderStatus> statuses = normalizeStatuses(request.getStatuses());
+        Pageable effectivePageable = withDefaultSort(pageable);
 
-        return orderRepository.findTasksPageByEmployeeId(
-                currentUserId,
-                statuses,
-                request.getFrom(),
-                request.getTo(),
-                request.getDeadlineFrom(),
-                request.getDeadlineTo(),
-                search,
-                pageable
+        return orderRepository.findAll(
+                buildMyTasksSpecification(currentUserId, request, statuses, search),
+                effectivePageable
         ).map(order -> toDto(order, findAssignment(order, currentUserId)));
     }
 
@@ -102,6 +106,56 @@ public class UserTaskService {
 
     private String normalizeSearch(String search) {
         return StringUtils.normalize(search);
+    }
+
+    private Pageable withDefaultSort(Pageable pageable) {
+        if (pageable.getSort().isSorted()) {
+            return pageable;
+        }
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "updatedAt"));
+    }
+
+    private Specification<Order> buildMyTasksSpecification(
+            UUID currentUserId,
+            UserTaskPagingRequest request,
+            List<OrderStatus> statuses,
+            String search
+    ) {
+        return (root, query, criteriaBuilder) -> {
+            query.distinct(true);
+            List<Predicate> predicates = new ArrayList<>();
+            Join<Order, OrderEmployee> assignment = root.join("employees", JoinType.INNER);
+            predicates.add(criteriaBuilder.equal(assignment.get("user").get("id"), currentUserId));
+
+            if (statuses != null) {
+                predicates.add(root.get("status").in(statuses));
+            }
+            if (request.getFrom() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("acceptedDate"), request.getFrom()));
+            }
+            if (request.getTo() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("acceptedDate"), request.getTo()));
+            }
+            if (request.getDeadlineFrom() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("deadline"), request.getDeadlineFrom()));
+            }
+            if (request.getDeadlineTo() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("deadline"), request.getDeadlineTo()));
+            }
+            if (search != null) {
+                Join<Order, Customer> customer = root.join("customer", JoinType.INNER);
+                Join<Order, ProductCategory> category = root.join("category", JoinType.INNER);
+                String likeSearch = "%" + search.toLowerCase() + "%";
+                predicates.add(criteriaBuilder.or(
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("orderName")), likeSearch),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("receiverName")), likeSearch),
+                        criteriaBuilder.like(criteriaBuilder.lower(customer.get("fullName")), likeSearch),
+                        criteriaBuilder.like(criteriaBuilder.lower(category.get("name")), likeSearch)
+                ));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
     }
 
     private Order findOwnedTask(UUID orderId, UUID currentUserId) {
