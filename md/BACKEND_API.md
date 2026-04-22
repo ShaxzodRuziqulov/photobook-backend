@@ -55,9 +55,11 @@ Maydonlar **snake_case** (`access_token`, `refresh_token`). Login javobida qo‘
   "refresh_token": "eyJ...",
   "user": {
     "id": "uuid",
-    "username": "admin",
-    "firstName": "Admin",
-    "lastName": "User"
+    "name": "Admin User",
+    "roles": ["ROLE_ADMIN"],
+    "avatar_url": "/uploads-storage/avatar.png",
+    "phone": "+998901234567",
+    "bio": "text"
   }
 }
 ```
@@ -276,7 +278,6 @@ Response:
       "fromStatus": "PENDING",
       "toStatus": "IN_PROGRESS",
       "changedById": "uuid",
-      "changedByName": "Admin",
       "changedAt": "2026-04-13T11:00:00"
     }
   ]
@@ -547,7 +548,8 @@ Izoh:
 - `type` required query param.
 - Rasmda ko'ringan `Mahsulot turi bo'yicha hisobot` bloki uchun mos.
 - Backend tanlangan `type` dagi barcha product categorylarni qaytaradi.
-- Order yo'q categorylar ham `count: 0` bilan keladi.
+- `count` hozir orderlar soni emas, shu categorydagi orderlarning final step `processed_count` yig'indisi.
+- Final processed count yo'q categorylar ham `count: 0` bilan keladi.
 
 ## 13. Upload
 
@@ -561,7 +563,7 @@ Response:
   "id": "uuid",
   "key": "file.png",
   "url": "/uploads-storage/file.png",
-  "mimeType": "image/png",
+  "mime": "image/png",
   "size": 12345
 }
 ```

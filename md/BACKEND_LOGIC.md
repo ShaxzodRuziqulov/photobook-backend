@@ -153,10 +153,13 @@ Ruxsat etilgan transitionlar:
 
 - `PENDING -> IN_PROGRESS`
 - `PENDING -> PAUSED`
+- `PENDING -> COMPLETED`
 - `PENDING -> CANCELLED`
+- `IN_PROGRESS -> PENDING`
 - `IN_PROGRESS -> PAUSED`
 - `IN_PROGRESS -> COMPLETED`
 - `IN_PROGRESS -> CANCELLED`
+- `PAUSED -> PENDING`
 - `PAUSED -> IN_PROGRESS`
 - `PAUSED -> COMPLETED`
 - `PAUSED -> CANCELLED`
@@ -298,14 +301,14 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 
 ### Hisoblash logikasi
 
-- Dashboard count qiymatlari order soni hisoblanadi, `orders.amount` yig'indisi emas.
+- `orders-by-kind` va `orders-by-status` count qiymatlari order soni hisoblanadi, `orders.amount` yig'indisi emas.
 - Service paging data yoki `findAll()` ishlatmaydi.
 - `orders-by-kind` `orders` jadvalida `GROUP BY kind` bilan hisoblaydi.
 - `orders-by-status?type=...` tanlangan `OrderKind` bo'yicha `GROUP BY status` bilan hisoblaydi.
-- `orders-by-category?type=...` `product_categories` dan boshlanib, `orders` ga `LEFT JOIN` qiladi va `GROUP BY category` bilan hisoblaydi.
+- `orders-by-category?type=...` `product_categories` dan boshlanib, `orders` va final `order_employees` bosqichiga `LEFT JOIN` qiladi. Bu endpoint hozir category bo'yicha **final step `processed_count` yig'indisini** qaytaradi, orderlar sonini emas.
 - `orders-by-kind` barcha `OrderKind` enum qiymatlarini qaytaradi. Bazada yo'q qiymatlar `0`.
 - `orders-by-status` barcha `OrderStatus` enum qiymatlarini qaytaradi. Bazada yo'q qiymatlar `0`.
-- `orders-by-category` tanlangan type dagi categorylarni qaytaradi. Order yo'q categorylar `0`.
+- `orders-by-category` tanlangan type dagi categorylarni qaytaradi. Final processed count yo'q categorylar `0`.
 
 ### Rasmda ko'rsatilgan dashboardga moslik
 
@@ -323,7 +326,7 @@ Amaldagi APIlar bu UI ni yopadi:
 - `Jarayonda`: `GET /api/v1/dashboard/orders-by-status?type=ALBUM` natijasida `status = IN_PROGRESS` itemlar `count` yig'indisi olinadi.
 - `Bajarilgan`: `GET /api/v1/dashboard/orders-by-status?type=ALBUM` natijasida `status = COMPLETED` itemlar `count` yig'indisi olinadi.
 - `Bajarilish foizi`: frontend `COMPLETED / total * 100` qilib hisoblaydi. `total` uchun `orders-by-kind` yoki `orders-by-status` yig'indisi ishlatiladi.
-- `Mahsulot turi bo'yicha hisobot`: `GET /api/v1/dashboard/orders-by-category?type=ALBUM` mos keladi.
+- `Mahsulot turi bo'yicha hisobot`: `GET /api/v1/dashboard/orders-by-category?type=ALBUM` mos keladi, lekin qiymat order soni emas, final bosqichdagi `processed_count` yig'indisi.
 
 ## 10. Socket Notification
 

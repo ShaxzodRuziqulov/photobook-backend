@@ -52,7 +52,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/me").authenticated()
 
-                        .requestMatchers("/api/v1/users/**", "/api/v1/roles/**")
+                        .requestMatchers("/api/v1/roles/**")
                         .hasAuthority("ROLE_ADMIN")
 
                         .requestMatchers(
@@ -62,6 +62,9 @@ public class SecurityConfiguration {
                                 "/api/v1/expenses/**",
                                 "/api/v1/product-categories/**"
                         ).hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/**")
                         .hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")

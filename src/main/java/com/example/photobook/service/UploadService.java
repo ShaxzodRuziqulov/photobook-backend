@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -99,13 +100,27 @@ public class UploadService {
         }
     }
 
-    public void delete(String key) {
-        if (key == null || key.isBlank()) {
+    /**
+     * Accepts either persisted upload id (UUID, as returned by POST /uploads) or storage key
+     * (e.g. {@code uuid-filename.png}).
+     */
+    public void delete(String idOrKey) {
+        if (idOrKey == null || idOrKey.isBlank()) {
             throw new IllegalArgumentException("key is required");
         }
 
-        Upload upload = repository.findByKey(key).orElseThrow(() -> new IllegalArgumentException("key not found"));
+        Optional<Upload> byId = parseUuid(idOrKey).flatMap(repository::findById);
+        Upload upload = byId.or(() -> repository.findByKey(idOrKey))
+                .orElseThrow(() -> new IllegalArgumentException("key not found"));
         deleteUpload(upload);
+    }
+
+    private static Optional<UUID> parseUuid(String value) {
+        try {
+            return Optional.of(UUID.fromString(value));
+        } catch (IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
     }
 
     public void deleteOwnedUpload(OwnerType ownerType, UUID ownerId, UUID keepUploadId) {

@@ -22,9 +22,9 @@ public class UploadController {
         return ResponseEntity.ok(uploadService.upload(file, dto));
     }
 
-    @DeleteMapping("/{key}")
-    public ResponseEntity<Void> delete(@PathVariable String key) {
-        uploadService.delete(key);
+    @DeleteMapping("/{idOrKey}")
+    public ResponseEntity<Void> delete(@PathVariable String idOrKey) {
+        uploadService.delete(idOrKey);
         return ResponseEntity.noContent().build();
     }
 }

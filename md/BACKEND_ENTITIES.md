@@ -14,7 +14,7 @@ Loyiha ichida hozir ishlatilayotgan asosiy jadvallar:
 - `materials`
 - `expense_categories`
 - `expenses`
-- `uploads`
+- `upload`
 
 `BaseEntity` orqali deyarli barcha jadvallarda quyidagilar bor:
 
@@ -35,7 +35,7 @@ Loyiha ichida hozir ishlatilayotgan asosiy jadvallar:
 - `bio` (text, null)
 - `user_status` (enum, masalan `ACTIVE`)
 - `is_active` (boolean, default true)
-- `upload_id` (fk -> uploads.id, null)
+- `upload_id` (fk -> upload.id, null)
 - `created_at`, `updated_at`
 
 ## 2) `roles`
@@ -76,7 +76,7 @@ Loyiha ichida hozir ishlatilayotgan asosiy jadvallar:
 - `order_name` (string, required)
 - `item_type` (string, null)
 - `customer_id` (fk -> customers.id, required)
-- `upload_id` (fk -> uploads.id, null)
+- `upload_id` (fk -> upload.id, null)
 - `receiver_name` (string, required)
 - `page_count` (int, required, default 0)
 - `amount` (int, required, default 0)
@@ -141,7 +141,7 @@ Constraint va indexlar:
 - `read_at` (datetime, null)
 - `created_at`, `updated_at`
 
-REST `NotificationDto` da qo‘shimcha ravishda `isRead` (boolean) qaytadi — odatda `read_at == null` bo‘lsa `false`.
+REST `NotificationDto` da qo‘shimcha ravishda `isRead` (boolean) qaytadi — `read_at != null` bo‘lsa `true`, `read_at == null` bo‘lsa `false`.
 
 Indexlar:
 
@@ -181,10 +181,10 @@ Izoh:
 - `payment_method` (string, null)
 - `receipt_image_url` (string, null)
 - `expense_date` (date, required)
-- `upload_id` (fk -> uploads.id, null)
+- `upload_id` (fk -> upload.id, null)
 - `created_at`, `updated_at`
 
-## 13) `uploads`
+## 13) `upload`
 
 - `id` (uuid)
 - `key` (string)
