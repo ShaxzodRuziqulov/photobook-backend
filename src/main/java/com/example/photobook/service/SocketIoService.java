@@ -4,6 +4,7 @@ import com.example.photobook.entity.Order;
 import com.example.photobook.entity.OrderEmployee;
 import com.example.photobook.entity.User;
 import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
+import com.example.photobook.entity.enumirated.NotificationType;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.repository.UserRepository;
 import com.example.photobook.dto.NotificationDto;
@@ -13,6 +14,8 @@ import io.socket.socketio.server.SocketIoSocket;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,6 +27,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class SocketIoService {
+
+    private static final Logger log = LoggerFactory.getLogger(SocketIoService.class);
 
     private static final String DEFAULT_NAMESPACE = "/";
     private static final String NOTIFICATION_EVENT = "notification";
@@ -47,19 +52,19 @@ public class SocketIoService {
 
     public void notifyOrderAssigned(Order order) {
         for (OrderEmployee assignment : sortedAssignments(order)) {
-            boolean actionable = assignment.getWorkStatus() == EmployeeWorkStatus.STARTED
+            boolean activeFirstStep = assignment.getWorkStatus() == EmployeeWorkStatus.STARTED
                     && order.getStatus() == OrderStatus.IN_PROGRESS;
             sendNotification(
                     assignment.getUser().getId(),
                     buildNotification(
-                            actionable ? "TASK_ACTIVATED" : "ORDER_ASSIGNED",
-                            actionable ? "Yangi ish navbati" : "Yangi buyurtma biriktirildi",
-                            actionable
-                                    ? "Buyurtma sizning navbatingizga tushdi"
-                                    : "Siz buyurtma jarayoniga biriktirildingiz",
+                            NotificationType.ORDER_ASSIGNED,
+                            "Yangi buyurtma biriktirildi",
+                            activeFirstStep
+                                    ? "Yangi buyurtma yaratildi. Hozir sizning bosqichingiz faol."
+                                    : "Siz buyurtma jarayoniga biriktirildingiz.",
                             order,
                             assignment,
-                            actionable
+                            activeFirstStep
                     )
             );
         }
@@ -70,7 +75,7 @@ public class SocketIoService {
             sendNotification(
                     assignment.getUser().getId(),
                     buildNotification(
-                            "ORDER_UPDATED",
+                            NotificationType.ORDER_UPDATED,
                             "Buyurtma yangilandi",
                             "Siz biriktirilgan buyurtma ma'lumotlari yangilandi",
                             order,
@@ -82,12 +87,16 @@ public class SocketIoService {
         }
     }
 
-    public void notifyOrderStatusChanged(Order order, OrderStatus from, OrderStatus to) {
+    public void notifyOrderStatusChanged(Order order, OrderStatus from, OrderStatus to, UUID excludeUserId) {
         for (OrderEmployee assignment : sortedAssignments(order)) {
+            UUID assigneeId = assignment.getUser().getId();
+            if (excludeUserId != null && excludeUserId.equals(assigneeId)) {
+                continue;
+            }
             sendNotification(
-                    assignment.getUser().getId(),
+                    assigneeId,
                     buildNotification(
-                            "ORDER_STATUS_CHANGED",
+                            NotificationType.ORDER_STATUS_CHANGED,
                             "Buyurtma holati o'zgardi",
                             "Buyurtma holati " + from + " dan " + to + " ga o'zgardi",
                             order,
@@ -107,7 +116,7 @@ public class SocketIoService {
         sendNotification(
                 assignment.getUser().getId(),
                 buildNotification(
-                        "TASK_ACTIVATED",
+                        NotificationType.TASK_ACTIVATED,
                         "Yangi ish navbati",
                         "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
                         order,
@@ -162,8 +171,12 @@ public class SocketIoService {
     }
 
     private void sendNotification(UUID userId, JSONObject payload) {
-        socketIoServer.namespace(DEFAULT_NAMESPACE)
-                .broadcast(userRoom(userId), NOTIFICATION_EVENT, payload);
+        try {
+            socketIoServer.namespace(DEFAULT_NAMESPACE)
+                    .broadcast(userRoom(userId), NOTIFICATION_EVENT, payload);
+        } catch (RuntimeException exception) {
+            log.warn("Socket broadcast failed for user {}: {}", userId, exception.getMessage());
+        }
     }
 
     private void replayUnreadNotifications(UUID userId) {
@@ -235,13 +248,16 @@ public class SocketIoService {
     }
 
     private List<OrderEmployee> sortedAssignments(Order order) {
+        if (order.getEmployees() == null || order.getEmployees().isEmpty()) {
+            return List.of();
+        }
         return order.getEmployees().stream()
                 .sorted(Comparator.comparing(OrderEmployee::getStepOrder))
                 .toList();
     }
 
     private JSONObject buildNotification(
-            String type,
+            NotificationType type,
             String title,
             String message,
             Order order,
@@ -268,19 +284,19 @@ public class SocketIoService {
     private JSONObject toJson(NotificationDto notification) {
         JSONObject payload = new JSONObject()
                 .put("id", notification.getId().toString())
-                .put("type", notification.getType())
+                .put("type", notification.getType() == null ? JSONObject.NULL : notification.getType().name())
                 .put("title", notification.getTitle())
                 .put("message", notification.getMessage())
                 .put("orderId", notification.getOrderId() == null ? JSONObject.NULL : notification.getOrderId().toString())
                 .put("orderName", notification.getOrderName() == null ? JSONObject.NULL : notification.getOrderName())
-                .put("orderKind", notification.getOrderKind() == null ? JSONObject.NULL : notification.getOrderKind())
+                .put("orderKind", notification.getOrderKind() == null ? JSONObject.NULL : notification.getOrderKind().name())
                 .put("employeeId", notification.getEmployeeId() == null ? JSONObject.NULL : notification.getEmployeeId().toString())
                 .put("employeeName", notification.getEmployeeName() == null ? JSONObject.NULL : notification.getEmployeeName())
                 .put("stepOrder", notification.getStepOrder() == null ? JSONObject.NULL : notification.getStepOrder())
-                .put("workStatus", notification.getWorkStatus() == null ? JSONObject.NULL : notification.getWorkStatus())
-                .put("targetType", notification.getTargetType() == null ? JSONObject.NULL : notification.getTargetType())
+                .put("workStatus", notification.getWorkStatus() == null ? JSONObject.NULL : notification.getWorkStatus().name())
+                .put("targetType", notification.getTargetType() == null ? JSONObject.NULL : notification.getTargetType().name())
                 .put("targetId", notification.getTargetId() == null ? JSONObject.NULL : notification.getTargetId().toString())
-                .put("targetKind", notification.getTargetKind() == null ? JSONObject.NULL : notification.getTargetKind())
+                .put("targetKind", notification.getTargetKind() == null ? JSONObject.NULL : notification.getTargetKind().name())
                 .put("route", notification.getRoute() == null ? JSONObject.NULL : notification.getRoute())
                 .put("actionRequired", Boolean.TRUE.equals(notification.getActionRequired()))
                 .put("isRead", Boolean.TRUE.equals(notification.getIsRead()))

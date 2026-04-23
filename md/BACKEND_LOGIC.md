@@ -1,18 +1,12 @@
 # BACKEND LOGIC
 
-Bu fayl backendning amaldagi logikasini tushuntiradi. Asosiy maqsad front bilan integratsiya uchun real contract va workflowni bir joyda ko‘rsatish. REST prefiks: **`/api/v1`**.
+Bu fayl backendning **biznes logikasi, ruxsatlar va oqimlarni** tushuntiradi (REST tanalarining to‘liq nusxasi bu yerda maqsad emas — ular [`BACKEND_API.md`](BACKEND_API.md) da).
 
-## 1. Asosiy ma'lumot
+**Endpoint jadvali:** [`BACKEND_API.md`](BACKEND_API.md) → **§0.1**. **Postman:** `postman/photobook-api.postman_collection.json`. **Papka:** [`README.md`](README.md).
 
-- **Standart port:** `9091` (Railway/prodda odatda `PORT`).
-- Base path: `/api/v1`
-- Auth turi: `Authorization: Bearer <access_token>`
-- Public yo'llar:
-  - `/api/v1/auth/**`
-  - `/uploads-storage/**`
-  - `/socket.io/**`
-  - swagger yo'llari (`/swagger-ui/**`, `/v3/api-docs/**`)
-- Static upload URL: `/uploads-storage/{key}`
+## 1. Transport va autentifikatsiya (qisqa)
+
+Port, JWT, `permitAll` yo‘llar, `refresh_token` formati — **`BACKEND_API.md` → §0**. Bu yerda takrorlanmaydi.
 
 ## 2. Response format
 
@@ -93,6 +87,7 @@ Paging endpointlar `POST /resource/paging` ko'rinishida.
 - `POST /api/v1/user-tasks/me/paging`
 - `PUT /api/v1/user-tasks/me/{id}`
 - `POST /api/v1/notifications/me/paging`
+- `GET /api/v1/notifications/me/unread-count`
 - `PUT /api/v1/notifications/{id}/read`
 - `PUT /api/v1/notifications/read-all`
 - `/api/v1/uploads/**`
@@ -263,7 +258,7 @@ Bu bo'lim worker login bo'lganda o'ziga tegishli ishlarni ko'rishi va update qil
 
 - notification yaratilganda DB ga saqlanadi
 - `POST /notifications/me/paging` current user notificationlarini page ko'rinishida qaytaradi
-- paging filterlari: `search`, `type`, `isRead`, `actionRequired`
+- paging filterlari: `search`, `type`, `isRead`, `actionRequired` (`type` bo‘yicha filtrlash `NotificationRepository` JPQL: `LOWER(n.type) = LOWER(:type)`; bo‘sh/`null` — barchasi)
 - notification payloadda route uchun `targetType`, `targetId`, `targetKind`, `route`, `orderKind` qaytadi
 - `GET /notifications/me/unread-count` current user uchun unread count qaytaradi
 - `PUT /notifications/{id}/read` faqat current userning notificationi uchun ishlaydi
@@ -422,10 +417,10 @@ Izoh:
 
 ### Notification triggerlar
 
-- `POST /api/v1/orders`: active workerga `TASK_ACTIVATED`, qolganlarga `ORDER_ASSIGNED`
-- `PUT /api/v1/orders/{id}`: biriktirilgan employee larga `ORDER_UPDATED`
-- `PUT /api/v1/orders/{id}/status`: biriktirilgan employee larga `ORDER_STATUS_CHANGED`
-- `PUT /api/v1/user-tasks/me/{id}`: active worker almashsa yangi workerga `TASK_ACTIVATED`
+- `POST /api/v1/orders` (`notifyOrderAssigned`): har bir biriktirilgan uchun **`ORDER_ASSIGNED`**; birinchi bosqich aktiv bo‘lsa (`STARTED` + buyurtma `IN_PROGRESS`) matn boshqacha va `actionRequired: true`, lekin tur yana ham **`ORDER_ASSIGNED`** — "navbat sizga tushdi" mazmuni faqat `TASK_ACTIVATED` (keyingi bosqichdan keyin) uchun.
+- `PUT /api/v1/orders/{id}` (`notifyOrderUpdated`): barcha biriktirilganlarga **`ORDER_UPDATED`**.
+- `PUT /api/v1/orders/{id}/status`: barcha biriktirilganlarga **`ORDER_STATUS_CHANGED`** (yangi holat **`IN_PROGRESS`** bo‘lsa, hozirgi aktiv ishchi bundan mustasno — unga faqat **`TASK_ACTIVATED`** yuboriladi, ikki marta xabar bo‘lmasligi uchun). Aktiv navbat boshqacha foydalanuvchiga o‘tgan bo‘lsa **`TASK_ACTIVATED`** (`notifyTaskActivated`).
+- `PUT /api/v1/user-tasks/me/{id}`: workflow qayta hisoblangach aktiv worker almashsa — yangi aktiv workerga **`TASK_ACTIVATED`** (`UserTaskService` → `SocketIoService`).
 
 ## 11. Frontend uchun tavsiya qilingan oqimlar
 
@@ -480,3 +475,10 @@ Izoh:
 - notification badge uchun `GET /notifications/me/unread-count` ishlatiladi
 - notification payload route maydonlari bilan boyitilgan: `orderKind`, `targetType`, `targetId`, `targetKind`, `route`
 - socket notification payloadi ham REST notification DTO bilan moslashtirilgan
+
+## 14. Hujjatlar va Postman (2026-04-23)
+
+- **Postman:** `postman/photobook-api.postman_collection.json` — barcha modullar, bildirishnomalar uchun alohida `type` filtr misollari (`ORDER_ASSIGNED`, `TASK_ACTIVATED`, `ORDER_UPDATED`, `ORDER_STATUS_CHANGED`), `Upload` endi kolleksiya JWT si bilan (operator/admin/menejer), Socket `OPTIONS` preflight namunasi.
+- **Endpoint jadvali:** `md/BACKEND_API.md` §0.1.
+- **API batafsil:** `md/BACKEND_API.md` (yangilangan: `refresh_token`, bildirishnoma `type` ro‘yxati, upload `DELETE` `idOrKey`, socket `OPTIONS`).
+- **Frontend contract:** `md/FRONTEND_CONTRACT.md` (`refresh_token`, upload JWT, bildirishnoma `type`, `GET /auth/me` amaliyoti).

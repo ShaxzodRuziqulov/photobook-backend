@@ -1,6 +1,6 @@
 # Railway deploy
 
-Bu loyiha Railway yoki boshqa konteyner muhitida **Spring Boot** backend sifatida ishlaydi. Ma’lumotlar bazasi sxemasi **Liquibase** orqali migratsiya qilinadi; `ddl-auto=update` ishlatmaslik tavsiya etiladi — sxema changelog bilan boshqariladi.
+Boshqa API hujjatlari: [`README.md`](README.md). Bu loyiha Railway yoki boshqa konteyner muhitida **Spring Boot** backend sifatida ishlaydi. Ma’lumotlar bazasi sxemasi **Liquibase** orqali migratsiya qilinadi; `ddl-auto=update` ishlatmaslik tavsiya etiladi — sxema changelog bilan boshqariladi.
 
 ## 1. Backend service
 
@@ -46,3 +46,13 @@ Hozirgi konfiguratsiyada fayllar **`APP_UPLOAD_DIR`** ostidagi diskda saqlanadi.
 
 - REST: `GET /api/v1/dashboard/orders-by-kind` (JWT va rol talab qilinadi) yoki Swagger: `/swagger-ui/index.html`.
 - Statik upload (public): `GET /uploads-storage/{key}`.
+
+## 6. API hujjatlari va Postman
+
+- **Postman kolleksiyasi:** `postman/photobook-api.postman_collection.json` (import qilib `{{baseUrl}}`, Login skripti `access_token` / `refresh_token` ni saqlaydi).
+- **Endpointlar jadvali:** `md/BACKEND_API.md` → §0.1.
+- **Batafsil REST + socket:** `md/BACKEND_API.md`, workflow: `md/BACKEND_LOGIC.md`, frontend: `md/FRONTEND_CONTRACT.md`.
+
+## 7. Socket.IO path (ixtiyoriy)
+
+`application.yml` → `socket.io.path` (`SOCKET_IO_PATH`, default `/socket.io/`). Frontend `io(BASE_URL, { path: "/socket.io/" })` bilan moslashtiring.

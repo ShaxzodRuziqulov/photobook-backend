@@ -1,13 +1,15 @@
 # Frontend Contract
 
-Bu fayl frontend integratsiyasi uchun qisqa contract. Batafsil backend izohi uchun `md/BACKEND_API.md`, entity/schema uchun `md/BACKEND_ENTITIES.md`, workflow uchun `md/BACKEND_LOGIC.md`.
+Bu fayl frontend uchun **ixtisoslashtirilgan qisqa** contract. Transport + barcha yo‘llar jadvali: [`BACKEND_API.md`](BACKEND_API.md) (§0 va **§0.1**); batafsil misollar — shu faylning keyingi bo‘limlari; qoidalar/oqim — [`BACKEND_LOGIC.md`](BACKEND_LOGIC.md); sxema — [`BACKEND_ENTITIES.md`](BACKEND_ENTITIES.md). Papka: [`README.md`](README.md). Postman: `postman/photobook-api.postman_collection.json`.
 
 ## Base
 
 - Base URL: `http://localhost:9091`
 - API prefix: `/api/v1`
 - Auth header: `Authorization: Bearer <access_token>`
-- Public: `/api/v1/auth/**`, `/uploads-storage/**`, `/socket.io/**`, `/swagger-ui/**`, `/v3/api-docs/**`
+- Public (Spring Security `permitAll`): `/api/v1/auth/**`, `/uploads-storage/**`, `/socket.io/**`, `/swagger-ui/**`, `/v3/api-docs/**`
+- **`GET /api/v1/auth/me`** filter zanjirida ochiq bo‘lsa-da, controller joriy foydalanuvchini JWT dan oladi — **amalda doim `Authorization: Bearer`** yuboring (aks holda foydalanuvchi topilmaydi).
+- **`POST/DELETE /api/v1/uploads/**` JWT + rol kerak** (operator ham chaqira oladi); faqat statik `GET /uploads-storage/...` ochiq.
 - Static upload URL: `/uploads-storage/{key}`
 
 ## Enums
@@ -64,11 +66,11 @@ Response:
 
 ### POST `/api/v1/auth/refresh`
 
-Request:
+Request (backend `RefreshTokenRequestDto` — **snake_case**):
 
 ```json
 {
-  "refreshToken": "jwt"
+  "refresh_token": "jwt"
 }
 ```
 
@@ -91,7 +93,7 @@ Request:
 
 ```json
 {
-  "refreshToken": "jwt"
+  "refresh_token": "jwt"
 }
 ```
 
@@ -238,6 +240,8 @@ Paging filter:
 }
 ```
 
+**`type` (ixtiyoriy):** `ORDER_ASSIGNED` \| `TASK_ACTIVATED` \| `ORDER_UPDATED` \| `ORDER_STATUS_CHANGED` — backend `LOWER` bilan solishtiradi; `Hammasi` uchun maydonni omit qiling yoki `null`.
+
 Notification item:
 
 ```json
@@ -310,6 +314,8 @@ Important:
 
 ### POST `/api/v1/uploads`
 
+**Authorization:** Bearer majburiy (`ROLE_ADMIN` \| `ROLE_MANAGER` \| `ROLE_OPERATOR`).
+
 Body: `multipart/form-data`
 
 - `file`: image file
@@ -330,7 +336,9 @@ Response:
 }
 ```
 
-### DELETE `/api/v1/uploads/{key}`
+### DELETE `/api/v1/uploads/{idOrKey}`
+
+Path: upload **`id`** (UUID) yoki **`key`** (string).
 
 Response: `204 No Content`.
 

@@ -137,8 +137,13 @@ public class OrderService {
         historyDto.setChangedById(changedById);
         historyDto.setChangedAt(LocalDateTime.now());
         historyService.create(historyDto);
-        socketIoService.notifyOrderStatusChanged(saved, from, to);
-        socketIoService.notifyTaskActivated(saved, socketIoService.findActiveAssignment(saved));
+
+        OrderEmployee activeAfterChange = socketIoService.findActiveAssignment(saved);
+        UUID skipStatusBroadcastFor = (to == OrderStatus.IN_PROGRESS && activeAfterChange != null)
+                ? activeAfterChange.getUser().getId()
+                : null;
+        socketIoService.notifyOrderStatusChanged(saved, from, to, skipStatusBroadcastFor);
+        socketIoService.notifyTaskActivated(saved, activeAfterChange);
 
         return toDto(saved);
     }
@@ -163,7 +168,7 @@ public class OrderService {
     private void fillBasicFields(Order order, OrderDto dto) {
         order.setKind(dto.getKind());
         order.setOrderName(dto.getOrderName());
-        order.setItemType(StringUtils.normalize(dto.getItemType()));
+        order.setItemType(dto.getItemType());
         order.setReceiverName(dto.getReceiverName().trim());
         order.setPageCount(dto.getPageCount());
         order.setAmount(dto.getAmount());

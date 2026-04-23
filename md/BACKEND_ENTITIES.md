@@ -1,5 +1,7 @@
 # Backend uchun entitylar
 
+REST endpointlar va rollar: [`BACKEND_API.md`](BACKEND_API.md) §0.1. Postman: `postman/photobook-api.postman_collection.json`. Papka: [`README.md`](README.md).
+
 Loyiha ichida hozir ishlatilayotgan asosiy jadvallar:
 
 - `users`
@@ -123,7 +125,7 @@ Constraint va indexlar:
 
 - `id` (uuid)
 - `user_id` (fk -> users.id, required)
-- `type` (string, required)
+- `type` (string, required) — amaldagi qiymatlar: `ORDER_ASSIGNED`, `TASK_ACTIVATED`, `ORDER_UPDATED`, `ORDER_STATUS_CHANGED` (`SocketIoService` / `NotificationService.create`)
 - `title` (string, required)
 - `message` (text, required)
 - `order_id` (uuid, null)

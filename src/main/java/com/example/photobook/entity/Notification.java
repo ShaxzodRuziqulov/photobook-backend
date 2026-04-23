@@ -1,7 +1,13 @@
 package com.example.photobook.entity;
 
+import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
+import com.example.photobook.entity.enumirated.NotificationTargetType;
+import com.example.photobook.entity.enumirated.NotificationType;
+import com.example.photobook.entity.enumirated.OrderKind;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -29,8 +35,9 @@ public class Notification extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private String type;
+    private NotificationType type;
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -44,8 +51,9 @@ public class Notification extends BaseEntity {
     @Column(name = "order_name", length = 200)
     private String orderName;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "order_kind", length = 20)
-    private String orderKind;
+    private OrderKind orderKind;
 
     @Column(name = "employee_id")
     private UUID employeeId;
@@ -56,17 +64,20 @@ public class Notification extends BaseEntity {
     @Column(name = "step_order")
     private Integer stepOrder;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "work_status", length = 30)
-    private String workStatus;
+    private EmployeeWorkStatus workStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "target_type", length = 30)
-    private String targetType;
+    private NotificationTargetType targetType;
 
     @Column(name = "target_id")
     private UUID targetId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "target_kind", length = 30)
-    private String targetKind;
+    private OrderKind targetKind;
 
     @Column(length = 255)
     private String route;

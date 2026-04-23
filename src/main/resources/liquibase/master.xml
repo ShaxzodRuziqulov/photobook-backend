@@ -11,5 +11,6 @@
     <include file="changelog/create/04-13042026-notifications.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create/05-20042026-notification-routing.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create/06-20042026-backfill-notification-routing.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create/07-23042026-order-item-type-enum.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

@@ -1,6 +1,7 @@
 package com.example.photobook.repository;
 
 import com.example.photobook.entity.Notification;
+import com.example.photobook.entity.enumirated.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,7 +27,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
                    LOWER(n.message) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(n.orderName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(n.employeeName, '')) LIKE LOWER(CONCAT('%', :search, '%')))
-              AND (:type IS NULL OR :type = '' OR LOWER(n.type) = LOWER(:type))
+              AND (:type IS NULL OR n.type = :type)
               AND (:actionRequired IS NULL OR n.actionRequired = :actionRequired)
               AND (:isRead IS NULL OR
                    (:isRead = true AND n.readAt IS NOT NULL) OR
@@ -35,7 +36,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             """)
     Page<Notification> findPage(@Param("userId") UUID userId,
                                 @Param("search") String search,
-                                @Param("type") String type,
+                                @Param("type") NotificationType type,
                                 @Param("isRead") Boolean isRead,
                                 @Param("actionRequired") Boolean actionRequired,
                                 Pageable pageable);

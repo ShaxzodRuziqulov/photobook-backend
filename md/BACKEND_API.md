@@ -1,6 +1,6 @@
 # API Documentation
 
-Bu hujjat loyihadagi Spring Boot REST API bilan sinxron. Barcha REST endpointlar prefiks ostida: **`/api/v1`**.
+Bu hujjat loyihadagi Spring Boot REST API bilan sinxron. Barcha REST endpointlar prefiks ostida: **`/api/v1`**. **Workflow / ruxsatlar “nimaga”:** [`BACKEND_LOGIC.md`](BACKEND_LOGIC.md). **Papka tuzilishi:** [`README.md`](README.md). **Tezkor endpoint jadvali:** **§0.1** (bu faylning boshida). **Postman:** `postman/photobook-api.postman_collection.json`.
 
 ## 0. Ishga tushirish va vositalar
 
@@ -12,7 +12,212 @@ Bu hujjat loyihadagi Spring Boot REST API bilan sinxron. Barcha REST endpointlar
 
 **Autentifikatsiya:** muhim endpointlar uchun header: `Authorization: Bearer <access_token>`.
 
-**JWT shart emas:** `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`, Swagger/OpenAPI yo‘llari, statik fayllar `GET /uploads-storage/**`, Socket.IO `/socket.io/**` (handshake).
+**JWT shart emas (filter):** `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/me` (Spring `permitAll`), Swagger/OpenAPI yo‘llari, statik fayllar `GET /uploads-storage/**`, Socket.IO `/socket.io/**` (handshake). **Amalda** `GET /auth/me` uchun Bearer token yubilinmasa foydalanuvchi konteksti bo‘lmaydi.
+
+**Refresh / logout tanasi:** `{ "refresh_token": "..." }` (`RefreshTokenRequestDto`).
+
+## 0.1. Barcha endpointlar — tezkor jadval
+
+`SecurityConfiguration` va barcha `@RestController` lar bilan sinxron. **REST prefiks:** `/api/v1`. **Socket / statik:** prefiks yo‘q.
+
+**Postman:** `postman/photobook-api.postman_collection.json`.
+
+### JWT va ochiq yo‘llar
+
+| Yo‘l / pattern | Eslatma |
+|----------------|---------|
+| `/api/v1/auth/**` | Filterda JWT shart emas; **`GET /auth/me`** amalda Bearer talab qiladi |
+| `/socket.io/**` | Handshake (JWT socket ichida `authenticate` event bilan) |
+| `/uploads-storage/**` | Statik fayllar (JWT shart emas) |
+| `/swagger-ui/**`, `/v3/api-docs/**` | Swagger / OpenAPI |
+| `OPTIONS /**` | CORS preflight |
+
+Boshqa REST endpointlar uchun header: `Authorization: Bearer <access_token>`.
+
+### Rol bo‘yicha qisqa xarita (`SecurityConfiguration`)
+
+| Rol | Modullar (qisqa) |
+|-----|------------------|
+| `ROLE_ADMIN` | `roles/**`, users CRUD (qisman), manager modullari + orders to‘liq |
+| `ROLE_ADMIN`, `ROLE_MANAGER` | `customers`, `materials`, `expense-categories`, `expenses`, `product-categories`, `GET /users/**`, `GET /dashboard/**`, `orders` (POST/PUT/DELETE — operatordan boshqa) |
+| `ROLE_ADMIN`, `ROLE_MANAGER`, `ROLE_OPERATOR` | `GET /orders/**`, `PUT /orders/*/status`, `user-tasks/**`, `notifications/**`, `uploads/**`, `GET/PUT /users/me` |
+
+**Operator** buyurtmani faqat ko‘radi va statusni o‘zgartiradi; yaratish/o‘chirish — admin/menejer.
+
+### Auth — `/api/v1/auth`
+
+| Metod | Yo‘l | Tana | Javob |
+|-------|------|------|--------|
+| POST | `/login` | `{ "username", "password" }` | `AuthTokenResponse` (`access_token`, `refresh_token`, `user`) |
+| POST | `/refresh` | `{ "refresh_token" }` | `TokenPairResponse` (`access_token`, `refresh_token`) |
+| GET | `/me` | — | `AuthUserResponse` |
+| POST | `/logout` | `{ "refresh_token" }` | `204 No Content` |
+
+### Users — `/api/v1/users`
+
+| Metod | Yo‘l | Tana | Eslatma |
+|-------|------|------|---------|
+| POST | `/` | `UserDto` | Yaratish |
+| PUT | `/{id}` | `UserDto` | |
+| GET | `/me` | — | Joriy profil |
+| PUT | `/me` | `UserProfileUpdateDto` | |
+| GET | `/{id}` | — | Admin/menejer: `GET /**` |
+| GET | `/` | — | Ro‘yxat |
+| POST | `/paging` | `UserPagingRequest` + query `page,size,sort` | `PageResponse<UserDto>` |
+| DELETE | `/{id}` | — | |
+| PUT | `/{id}/roles` | `UserRoleUpdateDto` | |
+
+### Roles — `/api/v1/roles`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| POST | `/` | `RoleDto` |
+| PUT | `/{id}` | `RoleDto` |
+| GET | `/{id}` | — |
+| GET | `/` | — |
+| POST | `/paging` | `RolePageRequest` + Pageable |
+| DELETE | `/{id}` | — |
+
+**Faqat `ROLE_ADMIN`.**
+
+### Customers — `/api/v1/customers`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| POST | `/` | `CustomerDto` |
+| PUT | `/{id}` | `CustomerDto` |
+| GET | `/{id}` | — |
+| GET | `/` | — |
+| POST | `/paging` | `CustomerPagingRequest` + Pageable |
+| DELETE | `/{id}` | — |
+
+### Product categories — `/api/v1/product-categories`
+
+| Metod | Yo‘l | Tana / query |
+|-------|------|----------------|
+| POST | `/` | `ProductCategoryDto` |
+| PUT | `/{id}` | `ProductCategoryDto` |
+| GET | `/{id}` | — |
+| GET | `/` | Query: `kind` = `ALBUM` \| `VIGNETTE` \| `PICTURE` (ixtiyoriy) |
+| POST | `/paging` | `ProductCategoryPagingRequest` + Pageable |
+| DELETE | `/{id}` | — |
+
+### Orders — `/api/v1/orders`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| POST | `/` | `OrderDto` |
+| PUT | `/{id}` | `OrderDto` |
+| GET | `/{id}` | — |
+| GET | `/` | — |
+| POST | `/paging` | `OrderPagingRequest` + Pageable |
+| DELETE | `/{id}` | — |
+| PUT | `/{id}/status` | `OrderStatusTransitionDto` (`toStatus`) |
+| GET | `/{id}/status-history` | — |
+
+**Hodisalar (bildirishnoma):** `POST /orders` → `notifyOrderAssigned`; `PUT /orders/{id}` → `notifyOrderUpdated`; `PUT /orders/{id}/status` → `notifyOrderStatusChanged` + `notifyTaskActivated`.
+
+### User tasks — `/api/v1/user-tasks`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| GET | `/me/{orderId}` | — |
+| POST | `/me/paging` | `UserTaskPagingRequest` + Pageable |
+| PUT | `/me/{orderId}` | `UserTaskUpdateDto` |
+
+`{orderId}` — buyurtma UUID.
+
+### Materials — `/api/v1/materials`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| POST | `/` | `MaterialDto` |
+| PUT | `/{id}` | `MaterialDto` |
+| GET | `/{id}` | — |
+| GET | `/` | — |
+| POST | `/paging` | `MaterialPagingRequest` + Pageable |
+| POST | `/{id}/adjust` | `MaterialAdjustDto` |
+| DELETE | `/{id}` | — |
+
+### Expense categories — `/api/v1/expense-categories`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| POST | `/` | `ExpenseCategoryDto` |
+| PUT | `/{id}` | `ExpenseCategoryDto` |
+| GET | `/{id}` | — |
+| GET | `/` | — |
+| POST | `/paging` | `ExpenseCategoryPagingRequest` + Pageable |
+| DELETE | `/{id}` | — |
+
+### Expenses — `/api/v1/expenses`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| POST | `/` | `ExpenseDto` |
+| PUT | `/{id}` | `ExpenseDto` |
+| GET | `/{id}` | — |
+| GET | `/` | — |
+| POST | `/paging` | `ExpensePagingRequest` + Pageable |
+| DELETE | `/{id}` | — |
+
+### Notifications — `/api/v1/notifications`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| POST | `/me/paging` | `NotificationPagingRequest` + Pageable |
+| GET | `/me/unread-count` | — |
+| PUT | `/{id}/read` | — |
+| PUT | `/read-all` | — |
+
+**`NotificationPagingRequest`:** `search`, `type`, `isRead`, `actionRequired` (hammasi ixtiyoriy).
+
+**`type` qiymatlari:** `ORDER_ASSIGNED`, `TASK_ACTIVATED`, `ORDER_UPDATED`, `ORDER_STATUS_CHANGED` — repository `LOWER(n.type) = LOWER(:type)`.
+
+### Dashboard — `/api/v1/dashboard`
+
+| Metod | Yo‘l | Query |
+|-------|------|--------|
+| GET | `/orders-by-kind` | — |
+| GET | `/orders-by-status` | `type` majburiy (`OrderKind`) |
+| GET | `/orders-by-category` | `type` majburiy (`OrderKind`) |
+
+### Uploads — `/api/v1/uploads`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| POST | `/` | `multipart/form-data`: `file` (majburiy), `ownerType`, `ownerId` (`UploadDto`) |
+| DELETE | `/{idOrKey}` | — UUID yoki `key` |
+
+**JWT:** admin / menejer / operator.
+
+### Order status histories — `/api/v1/order-status-histories`
+
+| Metod | Yo‘l | Tana |
+|-------|------|------|
+| POST | `/` | `OrderStatusHistoryDto` |
+| PUT | `/{id}` | `OrderStatusHistoryDto` |
+| GET | `/{id}` | — |
+| GET | `/` | — |
+| DELETE | `/{id}` | — |
+
+*Eslatma:* buyurtma statusi `PUT /orders/{id}/status` orqali o‘zgarganda tarix avtomatik yoziladi; bu CRUD alohida vositalar uchun.
+
+### Socket.IO va HTTP handshake
+
+| Metod | Yo‘l | Eslatma |
+|-------|------|---------|
+| GET | `/socket.io`, `/socket.io/` | `EngineIoServer` |
+| POST | `/socket.io`, `/socket.io/` | |
+| OPTIONS | `/socket.io`, `/socket.io/` | CORS (`SocketIoHttpController`) |
+
+**Muhit:** `application.yml` → `socket.io.path` (default `/socket.io/`).
+
+### Xatoliklar (jadvaldan tashqari)
+
+Ko‘p xatoliklar: `ApiExceptionHandler` — `message`, ixtiyoriy `errors`. Batafsil: [`BACKEND_LOGIC.md`](BACKEND_LOGIC.md) → «Error format».
+
+---
 
 ## 1. Auth
 
@@ -29,7 +234,7 @@ Bu hujjat loyihadagi Spring Boot REST API bilan sinxron. Barcha REST endpointlar
 
 ```json
 {
-  "refreshToken": "string"
+  "refresh_token": "string"
 }
 ```
 
@@ -37,7 +242,7 @@ Bu hujjat loyihadagi Spring Boot REST API bilan sinxron. Barcha REST endpointlar
 
 ```json
 {
-  "refreshToken": "string"
+  "refresh_token": "string"
 }
 ```
 
@@ -415,6 +620,12 @@ Note:
 
 - Barcha filterlar optional.
 - `search` title, message, orderName va employeeName bo'yicha qidiradi.
+- **`type`:** bo'sh yoki `null` yuborilsa barcha turlar. Aks holda aniq tur bo'yicha filtrlash — JPQL `LOWER(n.type) = LOWER(:type)` (registr muhim emas). Frontend pastki menyudagi qiymatlar bilan backenddagi **string** lar mos kelishi kerak:
+  - `ORDER_ASSIGNED` — buyurtma yaratilganda, navbat hali shu foydalanuvchida **aktiv emas** (yoki order `IN_PROGRESS` emas / assignment `STARTED` emas) bo‘lgan biriktirilganlar.
+  - `TASK_ACTIVATED` — navbat foydalanuvchiga tushganda (buyurtma yaratilishi, status o‘zgarishi yoki `PUT /user-tasks/me/{orderId}` dan keyingi workflow).
+  - `ORDER_UPDATED` — `PUT /orders/{id}` (buyurtma tahriri).
+  - `ORDER_STATUS_CHANGED` — `PUT /orders/{id}/status`.
+- `title` va `message` matnlari REST va socketda bir xil — asosan `SocketIoService` dagi literallar (til o‘zgartirish uchun shu servisni tahrirlash).
 - `isRead: true` o'qilgan, `isRead: false` o'qilmagan notificationlarni qaytaradi.
 - Default sort: `createdAt,desc`.
 
@@ -553,8 +764,14 @@ Izoh:
 
 ## 13. Upload
 
+**Autentifikatsiya:** `POST` va `DELETE` **`/api/v1/uploads/**`** uchun JWT + rol talab qilinadi (`ROLE_ADMIN`, `ROLE_MANAGER` yoki `ROLE_OPERATOR`). Statik yuklab olish: **`GET /uploads-storage/{key}`** — ochiq.
+
 ### POST /uploads
 Body: `multipart/form-data`
+
+- `file` (majburiy) — `MultipartFile`
+- `ownerType` (ixtiyoriy) — `USER` \| `ORDER` \| `EXPENSE`
+- `ownerId` (ixtiyoriy) — UUID; `ownerType` bilan birga kelishi kerak
 
 Response:
 
@@ -568,7 +785,9 @@ Response:
 }
 ```
 
-### DELETE /uploads/{key}
+### DELETE /uploads/{idOrKey}
+
+Path o‘zgaruvchisi — saqlangan yozuvning **`id` (UUID)** yoki fayl **`key`** (string).
 
 ## 14. Order Status Histories
 
@@ -584,8 +803,12 @@ Response:
 
 - `GET /socket.io`
 - `POST /socket.io`
+- `OPTIONS /socket.io` (CORS preflight, `SocketIoHttpController`)
 - `GET /socket.io/`
 - `POST /socket.io/`
+- `OPTIONS /socket.io/`
+
+**Konfig:** `application.yml` → `socket.io.path` (default `/socket.io/`).
 
 ### Client events
 
@@ -641,25 +864,18 @@ Payload:
 - **User task paging:** `acceptedDate` oralig‘i (`from` / `to`) olib tashlangan; faqat `deadlineFrom` / `deadlineTo` va yuqoridagi filtrlar.
 - Socket `notification` eventida REST bilan mos maydonlar: `id`, `isRead`, `orderStatus`, `createdAt`, `targetType`, `targetId`, `targetKind`, `route`, `orderKind` va hokazo.
 
-## 17. REST modullar (qisqa ro‘yxat)
+## 17. REST modullar — qisqa eslatma
 
-Quyidagi barcha yo‘llar **`/api/v1`** dan keyin keladi (jadvalda prefiks yozilmagan).
+Barcha yo‘llar **`/api/v1`** ostida. **Metod + yo‘l + tana** jadvali takrorlanmasligi uchun yagona manba: **§0.1** yuqorida.
 
-| Modul | Asosiy yo‘llar |
-|--------|----------------|
-| Auth | `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me` |
-| Users | CRUD `/users`, `/users/me`, `/users/paging`, `/users/{id}/roles` |
-| Roles | CRUD `/roles`, `/roles/paging` |
-| Customers | CRUD `/customers`, `/customers/paging` |
-| Product categories | `/product-categories`, `?kind=`, `/product-categories/paging` |
-| Orders | CRUD `/orders`, `/orders/paging`, `/orders/{id}/status`, `/orders/{id}/status-history` |
-| User tasks | `/user-tasks/me/{id}`, `/user-tasks/me/paging`, `PUT .../me/{id}` |
-| Materials | CRUD `/materials`, `/materials/{id}/adjust`, `/materials/paging` |
-| Expense categories | CRUD `/expense-categories`, `/expense-categories/paging` |
-| Expenses | CRUD `/expenses`, `/expenses/paging` |
-| Notifications | `/notifications/me/paging`, `/notifications/me/unread-count`, `/notifications/{id}/read`, `/notifications/read-all` |
-| Dashboard | `/dashboard/orders-by-kind`, `/dashboard/orders-by-status?type=`, `/dashboard/orders-by-category?type=` |
-| Uploads | `/uploads` (POST multipart), `/uploads/{key}` (DELETE) |
-| Order status histories | CRUD `/order-status-histories` |
+## 18. Hujjatlar indeksi
 
-**Xatoliklar:** ko‘pincha `message` va ixtiyoriy `errors` obyekti (`ApiExceptionHandler`). Batafsil misollar: `md/BACKEND_LOGIC.md` → «Error format».
+| Fayl | Mazmun |
+|------|--------|
+| [`README.md`](README.md) | Qaysi fayl nima uchun (o‘qish tartibi) |
+| **Ushbu `BACKEND_API.md` §0.1** | Barcha REST + socket handshake — tezkor jadval |
+| [`BACKEND_LOGIC.md`](BACKEND_LOGIC.md) | Ruxsatlar, workflow, socket oqimi |
+| [`FRONTEND_CONTRACT.md`](FRONTEND_CONTRACT.md) | Frontend uchun qisqa contract |
+| [`BACKEND_ENTITIES.md`](BACKEND_ENTITIES.md) | Jadval / maydonlar |
+| [`RAILWAY.md`](RAILWAY.md) | Deploy va muhit o‘zgaruvchilari |
+| `postman/photobook-api.postman_collection.json` | Postman kolleksiyasi |

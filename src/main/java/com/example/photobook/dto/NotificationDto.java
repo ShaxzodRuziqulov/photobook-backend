@@ -1,5 +1,9 @@
 package com.example.photobook.dto;
 
+import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
+import com.example.photobook.entity.enumirated.NotificationTargetType;
+import com.example.photobook.entity.enumirated.NotificationType;
+import com.example.photobook.entity.enumirated.OrderKind;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,19 +14,19 @@ import java.util.UUID;
 @Setter
 public class NotificationDto {
     private UUID id;
-    private String type;
+    private NotificationType type;
     private String title;
     private String message;
     private UUID orderId;
     private String orderName;
-    private String orderKind;
+    private OrderKind orderKind;
     private UUID employeeId;
     private String employeeName;
     private Integer stepOrder;
-    private String workStatus;
-    private String targetType;
+    private EmployeeWorkStatus workStatus;
+    private NotificationTargetType targetType;
     private UUID targetId;
-    private String targetKind;
+    private OrderKind targetKind;
     private String route;
     private Boolean actionRequired;
     private Boolean isRead;

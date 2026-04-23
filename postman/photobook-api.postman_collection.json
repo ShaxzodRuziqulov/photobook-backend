@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d6d87f2e-fbdb-4d90-99e2-3a2c7958b7f1",
     "name": "Photobook API",
-    "description": "Photobook backend REST API. Base URL odatda `http://localhost:9091` (Spring `server.port`). JWT: collection Bearer `{{accessToken}}`; login/refresh noauth. User task paging: `deadlineFrom`/`deadlineTo`, `from`/`to` (accepted date) yo'q.",
+    "description": "Photobook Spring Boot REST + Socket.IO.\n\n**Base URL:** `{{baseUrl}}` — lokalda odatda `http://localhost:9091` (`application.yml`: `server.port`, prod/Railway: `PORT`).\n\n**REST prefiks:** `/api/v1`.\n\n**JWT:** kolleksiya darajasida Bearer `{{accessToken}}`. `Login` va `Refresh` so‘rovlari `noauth` (token oladi). Boshqa barcha REST (shu jumladan **Upload**) uchun avval Login qiling.\n\n**Refresh / logout JSON kalitlari:** backend `RefreshTokenRequestDto` — **`refresh_token`** (snake_case).\n\n**Login / refresh javobi:** `access_token`, `refresh_token` (snake_case); login ichida `user`.\n\n**Paging:** ko‘p modullar `POST .../paging?page=&size=&sort=` + JSON body; bo‘sh filter `{}`.\n\n**Bildirishnomalar (`POST /notifications/me/paging`):** bodyda `type` ixtiyoriy; qiymatlar: `ORDER_ASSIGNED`, `TASK_ACTIVATED`, `ORDER_UPDATED`, `ORDER_STATUS_CHANGED` (backend JPQL `LOWER` bilan solishtiradi). `Hammasi` uchun `type` ni yubormang yoki `null`/`\"\"`.\n\n**Socket.IO:** handshake `GET|POST|OPTIONS` `/socket.io/` (query: `EIO=4&transport=polling` yoki websocket). Client event: `authenticate` (`token` yoki `Bearer ...`). Server: `authenticated`, `auth_error`, `notification`.\n\n**Swagger:** `/swagger-ui/index.html`, OpenAPI: `/v3/api-docs`.\n\n**Hujjatlar:** `md/BACKEND_API.md` (§0.1 — barcha endpointlar jadvali), `md/BACKEND_LOGIC.md`, `md/FRONTEND_CONTRACT.md`, `md/BACKEND_ENTITIES.md`, `md/RAILWAY.md`, `md/README.md`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -466,7 +466,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi\",\n  \"itemType\": \"Premium\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"processedCount\": 0,\n  \"currentStepProcessedCount\": 0,\n  \"activeEmployeeId\": null,\n  \"activeEmployeeName\": null,\n  \"pageCount\": 20,\n  \"amount\": 50,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-20\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Test order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
+              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi\",\n  \"itemType\": \"PREMIUM\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"processedCount\": 0,\n  \"currentStepProcessedCount\": 0,\n  \"activeEmployeeId\": null,\n  \"activeEmployeeName\": null,\n  \"pageCount\": 20,\n  \"amount\": 50,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-20\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Test order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/orders"
           }
@@ -478,7 +478,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi Updated\",\n  \"itemType\": \"Premium\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"pageCount\": 24,\n  \"amount\": 60,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-22\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Updated order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
+              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi Updated\",\n  \"itemType\": \"PREMIUM\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"pageCount\": 24,\n  \"amount\": 60,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-22\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Updated order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
           }
@@ -811,7 +811,7 @@
       "name": "Notifications",
       "item": [
         {
-          "name": "My Notifications Paging",
+          "name": "My Notifications Paging (hammasi)",
           "event": [
             {
               "listen": "test",
@@ -829,7 +829,79 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"search\": \"album\",\n  \"type\": \"TASK_ACTIVATED\",\n  \"isRead\": false,\n  \"actionRequired\": true\n}"
+              "raw": "{\n  \"search\": null,\n  \"type\": null,\n  \"isRead\": null,\n  \"actionRequired\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/notifications/me/paging?page=0&size=10&sort=createdAt,desc"
+          }
+        },
+        {
+          "name": "My Notifications Paging (type: ORDER_ASSIGNED)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": null,\n  \"type\": \"ORDER_ASSIGNED\",\n  \"isRead\": null,\n  \"actionRequired\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/notifications/me/paging?page=0&size=10&sort=createdAt,desc"
+          }
+        },
+        {
+          "name": "My Notifications Paging (type: TASK_ACTIVATED)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": null,\n  \"type\": \"TASK_ACTIVATED\",\n  \"isRead\": null,\n  \"actionRequired\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/notifications/me/paging?page=0&size=10&sort=createdAt,desc"
+          }
+        },
+        {
+          "name": "My Notifications Paging (type: ORDER_UPDATED)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": null,\n  \"type\": \"ORDER_UPDATED\",\n  \"isRead\": null,\n  \"actionRequired\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/notifications/me/paging?page=0&size=10&sort=createdAt,desc"
+          }
+        },
+        {
+          "name": "My Notifications Paging (type: ORDER_STATUS_CHANGED)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": null,\n  \"type\": \"ORDER_STATUS_CHANGED\",\n  \"isRead\": null,\n  \"actionRequired\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/notifications/me/paging?page=0&size=10&sort=createdAt,desc"
+          }
+        },
+        {
+          "name": "My Notifications Paging (search + filters misol)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.content && data.content.length && data.content[0].id) pm.collectionVariables.set('notificationId', data.content[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"search\": \"buyurtma\",\n  \"type\": \"TASK_ACTIVATED\",\n  \"isRead\": false,\n  \"actionRequired\": true\n}"
             },
             "url": "{{baseUrl}}/api/v1/notifications/me/paging?page=0&size=10&sort=createdAt,desc"
           }
@@ -902,7 +974,6 @@
             }
           ],
           "request": {
-            "auth": { "type": "noauth" },
             "method": "POST",
             "body": {
               "mode": "formdata",
@@ -988,7 +1059,7 @@
     },
     {
       "name": "Socket.IO",
-      "description": "HTTP handshake endpoints plus event notes. Client event: authenticate { token }. Server events: authenticated, auth_error, notification.",
+      "description": "Engine.IO / Socket.IO handshake (Spring `SocketIoHttpController` + `SocketIoWebSocketConfiguration`).\n\n**HTTP:** `GET|POST|OPTIONS` `/socket.io` yoki `/socket.io/` — CORS faqat `app.cors.allowed-origins` dagi `Origin` uchun.\n\n**Polling misol:** `?EIO=4&transport=polling`.\n\n**Realtime:** ulangach client `authenticate` yuboradi (`token` / `accessToken` / `authorization` — `Bearer` qabul).\n\n**Server eventlar:** `authenticated`, `auth_error`, `notification` (payload REST `NotificationDto` bilan mos, qo‘shimcha `orderStatus`).\n\n**Bildirishnoma turlari:** `ORDER_ASSIGNED`, `TASK_ACTIVATED`, `ORDER_UPDATED`, `ORDER_STATUS_CHANGED` — matnlar `SocketIoService` da.",
       "item": [
         {
           "name": "Socket Handshake GET",
@@ -1003,6 +1074,15 @@
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
+            "url": "{{baseUrl}}/socket.io/?EIO=4&transport=polling"
+          }
+        },
+        {
+          "name": "Socket Handshake OPTIONS (CORS preflight)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "OPTIONS",
+            "header": [{ "key": "Origin", "value": "http://localhost:5173" }],
             "url": "{{baseUrl}}/socket.io/?EIO=4&transport=polling"
           }
         }

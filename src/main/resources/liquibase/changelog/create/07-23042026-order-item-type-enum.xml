@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="07-23042026-order-item-type-enum-backfill" author="photobook">
+        <sql>
+            UPDATE orders
+            SET item_type = NULL
+            WHERE item_type IS NOT NULL
+              AND TRIM(item_type) = '';
+
+            UPDATE orders
+            SET item_type = 'PREMIUM'
+            WHERE item_type IS NOT NULL
+              AND LOWER(TRIM(item_type)) IN ('premium');
+
+            UPDATE orders
+            SET item_type = 'STANDARD'
+            WHERE item_type IS NOT NULL
+              AND LOWER(TRIM(item_type)) IN ('standard', 'standart');
+
+            UPDATE orders
+            SET item_type = 'CUSTOM'
+            WHERE item_type IS NOT NULL
+              AND item_type NOT IN ('PREMIUM', 'STANDARD', 'CUSTOM');
+        </sql>
+    </changeSet>
+</databaseChangeLog>

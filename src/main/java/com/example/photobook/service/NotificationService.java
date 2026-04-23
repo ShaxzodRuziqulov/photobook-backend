@@ -7,6 +7,8 @@ import com.example.photobook.entity.Notification;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.OrderEmployee;
 import com.example.photobook.entity.User;
+import com.example.photobook.entity.enumirated.NotificationTargetType;
+import com.example.photobook.entity.enumirated.NotificationType;
 import com.example.photobook.repository.NotificationRepository;
 import com.example.photobook.service.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -30,7 +33,7 @@ public class NotificationService {
 
     public Notification create(
             User user,
-            String type,
+            NotificationType type,
             String title,
             String message,
             Order order,
@@ -44,16 +47,14 @@ public class NotificationService {
         notification.setMessage(message);
         notification.setOrderId(order == null ? null : order.getId());
         notification.setOrderName(order == null ? null : order.getOrderName());
-        notification.setOrderKind(order == null ? null : order.getKind().name());
+        notification.setOrderKind(order == null ? null : order.getKind());
         notification.setEmployeeId(assignment == null ? null : assignment.getUser().getId());
         notification.setEmployeeName(assignment == null ? null : buildFullName(assignment.getUser()));
         notification.setStepOrder(assignment == null ? null : assignment.getStepOrder());
-        notification.setWorkStatus(assignment == null || assignment.getWorkStatus() == null
-                ? null
-                : assignment.getWorkStatus().name());
-        notification.setTargetType(order == null ? null : "ORDER");
+        notification.setWorkStatus(assignment == null ? null : assignment.getWorkStatus());
+        notification.setTargetType(order == null ? null : NotificationTargetType.ORDER);
         notification.setTargetId(order == null ? null : order.getId());
-        notification.setTargetKind(order == null ? null : order.getKind().name());
+        notification.setTargetKind(order == null ? null : order.getKind());
         notification.setRoute(order == null ? null : routeForOrder(order));
         notification.setActionRequired(actionRequired);
         return notificationRepository.save(notification);
@@ -66,7 +67,7 @@ public class NotificationService {
         return notificationRepository.findPage(
                 currentUserId,
                 safeRequest.getSearch(),
-                safeRequest.getType(),
+                parseNotificationTypeFilter(safeRequest.getType()),
                 safeRequest.getIsRead(),
                 safeRequest.getActionRequired(),
                 pageable
@@ -146,6 +147,17 @@ public class NotificationService {
         dto.setIsRead(notification.getReadAt() != null);
         dto.setCreatedAt(notification.getCreatedAt());
         return dto;
+    }
+
+    private NotificationType parseNotificationTypeFilter(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return NotificationType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid notification type filter: " + raw);
+        }
     }
 
     private String routeForOrder(Order order) {

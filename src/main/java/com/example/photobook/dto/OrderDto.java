@@ -1,5 +1,6 @@
 package com.example.photobook.dto;
 
+import com.example.photobook.entity.enumirated.OrderItemType;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import lombok.Getter;
@@ -20,7 +21,7 @@ public class OrderDto {
     private String categoryName;
     private String orderName;
 
-    private String itemType;
+    private OrderItemType itemType;
 
     private UUID customerId;
     private String customerName;
