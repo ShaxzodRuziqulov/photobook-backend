@@ -3,7 +3,7 @@
 Bu hujjat loyihadagi Spring Boot REST API bilan sinxron. Barcha REST endpointlar prefiks ostida: **`/api/v1`**. **Workflow / ruxsatlar “nimaga”:** [`BACKEND_LOGIC.md`](BACKEND_LOGIC.md). **Papka tuzilishi:** [`README.md`](README.md). **Tezkor endpoint jadvali:** **§0.1** (bu faylning boshida). **Postman:** `postman/photobook-api.postman_collection.json`.
 
 ## 0. Ishga tushirish va vositalar
-
+ 
 | Parametr | Qiymat |
 |----------|--------|
 | Standart HTTP port | `9091` (`application.yml`: `server.port`, prod da odatda `PORT` muhit o‘zgaruvchisi) |
