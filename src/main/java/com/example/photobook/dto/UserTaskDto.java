@@ -1,7 +1,6 @@
 package com.example.photobook.dto;
 
 import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
-import com.example.photobook.entity.enumirated.OrderItemType;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import lombok.Getter;
@@ -18,7 +17,7 @@ public class UserTaskDto {
     private UUID categoryId;
     private String categoryName;
     private String orderName;
-    private OrderItemType itemType;
+    private String itemType;
     private UUID customerId;
     private String customerName;
     private String receiverName;

@@ -466,7 +466,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi\",\n  \"itemType\": \"PREMIUM\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"processedCount\": 0,\n  \"currentStepProcessedCount\": 0,\n  \"activeEmployeeId\": null,\n  \"activeEmployeeName\": null,\n  \"pageCount\": 20,\n  \"amount\": 50,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-20\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Test order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
+              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi\",\n  \"itemType\": \"Premium\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"processedCount\": 0,\n  \"currentStepProcessedCount\": 0,\n  \"activeEmployeeId\": null,\n  \"activeEmployeeName\": null,\n  \"pageCount\": 20,\n  \"amount\": 50,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-20\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Test order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/orders"
           }
@@ -478,7 +478,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi Updated\",\n  \"itemType\": \"PREMIUM\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"pageCount\": 24,\n  \"amount\": 60,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-22\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Updated order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
+              "raw": "{\n  \"kind\": \"ALBUM\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"orderName\": \"Nikoh Albomi Updated\",\n  \"itemType\": \"Premium\",\n  \"customerId\": \"{{customerId}}\",\n  \"customerName\": null,\n  \"receiverName\": \"Ali\",\n  \"employees\": [\n    {\n      \"employeeId\": \"{{userId}}\",\n      \"stepOrder\": 1\n    }\n  ],\n  \"pageCount\": 24,\n  \"amount\": 60,\n  \"acceptedDate\": \"2026-03-12\",\n  \"deadline\": \"2026-03-22\",\n  \"status\": \"IN_PROGRESS\",\n  \"imageUrl\": null,\n  \"notes\": \"Updated order\",\n  \"uploadId\": \"{{uploadId}}\"\n}"
             },
             "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
           }

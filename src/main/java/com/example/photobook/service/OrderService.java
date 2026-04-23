@@ -168,7 +168,7 @@ public class OrderService {
     private void fillBasicFields(Order order, OrderDto dto) {
         order.setKind(dto.getKind());
         order.setOrderName(dto.getOrderName());
-        order.setItemType(dto.getItemType());
+        order.setItemType(StringUtils.normalize(dto.getItemType()));
         order.setReceiverName(dto.getReceiverName().trim());
         order.setPageCount(dto.getPageCount());
         order.setAmount(dto.getAmount());

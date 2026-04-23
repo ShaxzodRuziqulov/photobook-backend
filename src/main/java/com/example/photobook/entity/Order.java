@@ -1,7 +1,6 @@
 package com.example.photobook.entity;
 
 
-import com.example.photobook.entity.enumirated.OrderItemType;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import jakarta.persistence.*;
@@ -35,9 +34,8 @@ public class Order extends BaseEntity {
     @Column(name = "order_name", nullable = false, length = 200)
     private String orderName;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "item_type", length = 120)
-    private OrderItemType itemType;
+    private String itemType;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
