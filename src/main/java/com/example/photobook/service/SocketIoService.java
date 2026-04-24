@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -57,6 +58,7 @@ public class SocketIoService {
             sendNotification(
                     assignment.getUser().getId(),
                     buildNotification(
+                            assignment.getUser(),
                             NotificationType.ORDER_ASSIGNED,
                             "Yangi buyurtma biriktirildi",
                             activeFirstStep
@@ -75,6 +77,7 @@ public class SocketIoService {
             sendNotification(
                     assignment.getUser().getId(),
                     buildNotification(
+                            assignment.getUser(),
                             NotificationType.ORDER_UPDATED,
                             "Buyurtma yangilandi",
                             "Siz biriktirilgan buyurtma ma'lumotlari yangilandi",
@@ -96,6 +99,7 @@ public class SocketIoService {
             sendNotification(
                     assigneeId,
                     buildNotification(
+                            assignment.getUser(),
                             NotificationType.ORDER_STATUS_CHANGED,
                             "Buyurtma holati o'zgardi",
                             "Buyurtma holati " + from + " dan " + to + " ga o'zgardi",
@@ -116,6 +120,7 @@ public class SocketIoService {
         sendNotification(
                 assignment.getUser().getId(),
                 buildNotification(
+                        assignment.getUser(),
                         NotificationType.TASK_ACTIVATED,
                         "Yangi ish navbati",
                         "Oldingi bosqich tugadi. Buyurtma endi sizning navbatingizda",
@@ -124,6 +129,80 @@ public class SocketIoService {
                         true
                 )
         );
+        notifyAdminsTaskHandoff(order, assignment);
+    }
+
+    /**
+     * Operator bosqichni tugatganda barcha faol admin va menejerlarga yozuv + socket.
+     */
+    public void notifyAdminsTaskStepCompleted(Order order, OrderEmployee completedAssignment) {
+        if (order == null || completedAssignment == null) {
+            return;
+        }
+        User operator = completedAssignment.getUser();
+        String operatorLabel = formatPersonLabel(operator);
+        String title = "Bosqich yakunlandi";
+        String message = "Buyurtma «" + order.getOrderName() + "»: " + operatorLabel + " "
+                + completedAssignment.getStepOrder() + "-bosqichni tugatdi.";
+        broadcastToAdminsAndManagers(
+                NotificationType.ADMIN_TASK_STEP_COMPLETED,
+                title,
+                message,
+                order,
+                completedAssignment,
+                false,
+                null
+        );
+    }
+
+    private void notifyAdminsTaskHandoff(Order order, OrderEmployee newActiveAssignment) {
+        User next = newActiveAssignment.getUser();
+        String title = "Navbat keyingi xodimga o'tdi";
+        String message = "Buyurtma «" + order.getOrderName() + "»: " + newActiveAssignment.getStepOrder()
+                + "-bosqich endi " + formatPersonLabel(next) + " da faol.";
+        broadcastToAdminsAndManagers(
+                NotificationType.ADMIN_TASK_HANDOFF,
+                title,
+                message,
+                order,
+                newActiveAssignment,
+                false,
+                next.getId()
+        );
+    }
+
+    private void broadcastToAdminsAndManagers(
+            NotificationType type,
+            String title,
+            String message,
+            Order order,
+            OrderEmployee contextAssignment,
+            boolean actionable,
+            UUID excludeRecipientId
+    ) {
+        List<User> recipients = userRepository.findAllActiveAdminsAndManagers();
+        if (recipients.isEmpty()) {
+            return;
+        }
+        for (User admin : recipients) {
+            if (excludeRecipientId != null && excludeRecipientId.equals(admin.getId())) {
+                continue;
+            }
+            sendNotification(
+                    admin.getId(),
+                    buildNotification(admin, type, title, message, order, contextAssignment, actionable)
+            );
+        }
+    }
+
+    private static String formatPersonLabel(User user) {
+        if (user == null) {
+            return "noma'lum";
+        }
+        String first = user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String last = user.getLastName() == null ? "" : user.getLastName().trim();
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? Objects.requireNonNullElse(user.getUsername(), "foydalanuvchi") : full;
     }
 
     public OrderEmployee findActiveAssignment(Order order) {
@@ -257,20 +336,21 @@ public class SocketIoService {
     }
 
     private JSONObject buildNotification(
+            User recipient,
             NotificationType type,
             String title,
             String message,
             Order order,
-            OrderEmployee assignment,
+            OrderEmployee contextAssignment,
             boolean actionable
     ) {
         var notification = notificationService.create(
-                assignment.getUser(),
+                recipient,
                 type,
                 title,
                 message,
                 order,
-                assignment,
+                contextAssignment,
                 actionable
         );
         return toJson(notificationService.toDto(notification))

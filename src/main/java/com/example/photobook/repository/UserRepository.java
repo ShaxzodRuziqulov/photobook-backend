@@ -46,4 +46,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             FROM User u WHERE u.isActive = true
             """)
     List<User> findAllIsActive();
+
+    @EntityGraph(attributePaths = "roles")
+    @Query("""
+            SELECT DISTINCT u
+            FROM User u
+            JOIN u.roles r
+            WHERE u.isActive = true
+              AND r.name IN ('ROLE_ADMIN', 'ROLE_MANAGER')
+            """)
+    List<User> findAllActiveAdminsAndManagers();
 }

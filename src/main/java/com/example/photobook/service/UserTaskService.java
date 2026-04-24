@@ -29,7 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -63,6 +65,7 @@ public class UserTaskService {
         UUID currentUserId = currentUserService.getCurrentUserId();
         Order order = findOwnedTask(id, currentUserId);
         OrderEmployee assignment = findAssignment(order, currentUserId);
+        Map<Integer, EmployeeWorkStatus> workStatusByStepBefore = snapshotWorkStatusByStep(order);
         UUID previousActiveEmployeeId = getActiveEmployeeId(order);
         int targetProgress = getTargetProgress(order);
         refreshPipelineWorkflow(order, targetProgress);
@@ -99,8 +102,34 @@ public class UserTaskService {
 
         refreshPipelineWorkflow(order, targetProgress);
         Order saved = orderRepository.save(order);
+        notifyAdminsForNewlyCompletedSteps(saved, workStatusByStepBefore);
         notifyNextEmployeeIfChanged(saved, previousActiveEmployeeId);
         return toDto(saved, findAssignment(saved, currentUserId));
+    }
+
+    private Map<Integer, EmployeeWorkStatus> snapshotWorkStatusByStep(Order order) {
+        if (order.getEmployees() == null) {
+            return Map.of();
+        }
+        return order.getEmployees().stream()
+                .filter(employee -> employee.getStepOrder() != null)
+                .collect(Collectors.toMap(OrderEmployee::getStepOrder, OrderEmployee::getWorkStatus, (left, right) -> left));
+    }
+
+    private void notifyAdminsForNewlyCompletedSteps(Order order, Map<Integer, EmployeeWorkStatus> workStatusByStepBefore) {
+        if (order.getEmployees() == null) {
+            return;
+        }
+        for (OrderEmployee employee : order.getEmployees()) {
+            Integer step = employee.getStepOrder();
+            if (step == null) {
+                continue;
+            }
+            EmployeeWorkStatus before = workStatusByStepBefore.get(step);
+            if (before != EmployeeWorkStatus.COMPLETED && employee.getWorkStatus() == EmployeeWorkStatus.COMPLETED) {
+                socketIoService.notifyAdminsTaskStepCompleted(order, employee);
+            }
+        }
     }
 
     private List<OrderStatus> normalizeStatuses(List<OrderStatus> statuses) {
