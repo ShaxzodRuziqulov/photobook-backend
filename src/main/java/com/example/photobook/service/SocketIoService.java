@@ -155,6 +155,29 @@ public class SocketIoService {
         );
     }
 
+    /**
+     * Oxirgi bosqich operatori ishni tugatganda buyurtma to'liq yakunlanganda admin/menejerlarga.
+     */
+    public void notifyAdminsOrderWorkCompleted(Order order, OrderEmployee lastStepAssignment) {
+        if (order == null || lastStepAssignment == null) {
+            return;
+        }
+        User operator = lastStepAssignment.getUser();
+        String operatorLabel = formatPersonLabel(operator);
+        String title = "Buyurtma ish jarayoni yakunlandi";
+        String message = "Buyurtma «" + order.getOrderName() + "» barcha bosqichlar bo'yicha tugadi. Oxirgi bosqich ("
+                + lastStepAssignment.getStepOrder() + "): " + operatorLabel + ".";
+        broadcastToAdminsAndManagers(
+                NotificationType.ADMIN_ORDER_WORK_COMPLETED,
+                title,
+                message,
+                order,
+                lastStepAssignment,
+                false,
+                null
+        );
+    }
+
     private void notifyAdminsTaskHandoff(Order order, OrderEmployee newActiveAssignment) {
         User next = newActiveAssignment.getUser();
         String title = "Navbat keyingi xodimga o'tdi";

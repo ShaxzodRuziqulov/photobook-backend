@@ -8,5 +8,7 @@ public enum NotificationType {
     /** Operator bosqichni tugatganda (admin/menejer monitoring) */
     ADMIN_TASK_STEP_COMPLETED,
     /** Keyingi xodim navbatiga o‘tganda (admin/menejer monitoring) */
-    ADMIN_TASK_HANDOFF
+    ADMIN_TASK_HANDOFF,
+    /** Barcha bosqichlar tugab buyurtma ish jarayoni yakunlanganda */
+    ADMIN_ORDER_WORK_COMPLETED
 }

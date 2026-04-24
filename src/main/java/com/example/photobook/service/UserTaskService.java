@@ -65,6 +65,7 @@ public class UserTaskService {
         UUID currentUserId = currentUserService.getCurrentUserId();
         Order order = findOwnedTask(id, currentUserId);
         OrderEmployee assignment = findAssignment(order, currentUserId);
+        OrderStatus orderStatusBefore = order.getStatus();
         Map<Integer, EmployeeWorkStatus> workStatusByStepBefore = snapshotWorkStatusByStep(order);
         UUID previousActiveEmployeeId = getActiveEmployeeId(order);
         int targetProgress = getTargetProgress(order);
@@ -102,9 +103,24 @@ public class UserTaskService {
 
         refreshPipelineWorkflow(order, targetProgress);
         Order saved = orderRepository.save(order);
-        notifyAdminsForNewlyCompletedSteps(saved, workStatusByStepBefore);
+        notifyAdminsForNewlyCompletedSteps(saved, workStatusByStepBefore, orderStatusBefore);
+        if (saved.getStatus() == OrderStatus.COMPLETED && orderStatusBefore != OrderStatus.COMPLETED) {
+            OrderEmployee lastStep = findLastStepAssignment(saved);
+            if (lastStep != null) {
+                socketIoService.notifyAdminsOrderWorkCompleted(saved, lastStep);
+            }
+        }
         notifyNextEmployeeIfChanged(saved, previousActiveEmployeeId);
         return toDto(saved, findAssignment(saved, currentUserId));
+    }
+
+    private OrderEmployee findLastStepAssignment(Order order) {
+        if (order.getEmployees() == null || order.getEmployees().isEmpty()) {
+            return null;
+        }
+        return order.getEmployees().stream()
+                .max(Comparator.comparing(OrderEmployee::getStepOrder))
+                .orElse(null);
     }
 
     private Map<Integer, EmployeeWorkStatus> snapshotWorkStatusByStep(Order order) {
@@ -116,10 +132,22 @@ public class UserTaskService {
                 .collect(Collectors.toMap(OrderEmployee::getStepOrder, OrderEmployee::getWorkStatus, (left, right) -> left));
     }
 
-    private void notifyAdminsForNewlyCompletedSteps(Order order, Map<Integer, EmployeeWorkStatus> workStatusByStepBefore) {
+    private void notifyAdminsForNewlyCompletedSteps(
+            Order order,
+            Map<Integer, EmployeeWorkStatus> workStatusByStepBefore,
+            OrderStatus orderStatusBefore
+    ) {
         if (order.getEmployees() == null) {
             return;
         }
+        Integer maxStepOrder = order.getEmployees().stream()
+                .map(OrderEmployee::getStepOrder)
+                .filter(java.util.Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(null);
+        boolean orderJustFullyCompleted =
+                order.getStatus() == OrderStatus.COMPLETED && orderStatusBefore != OrderStatus.COMPLETED;
+
         for (OrderEmployee employee : order.getEmployees()) {
             Integer step = employee.getStepOrder();
             if (step == null) {
@@ -127,6 +155,9 @@ public class UserTaskService {
             }
             EmployeeWorkStatus before = workStatusByStepBefore.get(step);
             if (before != EmployeeWorkStatus.COMPLETED && employee.getWorkStatus() == EmployeeWorkStatus.COMPLETED) {
+                if (orderJustFullyCompleted && maxStepOrder != null && maxStepOrder.equals(step)) {
+                    continue;
+                }
                 socketIoService.notifyAdminsTaskStepCompleted(order, employee);
             }
         }
