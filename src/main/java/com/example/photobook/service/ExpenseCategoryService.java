@@ -5,6 +5,7 @@ import com.example.photobook.dto.request.ExpenseCategoryPagingRequest;
 import com.example.photobook.entity.ExpenseCategory;
 import com.example.photobook.mapper.ExpenseCategoryMapper;
 import com.example.photobook.repository.ExpenseCategoryRepository;
+import com.example.photobook.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,7 +44,11 @@ public class ExpenseCategoryService {
     }
 
     public Page<ExpenseCategoryDto> findPage(ExpenseCategoryPagingRequest request, Pageable pageable) {
-        return repository.findPage(request.getSearch(), pageable).map(mapper::toDto);
+        String search = StringUtils.normalize(request.getSearch());
+        Page<ExpenseCategory> page = search == null
+                ? repository.findPageWithoutTextSearch(pageable)
+                : repository.findPageWithTextSearch(search, pageable);
+        return page.map(mapper::toDto);
     }
 
     public void delete(UUID id) {

@@ -78,13 +78,20 @@ public class OrderService {
     }
 
     public Page<OrderDto> findPage(OrderPagingRequest request, Pageable pageable) {
-        return repository.findPage(
-                request.getSearch(),
-                request.getStatus(),
-                request.getAcceptedDate(),
-                request.getDeadline(),
-                pageable
-        ).map(this::toDto);
+        String search = StringUtils.normalize(request.getSearch());
+        Page<Order> page = search == null
+                ? repository.findPageWithoutTextSearch(
+                        request.getStatus(),
+                        request.getAcceptedDate(),
+                        request.getDeadline(),
+                        pageable)
+                : repository.findPageWithTextSearch(
+                        search,
+                        request.getStatus(),
+                        request.getAcceptedDate(),
+                        request.getDeadline(),
+                        pageable);
+        return page.map(this::toDto);
     }
 
     public void delete(UUID id) {

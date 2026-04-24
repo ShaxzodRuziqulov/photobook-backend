@@ -43,12 +43,25 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
 
     @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
     @Query("""
+            SELECT o
+            FROM Order o
+            WHERE o.status = COALESCE(:status, o.status)
+              AND o.acceptedDate = COALESCE(:acceptedDate, o.acceptedDate)
+              AND o.deadline = COALESCE(:deadline, o.deadline)
+            ORDER BY o.updatedAt DESC
+            """)
+    Page<Order> findPageWithoutTextSearch(@Param("status") OrderStatus status,
+                                          @Param("acceptedDate") LocalDate acceptedDate,
+                                          @Param("deadline") LocalDate deadline,
+                                          Pageable pageable);
+
+    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
+    @Query("""
             SELECT DISTINCT o
             FROM Order o
             LEFT JOIN o.employees assignment
             LEFT JOIN assignment.user employee
-            WHERE (:search IS NULL OR :search = '' OR
-                   LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            WHERE (LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.receiverName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.customer.fullName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(CONCAT(
@@ -62,11 +75,11 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
               AND o.deadline = COALESCE(:deadline, o.deadline)
             ORDER BY o.updatedAt DESC
             """)
-    Page<Order> findPage(@Param("search") String search,
-                         @Param("status") OrderStatus status,
-                         @Param("acceptedDate") LocalDate acceptedDate,
-                         @Param("deadline") LocalDate deadline,
-                         Pageable pageable);
+    Page<Order> findPageWithTextSearch(@Param("search") String search,
+                                       @Param("status") OrderStatus status,
+                                       @Param("acceptedDate") LocalDate acceptedDate,
+                                       @Param("deadline") LocalDate deadline,
+                                       Pageable pageable);
 
     @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
     Optional<Order> findById(UUID id);

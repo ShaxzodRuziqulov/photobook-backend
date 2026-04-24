@@ -18,17 +18,30 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
     @Query("""
             SELECT e
             FROM Expense e
-            WHERE (:search IS NULL OR :search = '' OR
-                   LOWER(e.name) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            WHERE (:categoryId IS NULL OR e.category.id = :categoryId)
+              AND (:materialId IS NULL OR e.material.id = :materialId)
+              AND (:paymentMethod IS NULL OR :paymentMethod = '' OR LOWER(COALESCE(e.paymentMethod, '')) = LOWER(:paymentMethod))
+            ORDER BY e.updatedAt DESC
+            """)
+    Page<Expense> findPageWithoutTextSearch(@Param("categoryId") UUID categoryId,
+                                            @Param("materialId") UUID materialId,
+                                            @Param("paymentMethod") String paymentMethod,
+                                            Pageable pageable);
+
+    @EntityGraph(attributePaths = {"category", "material"})
+    @Query("""
+            SELECT e
+            FROM Expense e
+            WHERE (LOWER(e.name) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(e.description, '')) LIKE LOWER(CONCAT('%', :search, '%')))
               AND (:categoryId IS NULL OR e.category.id = :categoryId)
               AND (:materialId IS NULL OR e.material.id = :materialId)
               AND (:paymentMethod IS NULL OR :paymentMethod = '' OR LOWER(COALESCE(e.paymentMethod, '')) = LOWER(:paymentMethod))
             ORDER BY e.updatedAt DESC
             """)
-    Page<Expense> findPage(@Param("search") String search,
-                           @Param("categoryId") UUID categoryId,
-                           @Param("materialId") UUID materialId,
-                           @Param("paymentMethod") String paymentMethod,
-                           Pageable pageable);
+    Page<Expense> findPageWithTextSearch(@Param("search") String search,
+                                         @Param("categoryId") UUID categoryId,
+                                         @Param("materialId") UUID materialId,
+                                         @Param("paymentMethod") String paymentMethod,
+                                         Pageable pageable);
 }

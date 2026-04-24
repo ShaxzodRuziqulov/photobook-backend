@@ -12,6 +12,7 @@ import com.example.photobook.entity.enumirated.UserStatus;
 import com.example.photobook.mapper.UserMapper;
 import com.example.photobook.repository.UserRepository;
 import com.example.photobook.service.security.CurrentUserService;
+import com.example.photobook.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -86,11 +87,11 @@ public class UserService {
     }
 
     public Page<UserDto> findPage(UserPagingRequest request, Pageable pageable) {
-        return repository.findPage(
-                request.getSearch(),
-                request.getIsActive(),
-                request.getRole(),
-                pageable).map(mapper::toDto);
+        String search = StringUtils.normalize(request.getSearch());
+        Page<User> page = search == null
+                ? repository.findPageWithoutTextSearch(request.getIsActive(), request.getRole(), pageable)
+                : repository.findPageWithTextSearch(search, request.getIsActive(), request.getRole(), pageable);
+        return page.map(mapper::toDto);
     }
 
     public UserDto delete(UUID id) {

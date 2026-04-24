@@ -26,8 +26,20 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             SELECT DISTINCT u
             FROM User u
             LEFT JOIN u.roles r
-            WHERE (:search IS NULL OR :search = '' OR
-                   LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            WHERE (:isActive IS NULL OR u.isActive = :isActive)
+              AND (:role IS NULL OR :role = '' OR LOWER(r.name) = LOWER(:role))
+            ORDER BY u.updatedAt DESC
+            """)
+    Page<User> findPageWithoutTextSearch(@Param("isActive") Boolean isActive,
+                                         @Param("role") String role,
+                                         Pageable pageable);
+
+    @EntityGraph(attributePaths = "roles")
+    @Query("""
+            SELECT DISTINCT u
+            FROM User u
+            LEFT JOIN u.roles r
+            WHERE (LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(u.firstName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(u.lastName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(u.phone, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
@@ -36,10 +48,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
               AND (:role IS NULL OR :role = '' OR LOWER(r.name) = LOWER(:role))
             ORDER BY u.updatedAt DESC
             """)
-    Page<User> findPage(@Param("search") String search,
-                        @Param("isActive") Boolean isActive,
-                        @Param("role") String role,
-                        Pageable pageable);
+    Page<User> findPageWithTextSearch(@Param("search") String search,
+                                      @Param("isActive") Boolean isActive,
+                                      @Param("role") String role,
+                                      Pageable pageable);
 
     @Query("""
             SELECT u

@@ -15,8 +15,15 @@ public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory
     @Query("""
             SELECT e
             FROM ExpenseCategory e
-            WHERE (:search IS NULL OR :search = '' OR LOWER(e.name) LIKE LOWER(CONCAT('%', :search, '%')))
             ORDER BY e.updatedAt DESC
             """)
-    Page<ExpenseCategory> findPage(@Param("search") String search, Pageable pageable);
+    Page<ExpenseCategory> findPageWithoutTextSearch(Pageable pageable);
+
+    @Query("""
+            SELECT e
+            FROM ExpenseCategory e
+            WHERE LOWER(e.name) LIKE LOWER(CONCAT('%', :search, '%'))
+            ORDER BY e.updatedAt DESC
+            """)
+    Page<ExpenseCategory> findPageWithTextSearch(@Param("search") String search, Pageable pageable);
 }

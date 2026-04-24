@@ -6,6 +6,7 @@ import com.example.photobook.dto.request.MaterialPagingRequest;
 import com.example.photobook.entity.Material;
 import com.example.photobook.mapper.MaterialMapper;
 import com.example.photobook.repository.MaterialRepository;
+import com.example.photobook.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -60,7 +61,11 @@ public class MaterialService {
     }
 
     public Page<MaterialDto> findPage(MaterialPagingRequest request, Pageable pageable) {
-        return repository.findPage(request.getSearch(),request.getItemType(), pageable).map(mapper::toDto);
+        String search = StringUtils.normalize(request.getSearch());
+        Page<Material> page = search == null
+                ? repository.findPageWithoutTextSearch(request.getItemType(), pageable)
+                : repository.findPageWithTextSearch(search, request.getItemType(), pageable);
+        return page.map(mapper::toDto);
     }
 
     public void delete(UUID id) {

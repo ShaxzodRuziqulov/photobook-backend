@@ -62,10 +62,11 @@ public class CustomerService {
     }
 
     public Page<CustomerDto> findPage(CustomerPagingRequest request, Pageable pageable) {
-        return repository.findPage(
-                request.getSearch(),
-                request.getIsActive(),
-                pageable).map(mapper::toDto);
+        String search = normalize(request.getSearch());
+        Page<Customer> page = search == null
+                ? repository.findPageWithoutTextSearch(request.getIsActive(), pageable)
+                : repository.findPageWithTextSearch(search, request.getIsActive(), pageable);
+        return page.map(mapper::toDto);
     }
 
     public CustomerDto delete(UUID id) {

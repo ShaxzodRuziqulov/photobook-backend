@@ -17,10 +17,16 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
     @Query("""
             SELECT r
             FROM Role r
-            WHERE (:search IS NULL OR :search = '' OR
-                   LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            ORDER BY r.updatedAt DESC
+            """)
+    Page<Role> findPageWithoutTextSearch(Pageable pageable);
+
+    @Query("""
+            SELECT r
+            FROM Role r
+            WHERE (LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(r.description, '')) LIKE LOWER(CONCAT('%', :search, '%')))
             ORDER BY r.updatedAt DESC
             """)
-    Page<Role> findPage(@Param("search") String search, Pageable pageable);
+    Page<Role> findPageWithTextSearch(@Param("search") String search, Pageable pageable);
 }

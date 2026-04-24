@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import com.example.photobook.util.StringUtils;
 
 import java.util.List;
 import java.util.UUID;
@@ -68,12 +69,20 @@ public class ExpenseService {
     }
 
     public Page<ExpenseDto> findPage(ExpensePagingRequest request, Pageable pageable) {
-        return repository.findPage(
-                request.getSearch(),
-                request.getCategoryId(),
-                request.getMaterialId(),
-                request.getPaymentMethod(),
-                pageable).map(mapper::toDto);
+        String search = StringUtils.normalize(request.getSearch());
+        Page<Expense> page = search == null
+                ? repository.findPageWithoutTextSearch(
+                        request.getCategoryId(),
+                        request.getMaterialId(),
+                        request.getPaymentMethod(),
+                        pageable)
+                : repository.findPageWithTextSearch(
+                        search,
+                        request.getCategoryId(),
+                        request.getMaterialId(),
+                        request.getPaymentMethod(),
+                        pageable);
+        return page.map(mapper::toDto);
     }
 
     public void delete(UUID id) {

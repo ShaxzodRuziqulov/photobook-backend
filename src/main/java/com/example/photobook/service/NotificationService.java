@@ -11,6 +11,7 @@ import com.example.photobook.entity.enumirated.NotificationTargetType;
 import com.example.photobook.entity.enumirated.NotificationType;
 import com.example.photobook.repository.NotificationRepository;
 import com.example.photobook.service.security.CurrentUserService;
+import com.example.photobook.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -64,14 +65,15 @@ public class NotificationService {
     public Page<NotificationDto> findMyNotificationsPage(NotificationPagingRequest request, Pageable pageable) {
         UUID currentUserId = currentUserService.getCurrentUserId();
         NotificationPagingRequest safeRequest = request == null ? new NotificationPagingRequest() : request;
-        return notificationRepository.findPage(
-                currentUserId,
-                safeRequest.getSearch(),
-                parseNotificationTypeFilter(safeRequest.getType()),
-                safeRequest.getIsRead(),
-                safeRequest.getActionRequired(),
-                pageable
-        ).map(this::toDto);
+        String search = StringUtils.normalize(safeRequest.getSearch());
+        NotificationType type = parseNotificationTypeFilter(safeRequest.getType());
+        Boolean isRead = safeRequest.getIsRead();
+        Boolean actionRequired = safeRequest.getActionRequired();
+        Page<Notification> page = search == null
+                ? notificationRepository.findPageWithoutTextSearch(currentUserId, type, isRead, actionRequired, pageable)
+                : notificationRepository.findPageWithTextSearch(
+                        currentUserId, search, type, isRead, actionRequired, pageable);
+        return page.map(this::toDto);
     }
 
     @Transactional(readOnly = true)

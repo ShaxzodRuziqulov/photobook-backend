@@ -26,7 +26,8 @@ import java.util.UUID;
         name = "notifications",
         indexes = {
                 @Index(name = "idx_notifications_user_id", columnList = "user_id"),
-                @Index(name = "idx_notifications_read_at", columnList = "read_at")
+                @Index(name = "idx_notifications_read_at", columnList = "read_at"),
+                @Index(name = "idx_notifications_user_created", columnList = "user_id, created_at")
         }
 )
 public class Notification extends BaseEntity {

@@ -5,6 +5,7 @@ import com.example.photobook.dto.request.RolePageRequest;
 import com.example.photobook.entity.Role;
 import com.example.photobook.mapper.RoleMapper;
 import com.example.photobook.repository.RoleRepository;
+import com.example.photobook.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,7 +44,11 @@ public class RoleService {
     }
 
     public Page<RoleDto> findPage(RolePageRequest request, Pageable pageable) {
-        return repository.findPage(request.getSearch(), pageable).map(mapper::toDto);
+        String search = StringUtils.normalize(request.getSearch());
+        Page<Role> page = search == null
+                ? repository.findPageWithoutTextSearch(pageable)
+                : repository.findPageWithTextSearch(search, pageable);
+        return page.map(mapper::toDto);
     }
 
     public void delete(UUID id) {

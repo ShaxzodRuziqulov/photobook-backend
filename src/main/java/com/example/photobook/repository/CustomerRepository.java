@@ -16,16 +16,23 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
     @Query("""
             SELECT c
             FROM Customer c
-            WHERE (:search IS NULL OR :search = '' OR
-                   LOWER(c.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            WHERE (:isActive IS NULL OR c.isActive = :isActive)
+            ORDER BY c.updatedAt DESC
+            """)
+    Page<Customer> findPageWithoutTextSearch(@Param("isActive") Boolean isActive, Pageable pageable);
+
+    @Query("""
+            SELECT c
+            FROM Customer c
+            WHERE (LOWER(c.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(c.notes) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(c.phone, '')) LIKE LOWER(CONCAT('%', :search, '%')))
               AND (:isActive IS NULL OR c.isActive = :isActive)
             ORDER BY c.updatedAt DESC
             """)
-    Page<Customer> findPage(@Param("search") String search,
-                            @Param("isActive") Boolean isActive,
-                            Pageable pageable);
+    Page<Customer> findPageWithTextSearch(@Param("search") String search,
+                                          @Param("isActive") Boolean isActive,
+                                          Pageable pageable);
 
     @Query("""
             SELECT c

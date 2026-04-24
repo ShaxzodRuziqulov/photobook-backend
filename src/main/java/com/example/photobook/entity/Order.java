@@ -18,7 +18,8 @@ import java.util.List;
         name = "orders",
         indexes = {
                 @Index(name = "idx_orders_category_id", columnList = "category_id"),
-                @Index(name = "idx_orders_customer_id", columnList = "customer_id")
+                @Index(name = "idx_orders_customer_id", columnList = "customer_id"),
+                @Index(name = "idx_orders_updated_at", columnList = "updated_at")
         }
 )
 public class Order extends BaseEntity {

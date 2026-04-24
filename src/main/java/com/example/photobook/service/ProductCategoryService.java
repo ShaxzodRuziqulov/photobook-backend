@@ -6,6 +6,7 @@ import com.example.photobook.entity.ProductCategory;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.mapper.ProductCategoryMapper;
 import com.example.photobook.repository.ProductCategoryRepository;
+import com.example.photobook.util.StringUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -54,10 +55,11 @@ public class ProductCategoryService {
     }
 
     public Page<ProductCategoryDto> findPage(ProductCategoryPagingRequest request, Pageable pageable) {
-        return repository.findPage(
-                request.getKind(),
-                request.getSearch(),
-                pageable).map(mapper::toDto);
+        String search = StringUtils.normalize(request.getSearch());
+        Page<ProductCategory> page = search == null
+                ? repository.findPageWithoutTextSearch(request.getKind(), pageable)
+                : repository.findPageWithTextSearch(request.getKind(), search, pageable);
+        return page.map(mapper::toDto);
     }
 
     public void delete(UUID id) {

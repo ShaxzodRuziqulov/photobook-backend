@@ -15,11 +15,20 @@ public interface MaterialRepository extends JpaRepository<Material, UUID> {
     @Query("""
             SELECT m
             FROM Material m
-            WHERE (:search IS NULL OR :search = '' OR
-                   LOWER(m.itemName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            WHERE (:itemType IS NULL OR :itemType = '' OR LOWER(COALESCE(m.itemType, '')) = LOWER(:itemType))
+            ORDER BY m.updatedAt DESC
+            """)
+    Page<Material> findPageWithoutTextSearch(@Param("itemType") String itemType, Pageable pageable);
+
+    @Query("""
+            SELECT m
+            FROM Material m
+            WHERE (LOWER(m.itemName) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(m.itemType, '')) LIKE LOWER(CONCAT('%', :search, '%')))
               AND (:itemType IS NULL OR :itemType = '' OR LOWER(COALESCE(m.itemType, '')) = LOWER(:itemType))
             ORDER BY m.updatedAt DESC
             """)
-    Page<Material> findPage(@Param("search") String search, @Param("itemType") String itemType, Pageable pageable);
+    Page<Material> findPageWithTextSearch(@Param("search") String search,
+                                          @Param("itemType") String itemType,
+                                          Pageable pageable);
 }

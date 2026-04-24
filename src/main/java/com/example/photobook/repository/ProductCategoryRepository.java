@@ -47,8 +47,18 @@ public interface ProductCategoryRepository extends JpaRepository<ProductCategory
             SELECT p
             FROM ProductCategory p
             WHERE (:kind IS NULL OR p.kind = :kind)
-              AND (:search IS NULL OR :search = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')))
             ORDER BY p.updatedAt DESC
             """)
-    Page<ProductCategory> findPage(@Param("kind") OrderKind kind, @Param("search") String search, Pageable pageable);
+    Page<ProductCategory> findPageWithoutTextSearch(@Param("kind") OrderKind kind, Pageable pageable);
+
+    @Query("""
+            SELECT p
+            FROM ProductCategory p
+            WHERE (:kind IS NULL OR p.kind = :kind)
+              AND LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))
+            ORDER BY p.updatedAt DESC
+            """)
+    Page<ProductCategory> findPageWithTextSearch(@Param("kind") OrderKind kind,
+                                                @Param("search") String search,
+                                                Pageable pageable);
 }
