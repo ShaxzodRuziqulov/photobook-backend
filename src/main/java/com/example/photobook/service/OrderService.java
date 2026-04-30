@@ -37,6 +37,7 @@ public class OrderService {
     private final UploadService uploadService;
     private final NotificationService notificationService;
     private final SocketIoService socketIoService;
+    private final OrderWorkLogService workLogService;
 
     public OrderDto create(OrderDto dto) {
         List<EmployeeDto> employees = dto.getEmployees();
@@ -97,6 +98,17 @@ public class OrderService {
     public void delete(UUID id) {
         Order order = findByOrderId(id);
 
+        if (order.getEmployees() != null) {
+            order.getEmployees().forEach(employee ->
+                workLogService.logFinalSnapshot(
+                        order.getId(),
+                        employee.getUser().getId(),
+                        employee.getStepOrder(),
+                        employee.getProcessedCount()
+                )
+            );
+        }
+
         uploadService.deleteOwnedUpload(
                 OwnerType.ORDER,
                 order.getId(),
@@ -104,7 +116,8 @@ public class OrderService {
         );
 
         notificationService.deleteByOrderId(order.getId());
-        repository.delete(order);
+        order.setDeleted(true);
+        repository.save(order);
     }
 
     public OrderDto changeStatus(UUID id,
@@ -298,22 +311,17 @@ public class OrderService {
         }
     }
 
-    private List<OrderEmployee> resolveEmployees(List<EmployeeDto> employees) {
+    private Map<UUID, User> resolveUserMap(List<EmployeeDto> employees) {
         List<UUID> employeeIds = employees.stream()
                 .map(EmployeeDto::getEmployeeId)
                 .distinct()
                 .toList();
-
-        Map<UUID, User> usersById = userService.findAllByIds(employeeIds).stream()
+        return userService.findAllByIds(employeeIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
-
-        return employees.stream()
-                .map(employeeDto -> toOrderEmployee(employeeDto, usersById))
-                .toList();
     }
 
     private Set<UUID> syncEmployees(Order order, List<EmployeeDto> employees) {
-        List<OrderEmployee> resolvedEmployees = resolveEmployees(employees);
+        Map<UUID, User> usersById = resolveUserMap(employees);
         Map<UUID, OrderEmployee> existingByUserId = order.getEmployees().stream()
                 .collect(Collectors.toMap(
                         assignment -> assignment.getUser().getId(),
@@ -322,25 +330,62 @@ public class OrderService {
                         LinkedHashMap::new
                 ));
 
-        Set<UUID> incomingUserIds = resolvedEmployees.stream()
-                .map(assignment -> assignment.getUser().getId())
+        Set<UUID> incomingUserIds = employees.stream()
+                .map(EmployeeDto::getEmployeeId)
                 .collect(Collectors.toSet());
 
         Set<UUID> removedUserIds = order.getEmployees().stream()
                 .map(existing -> existing.getUser().getId())
-                .filter(existingUserId -> !incomingUserIds.contains(existingUserId))
+                .filter(id -> !incomingUserIds.contains(id))
                 .collect(Collectors.toSet());
+
+        Map<Integer, Integer> countByRemovedStep = new HashMap<>();
+        order.getEmployees().stream()
+                .filter(existing -> !incomingUserIds.contains(existing.getUser().getId()))
+                .forEach(existing -> {
+                    countByRemovedStep.put(existing.getStepOrder(), existing.getProcessedCount());
+                    workLogService.logFinalSnapshot(
+                            order.getId(),
+                            existing.getUser().getId(),
+                            existing.getStepOrder(),
+                            existing.getProcessedCount()
+                    );
+                });
 
         order.getEmployees().removeIf(existing -> !incomingUserIds.contains(existing.getUser().getId()));
 
-        for (OrderEmployee resolvedEmployee : resolvedEmployees) {
-            UUID userId = resolvedEmployee.getUser().getId();
+        for (EmployeeDto employeeDto : employees) {
+            UUID userId = employeeDto.getEmployeeId();
             OrderEmployee existing = existingByUserId.get(userId);
+            boolean isReset = Boolean.TRUE.equals(employeeDto.getReset());
+
             if (existing != null) {
-                existing.setStepOrder(resolvedEmployee.getStepOrder());
+                boolean stepChanged = !existing.getStepOrder().equals(employeeDto.getStepOrder());
+                if (isReset || stepChanged) {
+                    workLogService.logFinalSnapshot(
+                            order.getId(),
+                            existing.getUser().getId(),
+                            existing.getStepOrder(),
+                            existing.getProcessedCount()
+                    );
+                }
+
+                if (isReset) {
+                    existing.setProcessedCount(0);
+                    existing.setWorkStatus(EmployeeWorkStatus.PENDING);
+                }
+                existing.setStepOrder(employeeDto.getStepOrder());
                 continue;
             }
-            order.addEmployee(resolvedEmployee);
+
+            OrderEmployee newEmployee = toOrderEmployee(employeeDto, usersById);
+            if (!isReset) {
+                Integer inheritedCount = countByRemovedStep.get(employeeDto.getStepOrder());
+                if (inheritedCount != null) {
+                    newEmployee.setProcessedCount(inheritedCount);
+                }
+            }
+            order.addEmployee(newEmployee);
         }
 
         return removedUserIds;
@@ -351,10 +396,9 @@ public class OrderService {
         if (user == null) {
             throw new IllegalArgumentException("employee not found: " + employeeDto.getEmployeeId());
         }
-
         OrderEmployee assignment = new OrderEmployee();
         assignment.setUser(user);
-        assignment.setProcessedCount(employeeDto.getProcessedCount() == null ? 0 : employeeDto.getProcessedCount());
+        assignment.setProcessedCount(0);
         assignment.setStepOrder(employeeDto.getStepOrder());
         assignment.setWorkStatus(EmployeeWorkStatus.PENDING);
         return assignment;
@@ -468,6 +512,7 @@ public class OrderService {
                 .map(OrderEmployee::getProcessedCount)
                 .orElse(0);
     }
+
 
     private int calculateCurrentStepProcessedCount(Order order) {
         OrderEmployee activeEmployee = findActiveEmployee(order);

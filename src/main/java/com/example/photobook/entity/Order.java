@@ -23,12 +23,15 @@ import java.util.List;
         }
 )
 public class Order extends BaseEntity {
+    
+    @Column(nullable = false)
+    private boolean deleted = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private OrderKind kind;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private ProductCategory category;
 
@@ -38,7 +41,7 @@ public class Order extends BaseEntity {
     @Column(name = "item_type", length = 120)
     private String itemType;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 

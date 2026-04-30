@@ -8,10 +8,8 @@ import com.example.photobook.projection.OrderStatusCountProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -24,11 +22,12 @@ import java.util.UUID;
  * Repository for order persistence and optimized order dashboard aggregations.
  */
 @Repository
-public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecificationExecutor<Order> {
+public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     @Query("""
             SELECT o.kind AS kind, COUNT(o.id) AS count
             FROM Order o
+            WHERE o.deleted = false
             GROUP BY o.kind
             """)
     List<OrderKindCountProjection> countOrdersByKind();
@@ -36,16 +35,16 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     @Query("""
             SELECT o.status AS status, COUNT(o.id) AS count
             FROM Order o
-            WHERE o.kind = :kind
+            WHERE o.kind = :kind AND o.deleted = false
             GROUP BY o.status
             """)
     List<OrderStatusCountProjection> countOrdersByStatus(@Param("kind") OrderKind kind);
 
-    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
     @Query("""
             SELECT o
             FROM Order o
-            WHERE o.status = COALESCE(:status, o.status)
+            WHERE o.deleted = false
+              AND o.status = COALESCE(:status, o.status)
               AND o.acceptedDate = COALESCE(:acceptedDate, o.acceptedDate)
               AND o.deadline = COALESCE(:deadline, o.deadline)
             ORDER BY o.updatedAt DESC
@@ -55,13 +54,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
                                           @Param("deadline") LocalDate deadline,
                                           Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
     @Query("""
             SELECT DISTINCT o
             FROM Order o
             LEFT JOIN o.employees assignment
             LEFT JOIN assignment.user employee
-            WHERE (LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            WHERE o.deleted = false
+              AND (LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.receiverName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.customer.fullName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(CONCAT(
@@ -81,8 +80,41 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
                                        @Param("deadline") LocalDate deadline,
                                        Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
-    Optional<Order> findById(UUID id);
+    @Query(value = """
+            SELECT DISTINCT o
+            FROM Order o
+            JOIN o.employees assignment
+            WHERE assignment.user.id = :userId
+              AND o.deleted = false
+              AND o.status IN :statuses
+              AND o.deadline >= :deadlineFrom
+              AND o.deadline <= :deadlineTo
+              AND (LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(COALESCE(o.receiverName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(COALESCE(o.customer.fullName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(COALESCE(o.category.name, '')) LIKE LOWER(CONCAT('%', :search, '%')))
+            ORDER BY o.updatedAt DESC
+            """,
+            countQuery = """
+            SELECT COUNT(DISTINCT o)
+            FROM Order o
+            JOIN o.employees assignment
+            WHERE assignment.user.id = :userId
+              AND o.deleted = false
+              AND o.status IN :statuses
+              AND o.deadline >= :deadlineFrom
+              AND o.deadline <= :deadlineTo
+              AND (LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(COALESCE(o.receiverName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(COALESCE(o.customer.fullName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
+                   LOWER(COALESCE(o.category.name, '')) LIKE LOWER(CONCAT('%', :search, '%')))
+            """)
+    Page<Order> findMyTasks(@Param("userId") UUID userId,
+                            @Param("statuses") List<OrderStatus> statuses,
+                            @Param("deadlineFrom") LocalDate deadlineFrom,
+                            @Param("deadlineTo") LocalDate deadlineTo,
+                            @Param("search") String search,
+                            Pageable pageable);
 
     @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
     @Query("""
@@ -90,6 +122,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
             FROM Order o
             LEFT JOIN o.employees assignment
             LEFT JOIN assignment.user employee
+            WHERE o.deleted = false
             ORDER BY o.updatedAt DESC
             """)
     List<Order> findAllWithDetails();
@@ -105,8 +138,4 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
             """)
     Optional<Order> findTaskByIdAndEmployeeId(@Param("orderId") UUID orderId,
                                               @Param("employeeId") UUID employeeId);
-
-    @Override
-    @EntityGraph(attributePaths = {"category", "customer", "employees", "employees.user"})
-    Page<Order> findAll(Specification<Order> specification, Pageable pageable);
 }

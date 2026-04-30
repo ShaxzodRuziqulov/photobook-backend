@@ -25,6 +25,7 @@ public class UserTaskDto {
     private Integer amount;
     private Integer processedCount;
     private Integer orderProcessedCount;
+    private Integer stepTotalProcessed;
     private Integer availableToProcess;
     private Integer remainingAvailable;
     private Integer remainingTotal;

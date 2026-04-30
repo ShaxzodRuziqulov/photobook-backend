@@ -3,30 +3,22 @@ package com.example.photobook.service;
 import com.example.photobook.dto.UserTaskDto;
 import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
-import com.example.photobook.entity.Customer;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.OrderEmployee;
-import com.example.photobook.entity.ProductCategory;
 import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.repository.OrderRepository;
 import com.example.photobook.service.security.CurrentUserService;
 import com.example.photobook.util.StringUtils;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +32,7 @@ public class UserTaskService {
     private final OrderRepository orderRepository;
     private final CurrentUserService currentUserService;
     private final SocketIoService socketIoService;
+    private final OrderWorkLogService workLogService;
 
     public UserTaskDto getUserTaskById(UUID id) {
         UUID currentUserId = currentUserService.getCurrentUserId();
@@ -50,13 +43,21 @@ public class UserTaskService {
     @Transactional(readOnly = true)
     public Page<UserTaskDto> findMyTasksPage(UserTaskPagingRequest request, Pageable pageable) {
         UUID currentUserId = currentUserService.getCurrentUserId();
-
         String search = normalizeSearch(request.getSearch());
-        List<OrderStatus> statuses = normalizeStatuses(request.getStatuses());
+        List<OrderStatus> statuses = request.getStatuses() != null && !request.getStatuses().isEmpty()
+                ? request.getStatuses()
+                : List.of(OrderStatus.values());
         Pageable effectivePageable = withDefaultSort(pageable);
 
-        return orderRepository.findAll(
-                buildMyTasksSpecification(currentUserId, request, statuses, search),
+        LocalDate deadlineFrom = request.getDeadlineFrom() != null ? request.getDeadlineFrom() : LocalDate.of(1900, 1, 1);
+        LocalDate deadlineTo = request.getDeadlineTo() != null ? request.getDeadlineTo() : LocalDate.of(9999, 12, 31);
+
+        return orderRepository.findMyTasks(
+                currentUserId,
+                statuses,
+                deadlineFrom,
+                deadlineTo,
+                search != null ? search : "",
                 effectivePageable
         ).map(order -> toDto(order, findAssignment(order, currentUserId)));
     }
@@ -76,15 +77,24 @@ public class UserTaskService {
             if (dto.getProcessedCount() < 0) {
                 throw new IllegalArgumentException("processed_count must be greater than or equal to 0");
             }
-            int nextProcessedCount = assignment.getProcessedCount() + dto.getProcessedCount();
-            if (nextProcessedCount > targetProgress) {
-                throw new IllegalArgumentException("processed_count increment cannot exceed remaining amount");
+
+            int stepTotalBefore = calculateStepTotalProcessed(order, assignment.getStepOrder());
+            int nextStepTotal = stepTotalBefore + dto.getProcessedCount();
+
+            if (nextStepTotal > targetProgress) {
+                throw new IllegalArgumentException("Step total progress cannot exceed order amount");
             }
-            OrderEmployee previousAssignment = findPreviousAssignment(order, assignment);
-            if (previousAssignment != null && nextProcessedCount > previousAssignment.getProcessedCount()) {
-                throw new IllegalArgumentException("processed_count increment cannot exceed previous step progress");
+
+            int previousStepTotal = calculatePreviousStepTotal(order, assignment.getStepOrder());
+            if (assignment.getStepOrder() > 1 && nextStepTotal > previousStepTotal) {
+                throw new IllegalArgumentException("Step progress cannot exceed previous step total progress");
             }
+
+            int previousCount = assignment.getProcessedCount();
+            int nextProcessedCount = previousCount + dto.getProcessedCount();
             assignment.setProcessedCount(nextProcessedCount);
+            
+            workLogService.logProgress(order.getId(), currentUserId, assignment.getStepOrder(), previousCount, nextProcessedCount);
         }
 
         if (dto.getNotes() != null) {
@@ -163,10 +173,6 @@ public class UserTaskService {
         }
     }
 
-    private List<OrderStatus> normalizeStatuses(List<OrderStatus> statuses) {
-        return statuses == null || statuses.isEmpty() ? null : statuses;
-    }
-
     private String normalizeSearch(String search) {
         return StringUtils.normalize(search);
     }
@@ -176,49 +182,6 @@ public class UserTaskService {
             return pageable;
         }
         return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "updatedAt"));
-    }
-
-    private Specification<Order> buildMyTasksSpecification(
-            UUID currentUserId,
-            UserTaskPagingRequest request,
-            List<OrderStatus> statuses,
-            String search
-    ) {
-        return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            Subquery<Integer> assignedToMe = query.subquery(Integer.class);
-            Root<OrderEmployee> assignmentRoot = assignedToMe.from(OrderEmployee.class);
-            assignedToMe.select(criteriaBuilder.literal(1));
-            assignedToMe.where(
-                    criteriaBuilder.equal(assignmentRoot.get("order"), root),
-                    criteriaBuilder.equal(assignmentRoot.get("user").get("id"), currentUserId)
-            );
-            predicates.add(criteriaBuilder.exists(assignedToMe));
-
-            if (statuses != null) {
-                predicates.add(root.get("status").in(statuses));
-            }
-            if (request.getDeadlineFrom() != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("deadline"), request.getDeadlineFrom()));
-            }
-            if (request.getDeadlineTo() != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("deadline"), request.getDeadlineTo()));
-            }
-            if (search != null) {
-                Join<Order, Customer> customer = root.join("customer", JoinType.INNER);
-                Join<Order, ProductCategory> category = root.join("category", JoinType.INNER);
-                String likeSearch = "%" + search.toLowerCase() + "%";
-                predicates.add(criteriaBuilder.or(
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("orderName")), likeSearch),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("receiverName")), likeSearch),
-                        criteriaBuilder.like(criteriaBuilder.lower(customer.get("fullName")), likeSearch),
-                        criteriaBuilder.like(criteriaBuilder.lower(category.get("name")), likeSearch)
-                ));
-            }
-
-            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
-        };
     }
 
     private Order findOwnedTask(UUID orderId, UUID currentUserId) {
@@ -256,10 +219,11 @@ public class UserTaskService {
         dto.setPageCount(order.getPageCount());
         dto.setAmount(order.getAmount());
         dto.setProcessedCount(assignment.getProcessedCount());
+        dto.setStepTotalProcessed(calculateStepTotalProcessed(order, assignment.getStepOrder()));
         dto.setOrderProcessedCount(calculateOrderProcessedCount(order));
-        dto.setAvailableToProcess(calculateAvailableToProcess(order, assignment));
-        dto.setRemainingAvailable(calculateRemainingAvailable(order, assignment));
-        dto.setRemainingTotal(calculateRemainingTotal(order, assignment));
+        dto.setAvailableToProcess(calculatePreviousStepTotal(order, assignment.getStepOrder()));
+        dto.setRemainingAvailable(dto.getAvailableToProcess() - dto.getStepTotalProcessed());
+        dto.setRemainingTotal(order.getAmount() - dto.getStepTotalProcessed());
         dto.setStepOrder(assignment.getStepOrder());
         dto.setWorkStatus(assignment.getWorkStatus());
         dto.setCanWork(order.getStatus() == OrderStatus.IN_PROGRESS &&
@@ -293,33 +257,37 @@ public class UserTaskService {
     }
 
     private int calculateOrderProcessedCount(Order order) {
+        Integer maxStep = order.getEmployees().stream()
+                .map(OrderEmployee::getStepOrder)
+                .max(Integer::compareTo)
+                .orElse(null);
+        if (maxStep == null) return 0;
+        return calculateStepTotalProcessed(order, maxStep);
+    }
+
+    private int calculateStepTotalProcessed(Order order, int stepOrder) {
         return order.getEmployees().stream()
-                .sorted(java.util.Comparator.comparing(OrderEmployee::getStepOrder))
-                .reduce((first, second) -> second)
-                .map(OrderEmployee::getProcessedCount)
+                .filter(e -> e.getStepOrder() == stepOrder)
+                .mapToInt(e -> e.getProcessedCount() == null ? 0 : e.getProcessedCount())
+                .sum();
+    }
+
+    private int calculatePreviousStepTotal(Order order, int stepOrder) {
+        if (stepOrder <= 1) return getTargetProgress(order);
+        return order.getEmployees().stream()
+                .filter(e -> e.getStepOrder() < stepOrder)
+                .collect(Collectors.groupingBy(OrderEmployee::getStepOrder, Collectors.summingInt(e -> e.getProcessedCount() == null ? 0 : e.getProcessedCount())))
+                .values().stream()
+                .min(Integer::compareTo) // In a strict pipeline, it should be the min of previous steps or just the immediate previous
                 .orElse(0);
+    }
+
+    private int calculateAvailableToProcess(Order order, OrderEmployee assignment) {
+        return calculatePreviousStepTotal(order, assignment.getStepOrder());
     }
 
     private int getTargetProgress(Order order) {
         return order.getAmount() == null ? 0 : order.getAmount();
-    }
-
-    private int calculateAvailableToProcess(Order order, OrderEmployee assignment) {
-        OrderEmployee previousAssignment = findPreviousAssignment(order, assignment);
-        if (previousAssignment == null) {
-            return getTargetProgress(order);
-        }
-        return previousAssignment.getProcessedCount() == null ? 0 : previousAssignment.getProcessedCount();
-    }
-
-    private int calculateRemainingAvailable(Order order, OrderEmployee assignment) {
-        int remaining = calculateAvailableToProcess(order, assignment) - safeProcessedCount(assignment);
-        return Math.max(remaining, 0);
-    }
-
-    private int calculateRemainingTotal(Order order, OrderEmployee assignment) {
-        int remaining = getTargetProgress(order) - safeProcessedCount(assignment);
-        return Math.max(remaining, 0);
     }
 
     private int safeProcessedCount(OrderEmployee assignment) {
@@ -349,37 +317,37 @@ public class UserTaskService {
     }
 
     private void refreshPipelineWorkflow(Order order, int targetProgress) {
-        List<OrderEmployee> assignments = order.getEmployees().stream()
-                .sorted(Comparator.comparing(OrderEmployee::getStepOrder))
-                .toList();
+        List<OrderEmployee> employees = order.getEmployees();
+        if (employees == null || employees.isEmpty()) return;
 
-        if (assignments.isEmpty()) {
-            return;
-        }
+        Map<Integer, Integer> stepTotals = employees.stream()
+                .collect(Collectors.groupingBy(OrderEmployee::getStepOrder,
+                        Collectors.summingInt(e -> e.getProcessedCount() == null ? 0 : e.getProcessedCount())));
 
+        List<Integer> sortedSteps = stepTotals.keySet().stream().sorted().toList();
         boolean allCompleted = true;
 
-        for (int i = 0; i < assignments.size(); i++) {
-            OrderEmployee current = assignments.get(i);
-
-            if (current.getProcessedCount() >= targetProgress) {
-                current.setWorkStatus(EmployeeWorkStatus.COMPLETED);
-                continue;
-            }
-
-            allCompleted = false;
-
-            if (i == 0) {
-                current.setWorkStatus(EmployeeWorkStatus.STARTED);
-                continue;
-            }
-
-            OrderEmployee previous = assignments.get(i - 1);
-            if (previous.getProcessedCount() > current.getProcessedCount()) {
-                current.setWorkStatus(EmployeeWorkStatus.STARTED);
+        for (int i = 0; i < sortedSteps.size(); i++) {
+            int step = sortedSteps.get(i);
+            int total = stepTotals.get(step);
+            
+            final EmployeeWorkStatus status;
+            if (total >= targetProgress) {
+                status = EmployeeWorkStatus.COMPLETED;
             } else {
-                current.setWorkStatus(EmployeeWorkStatus.PENDING);
+                allCompleted = false;
+                if (i == 0) {
+                    status = EmployeeWorkStatus.STARTED;
+                } else {
+                    int prevTotal = stepTotals.get(sortedSteps.get(i - 1));
+                    status = (prevTotal > total) ? EmployeeWorkStatus.STARTED : EmployeeWorkStatus.PENDING;
+                }
             }
+            
+            // Apply status to all employees in this step
+            employees.stream()
+                    .filter(e -> e.getStepOrder() == step)
+                    .forEach(e -> e.setWorkStatus(status));
         }
 
         order.setStatus(allCompleted ? OrderStatus.COMPLETED : OrderStatus.IN_PROGRESS);

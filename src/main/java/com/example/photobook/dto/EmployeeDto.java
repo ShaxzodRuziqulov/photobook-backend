@@ -15,4 +15,5 @@ public class EmployeeDto {
     private Integer stepOrder;
     private String notes;
     private EmployeeWorkStatus workStatus;
+    private Boolean reset;
 }
