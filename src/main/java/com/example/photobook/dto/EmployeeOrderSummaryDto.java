@@ -13,6 +13,7 @@ import java.util.UUID;
 public class EmployeeOrderSummaryDto {
     private UUID orderId;
     private String orderName;
+    private String category;
     private String itemType;
     private String status;
     private LocalDate acceptedDate;
@@ -23,6 +24,7 @@ public class EmployeeOrderSummaryDto {
         EmployeeOrderSummaryDto dto = new EmployeeOrderSummaryDto();
         dto.setOrderId(p.getOrderId());
         dto.setOrderName(p.getOrderName());
+        dto.setCategory(p.getCategory());
         dto.setItemType(p.getItemType());
         dto.setStatus(p.getStatus());
         dto.setAcceptedDate(p.getAcceptedDate());

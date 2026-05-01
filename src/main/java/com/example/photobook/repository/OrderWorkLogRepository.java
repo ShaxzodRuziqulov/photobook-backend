@@ -49,6 +49,7 @@ public interface OrderWorkLogRepository extends JpaRepository<OrderWorkLog, UUID
     @Query("""
             SELECT o.id             AS orderId,
                    o.orderName      AS orderName,
+                   o.category.name  AS category,
                    o.itemType       AS itemType,
                    o.status         AS status,
                    o.acceptedDate   AS acceptedDate,
@@ -59,7 +60,7 @@ public interface OrderWorkLogRepository extends JpaRepository<OrderWorkLog, UUID
             WHERE l.employeeId = :employeeId
               AND l.workMonth  = :month
               AND o.deleted    = false
-            GROUP BY o.id, o.orderName, o.itemType, o.status, o.acceptedDate
+            GROUP BY o.id, o.orderName, o.category.name, o.itemType, o.status, o.acceptedDate
             ORDER BY MAX(l.loggedAt) DESC
             """)
     List<EmployeeMonthlyOrderProjection> findOrderSummaryByEmployeeAndMonth(

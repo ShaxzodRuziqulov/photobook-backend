@@ -7,6 +7,7 @@ import java.util.UUID;
 public interface EmployeeMonthlyOrderProjection {
     UUID getOrderId();
     String getOrderName();
+    String getCategory();
     String getItemType();
     String getStatus();
     LocalDate getAcceptedDate();
