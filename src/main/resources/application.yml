@@ -7,6 +7,8 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:123}
     driver-class-name: org.postgresql.Driver
+  jackson:
+    time-zone: Asia/Tashkent
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:validate}

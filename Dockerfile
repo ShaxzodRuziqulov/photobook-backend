@@ -10,8 +10,10 @@ RUN chmod +x mvnw && ./mvnw -DskipTests package
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
+ENV TZ=Asia/Tashkent
+
 COPY --from=build /app/target/*.jar /app/app.jar
 
 EXPOSE 10000
 
-ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar --server.port=${PORT:-10000}"]
+ENTRYPOINT ["sh", "-c", "java -Duser.timezone=Asia/Tashkent -jar /app/app.jar --server.port=${PORT:-10000}"]
