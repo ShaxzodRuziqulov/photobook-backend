@@ -46,8 +46,6 @@ public class OrderService {
 
         Order order = mapper.toEntity(dto);
         fillOrderFields(order, dto, employees);
-        order.setStatus(OrderStatus.IN_PROGRESS);
-        applyWorkflow(order);
 
         Order saved = repository.save(order);
         attachUpload(saved, dto.getUploadId());
