@@ -11,6 +11,7 @@ public interface EmployeeMonthlyOrderProjection {
     String getItemType();
     String getStatus();
     LocalDate getAcceptedDate();
+    String getKind();
     LocalDateTime getLastLoggedAt();
     Long getTotalDelta();
 }

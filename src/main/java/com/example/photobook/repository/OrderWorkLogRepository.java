@@ -53,6 +53,7 @@ public interface OrderWorkLogRepository extends JpaRepository<OrderWorkLog, UUID
                    o.itemType       AS itemType,
                    o.status         AS status,
                    o.acceptedDate   AS acceptedDate,
+                   o.kind           AS kind,
                    MAX(l.loggedAt)  AS lastLoggedAt,
                    SUM(l.delta)     AS totalDelta
             FROM OrderWorkLog l

@@ -19,4 +19,5 @@ public class WorkLogResponseDto {
     private Integer snapshot;
     private String workMonth;
     private LocalDateTime loggedAt;
+    private String notes;
 }

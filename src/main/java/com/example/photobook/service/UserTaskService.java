@@ -93,8 +93,8 @@ public class UserTaskService {
             int previousCount = assignment.getProcessedCount();
             int nextProcessedCount = previousCount + dto.getProcessedCount();
             assignment.setProcessedCount(nextProcessedCount);
-            
-            workLogService.logProgress(order.getId(), currentUserId, assignment.getStepOrder(), previousCount, nextProcessedCount);
+
+            workLogService.logProgress(order.getId(), currentUserId, assignment.getStepOrder(), previousCount, nextProcessedCount, dto.getNotes());
         }
 
         if (dto.getNotes() != null) {
@@ -103,12 +103,15 @@ public class UserTaskService {
         }
 
         if (dto.getWorkStatus() != null) {
-            validateWorkStatusTransition(assignment.getWorkStatus(), dto.getWorkStatus());
-            if (dto.getWorkStatus() == EmployeeWorkStatus.COMPLETED &&
-                    assignment.getProcessedCount() < targetProgress) {
-                throw new IllegalArgumentException("Current step cannot be completed before full amount is processed");
+            EmployeeWorkStatus requestedStatus = dto.getWorkStatus();
+            if (requestedStatus == EmployeeWorkStatus.COMPLETED) {
+                int stepTotal = calculateStepTotalProcessed(order, assignment.getStepOrder());
+                if (stepTotal < targetProgress) {
+                    requestedStatus = assignment.getWorkStatus();
+                }
             }
-            assignment.setWorkStatus(dto.getWorkStatus());
+            validateWorkStatusTransition(assignment.getWorkStatus(), requestedStatus);
+            assignment.setWorkStatus(requestedStatus);
         }
 
         refreshPipelineWorkflow(order, targetProgress);
@@ -267,7 +270,7 @@ public class UserTaskService {
 
     private int calculateStepTotalProcessed(Order order, int stepOrder) {
         return order.getEmployees().stream()
-                .filter(e -> e.getStepOrder() == stepOrder)
+                .filter(e -> e.getStepOrder() != null && e.getStepOrder() == stepOrder)
                 .mapToInt(e -> e.getProcessedCount() == null ? 0 : e.getProcessedCount())
                 .sum();
     }
@@ -321,6 +324,7 @@ public class UserTaskService {
         if (employees == null || employees.isEmpty()) return;
 
         Map<Integer, Integer> stepTotals = employees.stream()
+                .filter(e -> e.getStepOrder() != null)
                 .collect(Collectors.groupingBy(OrderEmployee::getStepOrder,
                         Collectors.summingInt(e -> e.getProcessedCount() == null ? 0 : e.getProcessedCount())));
 

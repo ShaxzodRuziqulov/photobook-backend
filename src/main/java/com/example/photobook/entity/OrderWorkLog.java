@@ -54,4 +54,7 @@ public class OrderWorkLog {
 
     @Column(name = "logged_at", nullable = false)
     private LocalDateTime loggedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 }

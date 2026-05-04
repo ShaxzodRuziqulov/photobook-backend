@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -25,9 +26,10 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponseDto> handleIllegalArgument(IllegalArgumentException exception) {
+        String message = Objects.requireNonNullElse(exception.getMessage(), "Invalid request");
         return ResponseEntity.badRequest().body(ErrorResponseDto.builder()
-                .message(exception.getMessage())
-                .errors(Map.of("request", List.of(exception.getMessage())))
+                .message(message)
+                .errors(Map.of("request", List.of(message)))
                 .build());
     }
 
@@ -56,9 +58,10 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleGeneric(Exception exception) {
+        String details = Objects.requireNonNullElse(exception.getMessage(), exception.getClass().getSimpleName());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ErrorResponseDto.builder()
                 .message("Internal server error")
-                .errors(Map.of("server", List.of(exception.getMessage())))
+                .errors(Map.of("server", List.of(details)))
                 .build());
     }
 }

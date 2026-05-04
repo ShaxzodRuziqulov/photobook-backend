@@ -24,7 +24,7 @@ public class OrderWorkLogService {
     private final OrderWorkLogRepository repository;
     private final CurrentUserService currentUserService;
 
-    public void logProgress(UUID orderId, UUID employeeId, int stepOrder, int previousCount, int newCount) {
+    public void logProgress(UUID orderId, UUID employeeId, int stepOrder, int previousCount, int newCount, String notes) {
         int delta = newCount - previousCount;
         if (delta <= 0) return;
 
@@ -36,6 +36,9 @@ public class OrderWorkLogService {
         log.setSnapshot(newCount);
         log.setWorkMonth(YearMonth.now().toString());
         log.setLoggedAt(LocalDateTime.now());
+        if (notes != null && !notes.isBlank()) {
+            log.setNotes(notes.trim());
+        }
 
         repository.save(log);
     }
@@ -45,12 +48,11 @@ public class OrderWorkLogService {
                 .findTopByOrderIdAndEmployeeIdAndStepOrderOrderByLoggedAtDesc(orderId, employeeId, stepOrder)
                 .map(OrderWorkLog::getSnapshot)
                 .orElse(0);
-        
+
         if (currentCount > lastSnapshot) {
-            logProgress(orderId, employeeId, stepOrder, lastSnapshot, currentCount);
+            logProgress(orderId, employeeId, stepOrder, lastSnapshot, currentCount, null);
         } else if (currentCount > 0 && currentCount < lastSnapshot) {
-            // This case happens if a reset occurred and new work was done but not yet logged
-            logProgress(orderId, employeeId, stepOrder, 0, currentCount);
+            logProgress(orderId, employeeId, stepOrder, 0, currentCount, null);
         }
     }
 
@@ -107,7 +109,7 @@ public class OrderWorkLogService {
         dto.setOrderId(log.getOrderId());
         dto.setOrderName(log.getOrder() != null ? log.getOrder().getOrderName() : null);
         dto.setEmployeeId(log.getEmployeeId());
-        
+
         if (log.getEmployee() != null) {
             User user = log.getEmployee();
             String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
@@ -115,12 +117,13 @@ public class OrderWorkLogService {
             String fullName = (firstName + " " + lastName).trim();
             dto.setEmployeeFullName(fullName.isEmpty() ? user.getUsername() : fullName);
         }
-        
+
         dto.setStepOrder(log.getStepOrder());
         dto.setDelta(log.getDelta());
         dto.setSnapshot(log.getSnapshot());
         dto.setWorkMonth(log.getWorkMonth());
         dto.setLoggedAt(log.getLoggedAt());
+        dto.setNotes(log.getNotes());
         return dto;
     }
 }

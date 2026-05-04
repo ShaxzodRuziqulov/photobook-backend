@@ -17,6 +17,7 @@ public class EmployeeOrderSummaryDto {
     private String itemType;
     private String status;
     private LocalDate acceptedDate;
+    private String kind;
     private LocalDateTime lastLoggedAt;
     private Long totalDelta;
 
@@ -28,6 +29,7 @@ public class EmployeeOrderSummaryDto {
         dto.setItemType(p.getItemType());
         dto.setStatus(p.getStatus());
         dto.setAcceptedDate(p.getAcceptedDate());
+        dto.setKind(p.getKind());
         dto.setLastLoggedAt(p.getLastLoggedAt());
         dto.setTotalDelta(p.getTotalDelta());
         return dto;

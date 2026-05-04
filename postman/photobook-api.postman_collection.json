@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d6d87f2e-fbdb-4d90-99e2-3a2c7958b7f1",
     "name": "Photobook API",
-    "description": "Photobook Spring Boot REST + Socket.IO.\n\n**Base URL:** `{{baseUrl}}` — lokalda odatda `http://localhost:9091` (`application.yml`: `server.port`, prod/Railway: `PORT`).\n\n**REST prefiks:** `/api/v1`.\n\n**JWT:** kolleksiya darajasida Bearer `{{accessToken}}`. `Login` va `Refresh` so‘rovlari `noauth` (token oladi). Boshqa barcha REST (shu jumladan **Upload**) uchun avval Login qiling.\n\n**Refresh / logout JSON kalitlari:** backend `RefreshTokenRequestDto` — **`refresh_token`** (snake_case).\n\n**Login / refresh javobi:** `access_token`, `refresh_token` (snake_case); login ichida `user`.\n\n**Paging:** ko‘p modullar `POST .../paging?page=&size=&sort=` + JSON body; bo‘sh filter `{}`.\n\n**Bildirishnomalar (`POST /notifications/me/paging`):** bodyda `type` ixtiyoriy; qiymatlar: `ORDER_ASSIGNED`, `TASK_ACTIVATED`, `ORDER_UPDATED`, `ORDER_STATUS_CHANGED`, `ADMIN_TASK_STEP_COMPLETED`, `ADMIN_TASK_HANDOFF`, `ADMIN_ORDER_WORK_COMPLETED` (backend JPQL `LOWER` bilan solishtiradi). `Hammasi` uchun `type` ni yubormang yoki `null`/`\"\"`.\n\n**Socket.IO:** handshake `GET|POST|OPTIONS` `/socket.io/` (query: `EIO=4&transport=polling` yoki websocket). Client event: `authenticate` (`token` yoki `Bearer ...`). Server: `authenticated`, `auth_error`, `notification`.\n\n**Swagger:** `/swagger-ui/index.html`, OpenAPI: `/v3/api-docs`.\n\n**Hujjatlar:** `md/BACKEND_API.md` (§0.1 — barcha endpointlar jadvali), `md/BACKEND_LOGIC.md`, `md/FRONTEND_CONTRACT.md`, `md/BACKEND_ENTITIES.md`, `md/RAILWAY.md`, `md/README.md`.",
+    "description": "Photobook Spring Boot REST + Socket.IO.\n\n**Base URL:** `{{baseUrl}}` — lokalda odatda `http://localhost:9091` (`application.yml`: `server.port`, prod/Railway: `PORT`).\n\n**REST prefiks:** `/api/v1`.\n\n**JWT:** kolleksiya darajasida Bearer `{{accessToken}}`. `Login` va `Refresh` so‘rovlari `noauth` (token oladi). Boshqa barcha REST (shu jumladan **Upload**) uchun avval Login qiling.\n\n**Refresh / logout JSON kalitlari:** backend `RefreshTokenRequestDto` — **`refresh_token`** (snake_case).\n\n**Login / refresh javobi:** `access_token`, `refresh_token` (snake_case); login ichida `user`.\n\n**Paging:** ko‘p modullar `POST .../paging?page=&size=&sort=` + JSON body; bo‘sh filter `{}`.\n\n**Order paging (`POST /orders/paging`):** `acceptedDate` interval boshi, `deadline` interval oxiri. Order tanlangan oraliq bilan kesishsa qaytadi. Ikkalasi ham yuborilmasa backend default oxirgi 1 oylik intervalni ishlatadi.\n\n**Bildirishnomalar (`POST /notifications/me/paging`):** bodyda `type` ixtiyoriy; qiymatlar: `ORDER_ASSIGNED`, `TASK_ACTIVATED`, `ORDER_UPDATED`, `ORDER_STATUS_CHANGED`, `ADMIN_TASK_STEP_COMPLETED`, `ADMIN_TASK_HANDOFF`, `ADMIN_ORDER_WORK_COMPLETED` (backend JPQL `LOWER` bilan solishtiradi). `Hammasi` uchun `type` ni yubormang yoki `null`/`\"\"`.\n\n**Socket.IO:** handshake `GET|POST|OPTIONS` `/socket.io/` (query: `EIO=4&transport=polling` yoki websocket). Client event: `authenticate` (`token` yoki `Bearer ...`). Server: `authenticated`, `auth_error`, `notification`.\n\n**Swagger:** `/swagger-ui/index.html`, OpenAPI: `/v3/api-docs`.\n\n**Hujjatlar:** `md/BACKEND_API.md` (§0.1 — barcha endpointlar jadvali), `md/BACKEND_LOGIC.md`, `md/FRONTEND_CONTRACT.md`, `md/BACKEND_ENTITIES.md`, `md/RAILWAY.md`, `md/README.md`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -30,6 +30,7 @@
     { "key": "uploadId", "value": "" },
     { "key": "uploadKey", "value": "" },
     { "key": "notificationId", "value": "" },
+    { "key": "workMonth", "value": "2026-05" },
     { "key": "historyId", "value": "" }
   ],
   "item": [
@@ -498,13 +499,25 @@
           }
         },
         {
-          "name": "Orders Paging",
+          "name": "Orders Paging - Custom Range",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"search\": \"album\",\n  \"status\": \"IN_PROGRESS\",\n  \"acceptedDate\": \"2026-03-01\",\n  \"deadline\": \"2026-03-31\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/orders/paging?page=0&size=10&sort=acceptedDate,desc"
+          }
+        },
+        {
+          "name": "Orders Paging - Default 1 Month",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
             },
             "url": "{{baseUrl}}/api/v1/orders/paging?page=0&size=10&sort=acceptedDate,desc"
           }
@@ -1053,6 +1066,54 @@
           "request": {
             "method": "DELETE",
             "url": "{{baseUrl}}/api/v1/order-status-histories/{{historyId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Work Logs",
+      "description": "Order work log endpointlari (`WorkLogController`). `month` parametri `YYYY-MM` formatda yuboriladi. Bu endpointlar auth talab qiladi; `my-*` requestlar joriy foydalanuvchi bo‘yicha ishlaydi.",
+      "item": [
+        {
+          "name": "Get Monthly Work Report",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/work-logs/monthly?month={{workMonth}}"
+          }
+        },
+        {
+          "name": "Get My Monthly Total",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/work-logs/my-monthly?month={{workMonth}}"
+          }
+        },
+        {
+          "name": "Get My Work History",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/work-logs/my-history"
+          }
+        },
+        {
+          "name": "Get Order Work Logs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/work-logs/orders/{{orderId}}"
+          }
+        },
+        {
+          "name": "Get Employee Work History By Month",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/work-logs/employee/{{userId}}/history?month={{workMonth}}"
+          }
+        },
+        {
+          "name": "Get Employee Monthly Orders",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/work-logs/employee/{{userId}}/monthly-orders?month={{workMonth}}"
           }
         }
       ]

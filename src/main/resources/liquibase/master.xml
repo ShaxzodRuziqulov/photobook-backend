@@ -14,5 +14,6 @@
     <include file="changelog/create/07-23042026-order-item-type-enum.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create/08-30042026-order-work-log.xml" relativeToChangelogFile="true"/>
     <include file="changelog/create/09-30042026-add-deleted-to-orders.xml" relativeToChangelogFile="true"/>
+    <include file="changelog/create/10-04052026-work-log-notes.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

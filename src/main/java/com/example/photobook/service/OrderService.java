@@ -46,6 +46,8 @@ public class OrderService {
 
         Order order = mapper.toEntity(dto);
         fillOrderFields(order, dto, employees);
+        order.setStatus(OrderStatus.IN_PROGRESS);
+        applyWorkflow(order);
 
         Order saved = repository.save(order);
         attachUpload(saved, dto.getUploadId());
@@ -59,7 +61,10 @@ public class OrderService {
         validateOrder(dto, employees);
 
         Order order = findByOrderId(id);
+        OrderStatus currentStatus = order.getStatus();
         Set<UUID> removedUserIds = fillOrderFields(order, dto, employees);
+        order.setStatus(currentStatus);
+        applyWorkflow(order);
 
         Order saved = repository.save(order);
         attachUpload(saved, dto.getUploadId());
@@ -201,7 +206,6 @@ public class OrderService {
         fillBasicFields(order, dto);
         resolveRelations(order, dto);
         Set<UUID> removedUserIds = syncEmployees(order, employees);
-        applyWorkflow(order);
         return removedUserIds;
     }
 
@@ -214,7 +218,6 @@ public class OrderService {
         order.setAmount(dto.getAmount());
         order.setAcceptedDate(dto.getAcceptedDate());
         order.setDeadline(dto.getDeadline());
-        order.setStatus(dto.getStatus());
         order.setNotes(StringUtils.normalize(dto.getNotes()));
         if (dto.getImageUrl() != null) {
             order.setImageUrl(StringUtils.normalize(dto.getImageUrl()));
@@ -281,9 +284,6 @@ public class OrderService {
         }
         if (dto.getDeadline().isBefore(dto.getAcceptedDate())) {
             throw new IllegalArgumentException("deadline cannot be earlier than accepted_date");
-        }
-        if (dto.getStatus() == null) {
-            throw new IllegalArgumentException("status is required");
         }
     }
 
@@ -395,6 +395,7 @@ public class OrderService {
                     existing.setWorkStatus(EmployeeWorkStatus.PENDING);
                 }
                 existing.setStepOrder(employeeDto.getStepOrder());
+                existing.setNotes(StringUtils.normalize(employeeDto.getNotes()));
                 continue;
             }
 
@@ -420,6 +421,7 @@ public class OrderService {
         assignment.setUser(user);
         assignment.setProcessedCount(0);
         assignment.setStepOrder(employeeDto.getStepOrder());
+        assignment.setNotes(StringUtils.normalize(employeeDto.getNotes()));
         assignment.setWorkStatus(EmployeeWorkStatus.PENDING);
         return assignment;
     }
