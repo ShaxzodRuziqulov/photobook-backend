@@ -45,13 +45,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             FROM Order o
             WHERE o.deleted = false
               AND o.status = COALESCE(:status, o.status)
-              AND o.acceptedDate = COALESCE(:acceptedDate, o.acceptedDate)
-              AND o.deadline = COALESCE(:deadline, o.deadline)
+              AND o.acceptedDate <= :deadlineTo
+              AND o.deadline >= :acceptedDateFrom
             ORDER BY o.updatedAt DESC
             """)
     Page<Order> findPageWithoutTextSearch(@Param("status") OrderStatus status,
-                                          @Param("acceptedDate") LocalDate acceptedDate,
-                                          @Param("deadline") LocalDate deadline,
+                                          @Param("acceptedDateFrom") LocalDate acceptedDateFrom,
+                                          @Param("deadlineTo") LocalDate deadlineTo,
                                           Pageable pageable);
 
     @Query("""
@@ -70,14 +70,14 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                    LOWER(COALESCE(employee.username, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.category.name, '')) LIKE LOWER(CONCAT('%', :search, '%')))
               AND o.status = COALESCE(:status, o.status)
-              AND o.acceptedDate = COALESCE(:acceptedDate, o.acceptedDate)
-              AND o.deadline = COALESCE(:deadline, o.deadline)
+              AND o.acceptedDate <= :deadlineTo
+              AND o.deadline >= :acceptedDateFrom
             ORDER BY o.updatedAt DESC
             """)
     Page<Order> findPageWithTextSearch(@Param("search") String search,
                                        @Param("status") OrderStatus status,
-                                       @Param("acceptedDate") LocalDate acceptedDate,
-                                       @Param("deadline") LocalDate deadline,
+                                       @Param("acceptedDateFrom") LocalDate acceptedDateFrom,
+                                       @Param("deadlineTo") LocalDate deadlineTo,
                                        Pageable pageable);
 
     @Query(value = """

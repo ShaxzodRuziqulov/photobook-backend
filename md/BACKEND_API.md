@@ -405,8 +405,11 @@ Filterlar:
 
 - `search` optional. `orderName`, `receiverName`, `customer.fullName`, employee full name, employee username va category name ichidan qidiradi.
 - `status` optional. Qiymatlar: `PENDING`, `IN_PROGRESS`, `PAUSED`, `COMPLETED`, `CANCELLED`.
-- `acceptedDate` optional. Aniq qabul sanasi bo'yicha filterlaydi.
-- `deadline` optional. Aniq tugash sanasi bo'yicha filterlaydi.
+- `acceptedDate` optional. Interval boshi sifatida ishlaydi.
+- `deadline` optional. Interval oxiri sifatida ishlaydi.
+- Order interval bilan kesishsa chiqadi: `order.acceptedDate <= deadline` va `order.deadline >= acceptedDate`.
+- Ikkalasi ham yuborilmasa backend default oxirgi 1 oylik intervalni ishlatadi.
+- Faqat bittasi yuborilsa, ikkinchi tomoni ochiq interval bo'ladi.
 
 Bo'sh filter uchun `{}` yuboriladi:
 
@@ -418,7 +421,7 @@ Frontend eslatma:
 
 - `Hammasi` holati uchun `status` yuborilmaydi yoki `null` yuboriladi.
 - Sana inputi bo'sh bo'lsa `""` yuborilmaydi; field olib tashlanadi yoki `null` yuboriladi.
-- `acceptedDate` va `deadline` hozir range emas, aynan teng sana bo'yicha ishlaydi.
+- `acceptedDate` va `deadline` birga yuborilganda tanlangan vaqt oralig'i sifatida ishlaydi.
 
 Response:
 

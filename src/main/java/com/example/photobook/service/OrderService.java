@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -80,17 +81,36 @@ public class OrderService {
 
     public Page<OrderDto> findPage(OrderPagingRequest request, Pageable pageable) {
         String search = StringUtils.normalize(request.getSearch());
+        LocalDate acceptedDateFrom = request.getAcceptedDate();
+        LocalDate deadlineTo = request.getDeadline();
+
+        if (acceptedDateFrom == null && deadlineTo == null) {
+            deadlineTo = LocalDate.now();
+            acceptedDateFrom = deadlineTo.minusMonths(1);
+        } else {
+            if (acceptedDateFrom == null) {
+                acceptedDateFrom = LocalDate.of(1900, 1, 1);
+            }
+            if (deadlineTo == null) {
+                deadlineTo = LocalDate.of(9999, 12, 31);
+            }
+        }
+
+        if (acceptedDateFrom.isAfter(deadlineTo)) {
+            throw new IllegalArgumentException("accepted_date cannot be later than deadline");
+        }
+
         Page<Order> page = search == null
                 ? repository.findPageWithoutTextSearch(
                         request.getStatus(),
-                        request.getAcceptedDate(),
-                        request.getDeadline(),
+                        acceptedDateFrom,
+                        deadlineTo,
                         pageable)
                 : repository.findPageWithTextSearch(
                         search,
                         request.getStatus(),
-                        request.getAcceptedDate(),
-                        request.getDeadline(),
+                        acceptedDateFrom,
+                        deadlineTo,
                         pageable);
         return page.map(this::toDto);
     }

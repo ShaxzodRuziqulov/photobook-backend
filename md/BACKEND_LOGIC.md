@@ -203,22 +203,24 @@ Filter qoidalari (`OrderPagingRequest`):
 - `search` bo'sh yoki `null` bo'lsa qidiruv o'chadi.
 - `search` quyidagi fieldlardan qidiradi: `orderName`, `receiverName`, `customer.fullName`, employee full name, employee username, category name.
 - `status` `OrderStatus` enum bo'yicha aniq filterlaydi.
-- `acceptedDate` `orders.accepted_date` bilan **teng** sana bo'yicha filterlaydi (oraliq emas).
-- `deadline` `orders.deadline` bilan **teng** sana bo'yicha filterlaydi (oraliq emas).
-- `OrderPagingRequest` faqat `search`, `status`, `acceptedDate`, `deadline` ni qabul qiladi; `kind`, `customerId`, `employeeId`, `categoryId` va sana **oraliqlari** (range) bu endpointda yo'q.
+- `acceptedDate` interval boshi, `deadline` interval oxiri sifatida ishlaydi.
+- Order tanlangan oraliq bilan kesishsa chiqadi: `orders.accepted_date <= deadline` va `orders.deadline >= acceptedDate`.
+- `acceptedDate` va `deadline` ikkalasi ham bo'sh bo'lsa backend default oxirgi 1 oylik intervalni qo'llaydi.
+- Faqat bittasi kelsa, ikkinchi tomoni ochiq interval bo'ladi.
+- `OrderPagingRequest` hali ham faqat `search`, `status`, `acceptedDate`, `deadline` ni qabul qiladi; `kind`, `customerId`, `employeeId`, `categoryId` yo'q.
 
 Query ishlashi:
 
 - Repository `category`, `customer`, `employees`, `employees.user` ni `EntityGraph` orqali yuklaydi.
 - JPQL `DISTINCT` va employee join tufayli bir order bir nechta qatorda kelishi mumkinligi hisobga olingan.
-- Nullable `status`, `acceptedDate`, `deadline` filterlari PostgreSQL null-param type xatosini bermasligi uchun `COALESCE(:param, field)` orqali qo'llangan.
+- Sana filtri overlap prinsipi bilan ishlaydi; service bo'sh qiymatlarda default/open interval chegaralarini to'ldirib repositoryga yuboradi.
 - Controllerda default sort yo'q; frontend `sort=updatedAt,desc` yuborishi tavsiya etiladi.
 
 Frontend uchun muhim qoidalar:
 
 - Holat selectida `Hammasi` tanlansa `status` fieldini yubormang yoki `null` yuboring.
 - Bo'sh date inputni `""` qilib yubormang; fieldni olib tashlang yoki `null` yuboring.
-- Sana filterlari range emas. Range kerak bo'lsa backend contract alohida kengaytiriladi.
+- Sana filterlari bitta interval sifatida ishlaydi: `acceptedDate` dan `deadline` gacha.
 - Response `PageResponse<OrderDto>` formatida qaytadi: `content`, `pageNumber`, `pageSize`, `totalElements`, `totalPages`, `last`.
 
 ## 6. User Tasks
@@ -469,7 +471,7 @@ Izoh:
 - `employees[].workStatus` response ichida qaytadi
 - `orders.status` `PAUSED` va `CANCELLED` ni ham qabul qiladi
 - worker update endpointida `status` o'rniga `workStatus` ishlatiladi
-- order paging: `search`, `status`, `acceptedDate`, `deadline` (ikkala sana ham aniq kun, oraliq emas)
+- order paging: `search`, `status`, `acceptedDate`, `deadline` (interval, default bo'sh holatda oxirgi 1 oy)
 - **user task paging:** `deadlineFrom` / `deadlineTo` qoldi; `acceptedDate` uchun `from` / `to` olib tashlandi
 - notificationlar uchun unbounded `GET /notifications/me` o'rniga `POST /notifications/me/paging` ishlatiladi
 - notification badge uchun `GET /notifications/me/unread-count` ishlatiladi

@@ -160,7 +160,10 @@ Order paging filter:
 
 Filter qoidalari:
 
-- `acceptedDate` va `deadline` range emas, aynan teng sana.
+- `acceptedDate` interval boshi, `deadline` interval oxiri sifatida ishlaydi.
+- Order tanlangan oraliq bilan kesishsa chiqadi: `order.acceptedDate <= deadline` va `order.deadline >= acceptedDate`.
+- Ikkalasi ham yuborilmasa backend default oxirgi 1 oylik intervalni ishlatadi.
+- Faqat bittasi yuborilsa, ikkinchi tomoni ochiq interval bo'ladi.
 - `search`: order name, receiver, customer full name, employee name/username, category name.
 - `status` bo'lmasa hammasi qaytadi.
 
