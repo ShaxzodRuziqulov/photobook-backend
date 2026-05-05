@@ -1,0 +1,11 @@
+package com.example.photobook.projection;
+
+import java.util.UUID;
+
+public interface MyCategoryMonthlyStatsProjection {
+    UUID getCategoryId();
+    String getCategoryName();
+    String getWorkMonth();
+    long getOrderCount();
+    long getTotalProcessed();
+}

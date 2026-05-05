@@ -3,6 +3,7 @@ package com.example.photobook.service;
 import com.example.photobook.dto.UserTaskDto;
 import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
+import com.example.photobook.projection.MyCategoryMonthlyStatsProjection;
 import com.example.photobook.projection.MyTaskCategoryStatsProjection;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.OrderEmployee;
@@ -52,21 +53,25 @@ public class UserTaskService {
 
         LocalDate deadlineFrom = request.getDeadlineFrom() != null ? request.getDeadlineFrom() : LocalDate.of(1900, 1, 1);
         LocalDate deadlineTo = request.getDeadlineTo() != null ? request.getDeadlineTo() : LocalDate.of(9999, 12, 31);
+        LocalDate acceptedDateFrom = request.getAcceptedDateFrom() != null ? request.getAcceptedDateFrom() : LocalDate.of(1900, 1, 1);
+        LocalDate acceptedDateTo = request.getAcceptedDateTo() != null ? request.getAcceptedDateTo() : LocalDate.of(9999, 12, 31);
 
         return orderRepository.findMyTasks(
                 currentUserId,
                 statuses,
                 deadlineFrom,
                 deadlineTo,
+                acceptedDateFrom,
+                acceptedDateTo,
                 search != null ? search : "",
                 effectivePageable
         ).map(order -> toDto(order, findAssignment(order, currentUserId)));
     }
 
     @Transactional(readOnly = true)
-    public List<MyTaskCategoryStatsProjection> getMyCompletedStatsByCategory() {
+    public List<MyCategoryMonthlyStatsProjection> getMyCategoryMonthlyStats() {
         UUID currentUserId = currentUserService.getCurrentUserId();
-        return orderRepository.findMyCompletedOrderStatsByCategory(currentUserId);
+        return orderRepository.findMyCategoryMonthlyStats(currentUserId);
     }
 
     public UserTaskDto updateMyTask(UUID id, UserTaskUpdateDto dto) {

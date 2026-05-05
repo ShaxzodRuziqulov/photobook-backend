@@ -203,8 +203,7 @@ public class OrderService {
     private Set<UUID> fillOrderFields(Order order, OrderDto dto, List<EmployeeDto> employees) {
         fillBasicFields(order, dto);
         resolveRelations(order, dto);
-        Set<UUID> removedUserIds = syncEmployees(order, employees);
-        return removedUserIds;
+        return syncEmployees(order, employees);
     }
 
     private void fillBasicFields(Order order, OrderDto dto) {
@@ -479,10 +478,6 @@ public class OrderService {
                 .orElse(null);
 
         if (currentEmployee == null) {
-            if (order.getStatus() == OrderStatus.COMPLETED) {
-                sortedEmployees.forEach(employee -> employee.setWorkStatus(EmployeeWorkStatus.COMPLETED));
-                return;
-            }
 
             currentEmployee = sortedEmployees.get(0);
             sortedEmployees.forEach(employee -> employee.setWorkStatus(EmployeeWorkStatus.PENDING));

@@ -3,6 +3,7 @@ package com.example.photobook.repository;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
+import com.example.photobook.projection.MyCategoryMonthlyStatsProjection;
 import com.example.photobook.projection.MyTaskCategoryStatsProjection;
 import com.example.photobook.projection.OrderKindCountProjection;
 import com.example.photobook.projection.OrderStatusCountProjection;
@@ -90,6 +91,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
               AND o.status IN :statuses
               AND o.deadline >= :deadlineFrom
               AND o.deadline <= :deadlineTo
+              AND o.acceptedDate >= :acceptedDateFrom
+              AND o.acceptedDate <= :acceptedDateTo
               AND (LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.receiverName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.customer.fullName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
@@ -105,6 +108,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
               AND o.status IN :statuses
               AND o.deadline >= :deadlineFrom
               AND o.deadline <= :deadlineTo
+              AND o.acceptedDate >= :acceptedDateFrom
+              AND o.acceptedDate <= :acceptedDateTo
               AND (LOWER(o.orderName) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.receiverName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
                    LOWER(COALESCE(o.customer.fullName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR
@@ -114,6 +119,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                             @Param("statuses") List<OrderStatus> statuses,
                             @Param("deadlineFrom") LocalDate deadlineFrom,
                             @Param("deadlineTo") LocalDate deadlineTo,
+                            @Param("acceptedDateFrom") LocalDate acceptedDateFrom,
+                            @Param("acceptedDateTo") LocalDate acceptedDateTo,
                             @Param("search") String search,
                             Pageable pageable);
 
@@ -141,18 +148,18 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                                               @Param("employeeId") UUID employeeId);
 
     @Query(value = """
-            SELECT o.category_id   AS categoryId,
-                   pc.name         AS categoryName,
-                   COUNT(DISTINCT o.id) AS orderCount,
-                   COALESCE(SUM(oe.processed_count), 0) AS totalProcessed
-            FROM orders o
-            JOIN order_employees oe ON oe.order_id = o.id
+            SELECT o.category_id                          AS categoryId,
+                   pc.name                               AS categoryName,
+                   TO_CHAR(o.accepted_date, 'YYYY-MM')  AS workMonth,
+                   COUNT(DISTINCT wl.order_id)           AS orderCount,
+                   COALESCE(SUM(wl.delta), 0)            AS totalProcessed
+            FROM order_work_log wl
+            JOIN orders o ON o.id = wl.order_id
             JOIN product_categories pc ON pc.id = o.category_id
-            WHERE oe.user_id = :userId
-              AND o.status = 'COMPLETED'
-              AND o.deleted = false
-            GROUP BY o.category_id, pc.name
-            ORDER BY orderCount DESC
+            WHERE wl.employee_id = :userId
+              AND o.deleted      = false
+            GROUP BY o.category_id, pc.name, TO_CHAR(o.accepted_date, 'YYYY-MM')
+            ORDER BY pc.name, TO_CHAR(o.accepted_date, 'YYYY-MM') DESC
             """, nativeQuery = true)
-    List<MyTaskCategoryStatsProjection> findMyCompletedOrderStatsByCategory(@Param("userId") UUID userId);
+    List<MyCategoryMonthlyStatsProjection> findMyCategoryMonthlyStats(@Param("userId") UUID userId);
 }
