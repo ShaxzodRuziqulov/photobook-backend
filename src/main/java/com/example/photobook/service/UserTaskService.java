@@ -1,10 +1,10 @@
 package com.example.photobook.service;
 
+import com.example.photobook.dto.CategoryStatsDto;
 import com.example.photobook.dto.UserTaskDto;
 import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
 import com.example.photobook.projection.MyCategoryMonthlyStatsProjection;
-import com.example.photobook.projection.MyTaskCategoryStatsProjection;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.OrderEmployee;
 import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
@@ -69,9 +69,18 @@ public class UserTaskService {
     }
 
     @Transactional(readOnly = true)
-    public List<MyCategoryMonthlyStatsProjection> getMyCategoryMonthlyStats() {
+    public List<CategoryStatsDto> getMyCategoryMonthlyStats(String month) {
         UUID currentUserId = currentUserService.getCurrentUserId();
-        return orderRepository.findMyCategoryMonthlyStats(currentUserId);
+        return orderRepository.findMyCategoryMonthlyStats(currentUserId, month)
+                .stream()
+                .map(p -> new CategoryStatsDto(
+                        p.getCategoryId(),
+                        p.getCategoryName(),
+                        p.getKind(),
+                        p.getWorkMonth(),
+                        p.getOrderCount(),
+                        p.getTotalProcessed()))
+                .collect(Collectors.toList());
     }
 
     public UserTaskDto updateMyTask(UUID id, UserTaskUpdateDto dto) {

@@ -4,7 +4,6 @@ import com.example.photobook.entity.Order;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
 import com.example.photobook.projection.MyCategoryMonthlyStatsProjection;
-import com.example.photobook.projection.MyTaskCategoryStatsProjection;
 import com.example.photobook.projection.OrderKindCountProjection;
 import com.example.photobook.projection.OrderStatusCountProjection;
 import org.springframework.data.domain.Page;
@@ -150,6 +149,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Query(value = """
             SELECT o.category_id                          AS categoryId,
                    pc.name                               AS categoryName,
+                   o.kind                                AS kind,
                    TO_CHAR(o.accepted_date, 'YYYY-MM')  AS workMonth,
                    COUNT(DISTINCT wl.order_id)           AS orderCount,
                    COALESCE(SUM(wl.delta), 0)            AS totalProcessed
@@ -158,8 +158,10 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             JOIN product_categories pc ON pc.id = o.category_id
             WHERE wl.employee_id = :userId
               AND o.deleted      = false
-            GROUP BY o.category_id, pc.name, TO_CHAR(o.accepted_date, 'YYYY-MM')
+              AND (:month IS NULL OR TO_CHAR(o.accepted_date, 'YYYY-MM') = :month)
+            GROUP BY o.category_id, pc.name, o.kind, TO_CHAR(o.accepted_date, 'YYYY-MM')
             ORDER BY pc.name, TO_CHAR(o.accepted_date, 'YYYY-MM') DESC
             """, nativeQuery = true)
-    List<MyCategoryMonthlyStatsProjection> findMyCategoryMonthlyStats(@Param("userId") UUID userId);
+    List<MyCategoryMonthlyStatsProjection> findMyCategoryMonthlyStats(@Param("userId") UUID userId,
+                                                                       @Param("month") String month);
 }

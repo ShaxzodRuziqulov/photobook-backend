@@ -1,10 +1,10 @@
 package com.example.photobook.controller;
 
+import com.example.photobook.dto.CategoryStatsDto;
 import com.example.photobook.dto.UserTaskDto;
 import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.PageResponse;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
-import com.example.photobook.projection.MyCategoryMonthlyStatsProjection;
 import com.example.photobook.service.UserTaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +22,9 @@ public class UserTaskController {
     private final UserTaskService service;
 
     @GetMapping("/me/stats/by-category")
-    public ResponseEntity<List<MyCategoryMonthlyStatsProjection>> myStatsByCategory() {
-        return ResponseEntity.ok(service.getMyCategoryMonthlyStats());
+    public ResponseEntity<List<CategoryStatsDto>> myStatsByCategory(
+            @RequestParam(required = false) String month) {
+        return ResponseEntity.ok(service.getMyCategoryMonthlyStats(month));
     }
 
     @GetMapping("/me/{id}")
