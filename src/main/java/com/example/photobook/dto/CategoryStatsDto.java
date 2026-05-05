@@ -11,6 +11,7 @@ public class CategoryStatsDto {
     private final UUID categoryId;
     private final String categoryName;
     private final String kind;
+    private final Integer defaultPages;
     private final String workMonth;
     private final long orderCount;
     private final long totalProcessed;

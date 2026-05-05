@@ -150,6 +150,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             SELECT o.category_id                          AS categoryId,
                    pc.name                               AS categoryName,
                    o.kind                                AS kind,
+                   MAX(o.page_count)                     AS defaultPages,
                    TO_CHAR(o.accepted_date, 'YYYY-MM')  AS workMonth,
                    COUNT(DISTINCT wl.order_id)           AS orderCount,
                    COALESCE(SUM(wl.delta), 0)            AS totalProcessed

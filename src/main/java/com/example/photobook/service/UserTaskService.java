@@ -4,7 +4,6 @@ import com.example.photobook.dto.CategoryStatsDto;
 import com.example.photobook.dto.UserTaskDto;
 import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
-import com.example.photobook.projection.MyCategoryMonthlyStatsProjection;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.OrderEmployee;
 import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
@@ -77,6 +76,7 @@ public class UserTaskService {
                         p.getCategoryId(),
                         p.getCategoryName(),
                         p.getKind(),
+                        p.getDefaultPages(),
                         p.getWorkMonth(),
                         p.getOrderCount(),
                         p.getTotalProcessed()))
