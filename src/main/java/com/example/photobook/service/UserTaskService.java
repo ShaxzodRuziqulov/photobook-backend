@@ -3,6 +3,7 @@ package com.example.photobook.service;
 import com.example.photobook.dto.UserTaskDto;
 import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
+import com.example.photobook.projection.MyTaskCategoryStatsProjection;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.OrderEmployee;
 import com.example.photobook.entity.enumirated.EmployeeWorkStatus;
@@ -60,6 +61,12 @@ public class UserTaskService {
                 search != null ? search : "",
                 effectivePageable
         ).map(order -> toDto(order, findAssignment(order, currentUserId)));
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyTaskCategoryStatsProjection> getMyCompletedStatsByCategory() {
+        UUID currentUserId = currentUserService.getCurrentUserId();
+        return orderRepository.findMyCompletedOrderStatsByCategory(currentUserId);
     }
 
     public UserTaskDto updateMyTask(UUID id, UserTaskUpdateDto dto) {

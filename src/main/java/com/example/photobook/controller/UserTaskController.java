@@ -4,6 +4,7 @@ import com.example.photobook.dto.UserTaskDto;
 import com.example.photobook.dto.UserTaskUpdateDto;
 import com.example.photobook.dto.request.PageResponse;
 import com.example.photobook.dto.request.UserTaskPagingRequest;
+import com.example.photobook.projection.MyTaskCategoryStatsProjection;
 import com.example.photobook.service.UserTaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -18,6 +20,11 @@ import java.util.UUID;
 @RequestMapping("/api/v1/user-tasks")
 public class UserTaskController {
     private final UserTaskService service;
+
+    @GetMapping("/me/stats/by-category")
+    public ResponseEntity<List<MyTaskCategoryStatsProjection>> myStatsByCategory() {
+        return ResponseEntity.ok(service.getMyCompletedStatsByCategory());
+    }
 
     @GetMapping("/me/{id}")
     public ResponseEntity<UserTaskDto> myTaskById(@PathVariable UUID id) {

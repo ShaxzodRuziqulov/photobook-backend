@@ -3,6 +3,7 @@ package com.example.photobook.repository;
 import com.example.photobook.entity.Order;
 import com.example.photobook.entity.enumirated.OrderKind;
 import com.example.photobook.entity.enumirated.OrderStatus;
+import com.example.photobook.projection.MyTaskCategoryStatsProjection;
 import com.example.photobook.projection.OrderKindCountProjection;
 import com.example.photobook.projection.OrderStatusCountProjection;
 import org.springframework.data.domain.Page;
@@ -138,4 +139,20 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             """)
     Optional<Order> findTaskByIdAndEmployeeId(@Param("orderId") UUID orderId,
                                               @Param("employeeId") UUID employeeId);
+
+    @Query(value = """
+            SELECT o.category_id   AS categoryId,
+                   pc.name         AS categoryName,
+                   COUNT(DISTINCT o.id) AS orderCount,
+                   COALESCE(SUM(oe.processed_count), 0) AS totalProcessed
+            FROM orders o
+            JOIN order_employees oe ON oe.order_id = o.id
+            JOIN product_categories pc ON pc.id = o.category_id
+            WHERE oe.user_id = :userId
+              AND o.status = 'COMPLETED'
+              AND o.deleted = false
+            GROUP BY o.category_id, pc.name
+            ORDER BY orderCount DESC
+            """, nativeQuery = true)
+    List<MyTaskCategoryStatsProjection> findMyCompletedOrderStatsByCategory(@Param("userId") UUID userId);
 }
