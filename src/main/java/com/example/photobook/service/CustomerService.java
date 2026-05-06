@@ -13,9 +13,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.transaction.annotation.Transactional;
 import static com.example.photobook.util.StringUtils.normalize;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CustomerService {
     private final CustomerRepository repository;

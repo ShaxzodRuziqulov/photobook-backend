@@ -16,9 +16,9 @@ import java.util.Objects;
 public class ApiExceptionHandler {
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ErrorResponseDto> handleMaxUploadSize(MaxUploadSizeExceededException exception) {
+    public ResponseEntity<ErrorResponseDto> handleMaxUploadSize(MaxUploadSizeExceededException ignored) {
         String message = "Maximum upload size exceeded";
-        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(ErrorResponseDto.builder()
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(ErrorResponseDto.builder()
                 .message(message)
                 .errors(Map.of("file", List.of(message)))
                 .build());
@@ -41,12 +41,12 @@ public class ApiExceptionHandler {
             if (details.contains("username")) {
                 message = "username already exists";
             } else if (details.contains("uk_order_employees_order_user")
-                    || details.contains("order_employees")
+                    || (details.contains("order_employees")
                     && details.contains("order_id")
-                    && details.contains("user_id")) {
+                    && details.contains("user_id"))) {
                 message = "employee already assigned to this order";
             } else if (details.contains("product_categories") || details.contains("product category")
-                    || details.contains("uk") && details.contains("name")) {
+                    || (details.contains("uk") && details.contains("name"))) {
                 message = "product category name already exists";
             }
         }

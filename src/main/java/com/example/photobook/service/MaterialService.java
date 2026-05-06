@@ -14,8 +14,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class MaterialService {
 
@@ -69,8 +71,8 @@ public class MaterialService {
     }
 
     public void delete(UUID id) {
-        Material expenseCategory = findByMaterialId(id);
-        repository.delete(expenseCategory);
+        Material material = findByMaterialId(id);
+        repository.delete(material);
     }
 
     public Material findByMaterialId(UUID id) {

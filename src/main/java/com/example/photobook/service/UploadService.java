@@ -20,8 +20,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class UploadService {
     private final UploadRepository repository;
     private final UserRepository userRepository;

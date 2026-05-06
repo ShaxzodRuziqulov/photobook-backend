@@ -45,7 +45,9 @@ public class AuthenticationController {
     @GetMapping("/me")
     public ResponseEntity<AuthUserResponse> authenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        assert authentication != null;
+        if (authentication == null) {
+            throw new IllegalArgumentException("Authentication required");
+        }
         User currentUser = currentUserService.getCurrentUser();
         return ResponseEntity.ok(authService.toAuthUserResponse(currentUser));
     }

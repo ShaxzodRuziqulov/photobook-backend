@@ -15,8 +15,10 @@ import com.example.photobook.util.StringUtils;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ExpenseService {
     private final ExpenseRepository repository;
