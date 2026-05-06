@@ -151,7 +151,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                    pc.name                               AS categoryName,
                    o.kind                                AS kind,
                    o.page_count                          AS defaultPages,
-                   TO_CHAR(o.accepted_date, 'YYYY-MM')  AS workMonth,
+                   wl.work_month                         AS workMonth,
                    COUNT(DISTINCT wl.order_id)           AS orderCount,
                    COALESCE(SUM(wl.delta), 0)            AS totalProcessed
             FROM order_work_log wl
@@ -159,9 +159,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             JOIN product_categories pc ON pc.id = o.category_id
             WHERE wl.employee_id = :userId
               AND o.deleted      = false
-              AND (:month IS NULL OR TO_CHAR(o.accepted_date, 'YYYY-MM') = :month)
-            GROUP BY o.category_id, pc.name, o.kind, o.page_count, TO_CHAR(o.accepted_date, 'YYYY-MM')
-            ORDER BY pc.name, o.page_count, TO_CHAR(o.accepted_date, 'YYYY-MM') DESC
+              AND (:month IS NULL OR wl.work_month = :month)
+            GROUP BY o.category_id, pc.name, o.kind, o.page_count, wl.work_month
+            ORDER BY pc.name, o.page_count, wl.work_month DESC
             """, nativeQuery = true)
     List<MyCategoryMonthlyStatsProjection> findMyCategoryMonthlyStats(@Param("userId") UUID userId,
                                                                        @Param("month") String month);
